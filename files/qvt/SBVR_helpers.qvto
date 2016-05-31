@@ -1,0 +1,125 @@
+library sbvr_helpers;
+
+import vepsem.QvtUtils;
+
+modeltype UML uses 'http://www.eclipse.org/uml2/4.0.0/UML';
+modeltype ecore uses 'http://www.eclipse.org/emf/2002/Ecore';
+
+helper properCaseName(in s: String) : String 
+{ 
+  if s = null or s.trim().length() = 0 then return null endif;
+  return s.substituteAll("\n", " ").trim().substituteAll("  ", " ");
+}
+
+helper properName(in s: String) : String 
+{
+  var nm: String:= properCaseName(s);
+  return if nm != null and nm.trim().length() > 0 then nm.toLowerCase() else null endif;
+}
+
+helper Element::inPackage(in pkg: Package) : Boolean
+{
+	var targetElem: Element := self;
+	if targetElem = pkg then {
+		return true;
+	} endif;
+	while (targetElem.owner != null) {
+		if targetElem.owner = pkg then {
+			return true;
+		} else {
+			targetElem := targetElem.owner;
+		} endif;
+	};
+	return false;
+}
+
+helper Element::contains(in pack: String, in mainPack: String, in subPack : String): Boolean 
+{
+   var targetElem:Element := self;
+    while (not targetElem.container().repr().equalsIgnoreCase(self.getModel().name)){
+        if targetElem.container()<> null then {
+            targetElem := targetElem.container().oclAsType(NamedElement);
+            if targetElem.oclAsType(NamedElement).name.equalsIgnoreCase(subPack) and targetElem.container().oclAsType(NamedElement).name.equalsIgnoreCase(pack)
+            and targetElem.container().oclAsType(NamedElement).container().oclAsType(NamedElement).name.equalsIgnoreCase(mainPack) then {
+            	return true;
+            } endif;
+           
+        } endif;
+    }; 
+    return false;
+}
+
+query Element::isStereotypedBy (str : String) : Boolean 
+{ 
+   var st : Stereotype := self.getAppliedStereotype(str); 
+   return if ( self.isStereotypeApplied(st) ) then true else false endif;
+}
+
+query String::verbFromBehavior() : String
+{
+	var name: String := properName(self).tokenize()->first().trim().replaceAll(" ", "_").toLower(); 
+	if name.trim().length() = 0 then {
+		name := null;
+	} endif;
+	return name;
+}
+
+query String::nounFromBehavior() : String
+{
+	var name: String := properCaseName(self).substringAfter(properCaseName(self).tokenize()->first()).trim(); 
+	if name.trim().length() = 0 then {
+		name := null;
+	} endif;
+	return name;
+}
+
+query String::verbFromAction() : String
+{
+	var name : String := properName(self).tokenize()->last().trim().replaceAll(" ", "_").toLower();
+	if name.trim().length() = 0 then {
+		name := null;
+	} endif;
+	return name;
+}
+
+query String::nounFromAction() : String
+{
+	var name : String := properCaseName(self).tokenize()->first().trim();
+	if name.trim().length() = 0 then {
+		name := null;
+	} endif;
+	return name;
+}
+ 
+query String::isIndividualConcept() : Boolean
+{
+	return self.match("^[A-Z0-9]+.*");
+}
+
+helper Element::setAnnotation(aname: String, k : String, v: String) 
+{
+    if self.getEAnnotation(aname)=null then {
+    	self.createEAnnotation(aname);
+    } endif;
+    self.eAnnotations->select(source = aname)->first()![EAnnotation].details += object EStringToStringMapEntry { 
+    	key := k; value := v; 
+    };
+    return
+}
+
+query Generalization::bothNamesPresent() : Boolean
+{
+	return properName(self.specific.name) != null and properName(self.general.name) != null;
+}
+
+query Association::bothNamesPresent() : Boolean
+{
+	var classSet: OrderedSet(Type) := self.endType->asOrderedSet();
+	return properName(classSet->first().name) != null and properName(classSet->last().name) != null;
+}
+
+query Dependency::bothNamesPresent() : Boolean
+{
+	return properName(self.client->asOrderedSet()->first().name) != null and 
+		properName(self.supplier->asOrderedSet()->first().name) != null;
+}

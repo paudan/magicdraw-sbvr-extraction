@@ -1,0 +1,26 @@
+#set( $newline="")## Strangely, this works as a newline break
+#macro (properName $name)
+$name.replaceAll("\n", " ").replaceAll("\r", " ").replaceAll("  ", " ") #end
+#macro (usecase_gc $name)
+#set ($proper = "#properName ($name)")
+#set ($index = $proper.indexOf(" ")+1)
+#set ($result = $proper.substring($index).trim())
+${result} #end
+#macro( gc $list )
+#foreach ($element in $list)
+#properName ($element.name)${newline}
+	Concept_type: general_concept
+#end
+#end
+#macro (classname $fullname)
+#set ($index = $fullname.lastIndexOf(".")+1)
+#set ($cname1 = $fullname.substring($index))
+${cname1} #end
+#gc ($Actor)
+#gc ($Model)
+#gc ($Component)
+#gc ($Package)
+#foreach ($usecase in $UseCase)
+#usecase_gc ($usecase.name)${newline}
+	Concept_type: general_concept
+#end

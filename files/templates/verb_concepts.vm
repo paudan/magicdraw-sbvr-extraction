@@ -1,0 +1,11 @@
+#parse ("gen_concepts.vm")
+#foreach ($gen in $Generalization)
+#set ($genname1 = "$gen.general.getClassType()")
+#set ($cname1 = "#classname ($genname1)")
+#set ($genname2 = "$gen.specific.getClassType()")
+#set ($cname2 = "#classname ($genname2)")
+#if (($cname1.trim() == "Actor") && ($cname2.trim() == "Actor"))
+#properName ($gen.general.name) generalizes #properName ($gen.specific.name)${newline}
+	Concept_type: binary_verb_concept
+#end
+#end

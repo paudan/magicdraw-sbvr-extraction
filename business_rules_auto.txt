@@ -1,0 +1,169 @@
+
+Model name: Case 2
+Instance Specification
+operative business rule It is obligatory that Administratorius perþiûrëti parametrø sàraðà if Administratorius administruoti parametrus
+operative business rule It is obligatory that IS naudotojas perþiûrëti nariø sàraðà if Administratorius administruoti narius
+operative business rule It is obligatory that IS naudotojas perþiûrëti renginiø sàraðà if Administratorius administruoti renginius
+operative business rule It is obligatory that Renginio iþdininkas parengti savo srities ataskaità if Pagrindinis organizatorius parengti galutinæ renginio ataskaità
+operative business rule It is obligatory that Renginio iþdininkas parengti savo srities ataskaità if Pagrindinis organizatorius sudaryti renginio planà
+operative business rule It is obligatory that Renginio logistikos koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius parengti galutinæ renginio ataskaità
+operative business rule It is obligatory that Renginio logistikos koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius sudaryti renginio planà
+operative business rule It is obligatory that Renginio projektø koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius parengti galutinæ renginio ataskaità
+operative business rule It is obligatory that Renginio projektø koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius sudaryti renginio planà
+operative business rule It is obligatory that Renginio ryðiø su ámonëmis koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius parengti galutinæ renginio ataskaità
+operative business rule It is obligatory that Renginio ryðiø su ámonëmis koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius sudaryti renginio planà
+operative business rule It is obligatory that Renginio socialinës dalies koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius parengti galutinæ renginio ataskaità
+operative business rule It is obligatory that Renginio socialinës dalies koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius sudaryti renginio planà
+operative business rule It is obligatory that Renginio vieðøjø ryðiø koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius parengti galutinæ renginio ataskaità
+operative business rule It is obligatory that Renginio vieðøjø ryðiø koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius sudaryti renginio planà
+operative business rule It is obligatory that Renginio þmogiðkøjø iðtekliø koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius parengti galutinæ renginio ataskaità
+operative business rule It is obligatory that Renginio þmogiðkøjø iðtekliø koordinatorius parengti savo srities ataskaità if Pagrindinis organizatorius sudaryti renginio planà
+operative business rule It is obligatory that Sistemos administravimo posistemë nurodyti narystës statusà if Sistemos administravimo posistemë patvirtinti registracijà
+operative business rule It is obligatory that Sistemos administravimo posistemë nurodyti naudotojo rolæ if Sistemos administravimo posistemë patvirtinti registracijà
+operative business rule It is permitted that Administratorius koreguoti parametro reikðmæ if Administratorius administruoti parametrus
+operative business rule It is permitted that Administratorius koreguoti renginá if Administratorius administruoti parametrus
+operative business rule It is permitted that Administratorius koreguoti renginá if Administratorius administruoti renginius
+operative business rule It is permitted that Administratorius nurodyti narystës statusà if Administratorius administruoti narius
+operative business rule It is permitted that Administratorius nurodyti naudotojo rolæ if Administratorius administruoti narius
+operative business rule It is permitted that Administratorius patvirtinti registracijà if Administratorius administruoti narius
+operative business rule It is permitted that Administratorius trinti parametro reikðmæ if Administratorius administruoti parametrus
+operative business rule It is permitted that Administratorius trinti parametro reikðmæ if Administratorius administruoti renginius
+operative business rule It is permitted that Administratorius ávesti parametro reikðmæ if Administratorius administruoti parametrus
+operative business rule It is permitted that Administratorius ávesti renginá if Administratorius administruoti parametrus
+operative business rule It is permitted that Administratorius ávesti renginá if Administratorius administruoti renginius
+
+Model name: Case 5
+Instance Specification
+operative business rule It is permitted that Sistemos administratorius redaguoti naudotojà if Sistemos administratorius perþiûrëti naudotojus
+operative business rule It is permitted that Sistemos administratorius uþblokuoti/ atblokuoti naudotojà if Sistemos administratorius perþiûrëti naudotojus
+operative business rule It is permitted that Tëvai iðtrinti dienpinigiø áraðus if Tëvai perþiûrëti visus dienpinigiø áraðus
+operative business rule It is permitted that Tëvai pridëti dienpinigiø áraðà if Tëvai perþiûrëti visus dienpinigiø áraðus
+operative business rule It is permitted that Tëvai redaguoti dienpinigiø áraðus if Tëvai perþiûrëti visus dienpinigiø áraðus
+operative business rule It is permitted that Ðeimos narys keisti statusà if Vaikai perþiûrëti priskirtas uþduotis
+operative business rule It is permitted that Ðeimos narys pridëti iðlaidas if Vaikai perþiûrëti asmenines iðlaidas
+operative business rule It is permitted that Ðeimos narys pridëti pajamas if Vaikai perþiûrëti savo pajamas
+operative business rule It is permitted that Ðeimos narys redaguoti asmeninius duomenis if Ðeimos narys perþiûrëti asmeninius duomenis
+
+Model name: Case 6
+Instance Specification
+operative business rule It is permitted that Mobili programëlë redaguoti laikà if Mobili programëlë redaguoti ávyká
+operative business rule It is permitted that Mobili programëlë redaguoti vietà if Mobili programëlë redaguoti ávyká
+operative business rule It is permitted that Programëlës vartotojas iðtrinti ávyká if Programëlës vartotojas redaguoti uþraðà
+operative business rule It is permitted that Programëlës vartotojas redaguoti ávyká if Programëlës vartotojas redaguoti uþraðà
+operative business rule It is permitted that Programëlës vartotojas sukurti ávyká if Programëlës vartotojas redaguoti uþraðà
+
+Model name: Case 1
+Instance Specification
+operative business rule It is obligatory that ASNGIS paruoðti uþsakymà automatizuotai gamybai sudarant XML dokumentà if ASNGIS gaminti uþsakymà
+operative business rule It is obligatory that ASNGIS paruoðti uþsakymà automatizuotai gamybai sudarant XML dokumentà if Operatorius gaminti uþsakymà
+operative business rule It is obligatory that ASNGIS paruoðti uþsakymà automatizuotai gamybai sudarant XML dokumentà if Vadybininkas gaminti uþsakymà
+operative business rule It is obligatory that ASNGIS pateikti nuotraukas spaudai if ASNGIS pradëti gamybos uþsakymà
+operative business rule It is obligatory that Automatizuotos skaitmeniniø nuotraukø gamybos IS nurodyti spaudos parametrus if Automatizuotos skaitmeniniø nuotraukø gamybos IS pateikti nuotraukas spaudai
+operative business rule It is obligatory that Klientas pateikti nuotraukas spaudai if Klientas pradëti gamybos uþsakymà
+operative business rule It is obligatory that Kurjeriø tarnyba iðkviesti kurjerá if Vadybininkas iðsiøsti pagamintas nuotraukas
+operative business rule It is obligatory that Tiekëjas pateikti medþiagø uþsakymà if Operatorius apsirûpinti þaliavomis
+operative business rule It is obligatory that Tiekëjas pateikti medþiagø uþsakymà if Vadybininkas apsirûpinti þaliavomis
+operative business rule It is obligatory that Vadybininkas pateikti nuotraukas spaudai if Vadybininkas pradëti gamybos uþsakymà
+
+Model name: Case 4
+Instance Specification
+operative business rule It is obligatory that Klientas atsiimti prekæ if Klientas pirkti prekæ
+operative business rule It is obligatory that Klientas atsiskaityti uþ prekes if Klientas pirkti prekæ
+operative business rule It is obligatory that Klientas iðsirinkti prekæ if Klientas pirkti prekæ
+operative business rule It is obligatory that Vartotojas ásidëti prekæ á krepðelá if Vartotojas pirkti prekæ
+operative business rule It is permitted that Pardavimø vadybininkas paðalinti prekæ ið asortimento if Pardavimø vadybininkas valdyti prekiø asortimentà
+operative business rule It is permitted that Pardavimø vadybininkas átraukti prekæ á asortimentà if Pardavimø vadybininkas valdyti prekiø asortimentà
+operative business rule It is permitted that Sveèias perþiûrëti prekæ if Sveèias perþiûrëti prekiø sàraðà
+operative business rule It is permitted that Sveèias perþiûrëti prekæ if Sveèias vykdyti paieðkà
+operative business rule It is permitted that Vartotojas redaguoti vartotojo informacijà if Vartotojas perþiûrëti vartotojo informacijà
+
+Model name: Case 3
+Instance Specification
+operative business rule It is permitted that Registruotas vartotojas redaguoti áraðà if Registruotas vartotojas kurti áraðà
+
+Model name: Case 9
+Instance Specification
+operative business rule It is obligatory that 5Pips IS uþpildyti plano registracijos formà if 5Pips IS ávykdyti mokëjimà and Jei nori aktyvuoti
+operative business rule It is obligatory that 5Pips prietaisø skydelis pakeisti vartotojo rolæ if Vartotojo MT4 platforma aktyvuoti 5Pips Client robot
+operative business rule It is obligatory that Administratorius aktyvuoti 5Pips Client robot if Administratorius prijungti kliento MT4 paskyrà
+operative business rule It is obligatory that Administratorius atidaryti prekybos pozicijà if Administratorius aktyvuoti 5Pips Server robot and Jei nori atidaryti prekybos pozicijà
+operative business rule It is obligatory that Administratorius modifikuoti prekybos pozicijà if Administratorius aktyvuoti 5Pips Server robot and Jei nori modifikuoti prekybos pozicijà
+operative business rule It is obligatory that Administratorius redaguoti vartotojo duomenis if Administratorius redaguoti pasirinkto vartotojo duomenis
+operative business rule It is obligatory that Administratorius uþdaryti prekybos pozicijà if Administratorius aktyvuoti 5Pips Server robot and Jei nori uþdaryti prekybos pozicijà
+operative business rule It is obligatory that Aktyvus vartotojas ávykdyti mokëjimà if Aktyvus vartotojas pasirinkti planà aktyviems and Jei nori apmokëti
+operative business rule It is obligatory that Vartotojas atsijungti  if Vartotojas prisijungti  and Jei nori atsijungti
+operative business rule It is obligatory that Vartotojas pasirinkti mokëjimo tipà if Vartotojas pasirinkti planà
+operative business rule It is obligatory that Vartotojas pasirinkti pamokà if Sveèias perþiûrëti pamokà
+operative business rule It is obligatory that Vartotojas redaguoti vartotojo duomenis if Vartotojas redaguoti savo duomenis
+operative business rule It is obligatory that Vartotojas ávykdyti mokëjimà if Vartotojas pasirinkti planà and Jei nori apmokëti
+operative business rule It is obligatory that Vartotojo MT4 platforma kopijuoti 5Pips Server robot veiksmus if 5Pips MT4 platforma atidaryti prekybos pozicijà
+operative business rule It is obligatory that Vartotojo MT4 platforma kopijuoti 5Pips Server robot veiksmus if 5Pips MT4 platforma modifikuoti prekybos pozicijà
+operative business rule It is obligatory that Vartotojo MT4 platforma kopijuoti 5Pips Server robot veiksmus if 5Pips MT4 platforma uþdaryti prekybos pozicijà
+operative business rule It is obligatory that Vartotojo MT4 platforma kopijuoti 5Pips Server robot veiksmus if Vartotojo MT4 platforma aktyvuoti 5Pips Client robot
+operative business rule It is permitted that 5Pips IS uþpildyti plano registracijos formà if 5Pips IS ávykdyti mokëjimà
+operative business rule It is permitted that Administratorius atidaryti prekybos pozicijà if Administratorius aktyvuoti 5Pips Server robot
+operative business rule It is permitted that Administratorius modifikuoti prekybos pozicijà if Administratorius aktyvuoti 5Pips Server robot
+operative business rule It is permitted that Administratorius uþdaryti prekybos pozicijà if Administratorius aktyvuoti 5Pips Server robot
+operative business rule It is permitted that Aktyvus vartotojas ávykdyti mokëjimà if Aktyvus vartotojas pasirinkti planà aktyviems
+operative business rule It is permitted that Vartotojas atsijungti  if Vartotojas prisijungti 
+operative business rule It is permitted that Vartotojas ávykdyti mokëjimà if Vartotojas pasirinkti planà
+
+Model name: Case 8
+Instance Specification
+operative business rule It is obligatory that Knygø mylëtojas dalintis informacija su bendraminèiais if Bendramintis gauti informacijà apie knygas
+operative business rule It is permitted that Administratorius paðalinti tiekëjà if Administratorius perþiûrëti informacijos tiekëjus
+operative business rule It is permitted that Administratorius redaguoti tiekëjà if Administratorius perþiûrëti informacijos tiekëjus
+operative business rule It is permitted that Administratorius sukurti tiekëjà if Administratorius perþiûrëti informacijos tiekëjus
+
+Model name: Case 10
+Instance Specification
+operative business rule It is obligatory that Kompiuteriø infrastruktûros administratorius perþiûrëti organizacijoje besidubliuojanèius failus if Kompiuteriø infrastruktûros administratorius apjungti failø sistemos indeksus
+operative business rule It is obligatory that Organizacijos darbuotojas eksportuoti statistikà if Organizacijos darbuotojas perþiûrëti vietinæ statistikà
+operative business rule It is obligatory that Organizacijos darbuotojas perþiûrëti rezultatus if Organizacijos darbuotojas skenuoti kompiuterá
+operative business rule It is obligatory that Organizacijos padalinys kaupti dubliavimosi statistikà if Organizacijos padalinys ieðkoti besidubliuojanèiø failø
+operative business rule It is obligatory that Organizacijos padalinys kaupti statistikà apie PÁ, kuri atsinaujina automatinio paleidimo nuostatas if Organizacijos padalinys automatinio paleidimo pokyèiø stebëjimas
+operative business rule It is obligatory that Organizacijos padalinys kaupti statistikà apie diskø fragmentacijà if Organizacijos padalinys defragmentuoti diskus
+operative business rule It is obligatory that Organizacijos padalinys kaupti statistikà apie paslaugas bei tvarkykles if Organizacijos padalinys valdyti paslaugas bei tvarkykles
+operative business rule It is obligatory that Organizacijos padalinys kaupti statistikà apie registro problemas if Organizacijos padalinys defragmentuoti registrà
+operative business rule It is obligatory that Ðalinimo posistemë parinkti failus if Ðalinimo posistemë ðalinti dublikatus
+operative business rule It is permitted that Infrastruktûros administracija konfigûruoti dubliuojanèiø failø skenerá if Infrastruktûros administracija analizuoti PÁ "RegHunter" sukauptà statistinæ informacijà
+operative business rule It is permitted that Infrastruktûros administracija spræsti kompiuteriø valdymo problemas if Infrastruktûros administracija analizuoti PÁ "RegHunter" sukauptà statistinæ informacijà
+operative business rule It is permitted that Kompiuterio skenavimo posistemë perþiûrëti failà failø sistemoje if Kompiuterio skenavimo posistemë perþiûrëti rezultatus
+operative business rule It is permitted that Organizacijos darbuotojas derinti neátrauktuosius kelius if Organizacijos darbuotojas derinti skenavimo nustatymus
+operative business rule It is permitted that Organizacijos darbuotojas derinti átrauktuosius failø plëtinius if Organizacijos darbuotojas derinti skenavimo nustatymus
+operative business rule It is permitted that Organizacijos darbuotojas parinkti diskus if Organizacijos darbuotojas skenuoti kompiuterá
+operative business rule It is permitted that Organizacijos darbuotojas ðalinti dublikatus if Organizacijos darbuotojas skenuoti kompiuterá
+operative business rule It is permitted that Organizacijos padalinys ieðkoti besidubliuojanèiø failø if Organizacijos padalinys ðalinti besidubliuojanèius failus
+operative business rule It is permitted that Organizacijos padalinys priþiûrëti OS if Organizacijos padalinys defragmentuoti registrà
+operative business rule It is permitted that Organizacijos padalinys priþiûrëti OS if Organizacijos padalinys valdyti automatiná programø paleidimà
+operative business rule It is permitted that Organizacijos padalinys priþiûrëti OS if Organizacijos padalinys ðalinti nereikalingas registro nuorodas
+operative business rule It is permitted that Organizacijos padalinys priþiûrëti diskus if Organizacijos padalinys defragmentuoti diskus
+operative business rule It is permitted that Organizacijos padalinys priþiûrëti diskus if Organizacijos padalinys ieðkoti besidubliuojanèiø failø
+operative business rule It is permitted that Organizacijos padalinys priþiûrëti diskus if Organizacijos padalinys paðalinti laikinus failus
+operative business rule It is permitted that Organizacijos padalinys saugiai ðalinti konfidencialius dokumentus if Organizacijos padalinys iðtrinti failà
+operative business rule It is permitted that Organizacijos padalinys saugiai ðalinti konfidencialius dokumentus if Organizacijos padalinys iðvalyti diskà
+operative business rule It is permitted that Organizacijos padalinys valdyti automatiná programø paleidimà if Organizacijos padalinys automatinio paleidimo pokyèiø stebëjimas
+operative business rule It is permitted that Organizacijos padalinys valdyti automatiná programø paleidimà if Organizacijos padalinys valdyti automatinio paleidimo nustatymus
+operative business rule It is permitted that Organizacijos padalinys valdyti automatiná programø paleidimà if Organizacijos padalinys valdyti paslaugas bei tvarkykles
+operative business rule It is permitted that Ðalinimo posistemë perþiûrëti rezultatus if Kompiuterio skenavimo posistemë parinkti failus
+
+Model name: Case 7
+Instance Specification
+operative business rule It is obligatory that Administratorius blokuoti naudotojus if Administratorius administruoti naudotojus and Þaidëjas paþeidë taisykles
+operative business rule It is obligatory that Administratorius nubausti þaidëjus if Administratorius administruoti naudotojus and Þaidëjas paþeidë taisykles
+operative business rule It is obligatory that Administratorius suteikti papildomas paslaugas if Administratorius administruoti naudotojus and Þaidëjas laimëjo konkursà ar kitaip nusipelnë
+operative business rule It is obligatory that Administratorius ðalinti naudotojus if Administratorius administruoti naudotojus and Þaidëjas paþeidë taisykles
+operative business rule It is obligatory that IS naudotojas bendrauti su kitais þaidëjais if Þaidëjas þaisti þaidimà
+operative business rule It is obligatory that Þaidëjas rasti prieðininkà if Þaidëjas þaisti þaidimà
+operative business rule It is obligatory that Þaidëjas valdyti veikëjus if Þaidëjas þaisti þaidimà
+operative business rule It is permitted that Administratorius blokuoti naudotojus if Administratorius administruoti naudotojus
+operative business rule It is permitted that Administratorius nubausti þaidëjus if Administratorius administruoti naudotojus
+operative business rule It is permitted that Administratorius suteikti papildomas paslaugas if Administratorius administruoti naudotojus
+operative business rule It is permitted that Administratorius ðalinti naudotojus if Administratorius administruoti naudotojus
+operative business rule It is permitted that IS naudotojas perþiûrëti kitus naudotojus if Administratorius administruoti naudotojus
+operative business rule It is permitted that Þaidimo analitikas administruoti pastatus if Þaidimo analitikas valdyti þaidimo objektus ir jø parametrus
+operative business rule It is permitted that Þaidimo analitikas administruoti pavirðius if Þaidimo analitikas valdyti þaidimo objektus ir jø parametrus
+operative business rule It is permitted that Þaidimo analitikas administruoti veikëjus if Þaidimo analitikas valdyti þaidimo objektus ir jø parametrus
+operative business rule It is permitted that Þaidimo analitikas administruoti veikëjø paketus if Þaidimo analitikas valdyti þaidimo objektus ir jø parametrus
+operative business rule It is permitted that Þaidimo analitikas administruoti veikëjø tipus if Þaidimo analitikas valdyti þaidimo objektus ir jø parametrus
+operative business rule It is permitted that Þaidimo analitikas administruoti þemëlapius if Þaidimo analitikas valdyti þaidimo objektus ir jø parametrus

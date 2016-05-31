@@ -1,0 +1,585 @@
+library UCD_transformations; 
+
+import sbvr_helpers;
+
+modeltype UML uses 'http://www.eclipse.org/uml2/4.0.0/UML';
+
+property aModel : Model = null;
+property aPackage: Package = null;
+property rulesPackage: Package = null;
+property vocPackage: Package = null;
+property modelVocPackage: Package = null;
+property steGeneral: Stereotype = null;
+property steIndividual: Stereotype = null;
+property steBinaryVC: Stereotype = null;
+property steRole: Stereotype = null;
+property steStructuralBR: Stereotype = null;
+property steOperativeBR: Stereotype = null;
+property steCharacteristic: Stereotype = null;
+property stePartitive: Stereotype = null;
+property stePartitive2: Stereotype = null;
+property steCategorization: Stereotype = null;
+property candidateGC: Set(Class) = null;
+property candidateIndC: Set(InstanceSpecification) = null;
+property genAssociations: Dict(Association, Association) = null;
+
+helper initStereotypes(in profile: Profile, in profrules: Profile, in profvoc: Profile, in profext: Profile, in profsbvr: Profile) 
+{    
+    this.steGeneral := profile.ownedStereotype![name = "general concept"];
+    this.steIndividual := profile.ownedStereotype![name = "individual noun concept"];
+    this.steBinaryVC := profvoc.ownedStereotype![name = "association"];
+    this.steRole := profile.ownedStereotype![name = "role"];
+    this.stePartitive := profvoc.ownedStereotype![name = "property association"];
+    this.stePartitive2 := profvoc.ownedStereotype![name = "partitive verb concept"];
+    this.steCharacteristic := profile.ownedStereotype![name = "characteristic"];
+    this.steCategorization := profvoc.ownedStereotype![name = "categorization"];
+    this.steStructuralBR := profrules.ownedStereotype![name = "structural business rule"];
+    this.steOperativeBR := profrules.ownedStereotype![name = "operative business rule"];
+    this.aModel := object Model{};
+    this.aModel.name := 'SBVR Model';
+    this.aModel.applyProfile(profile);
+    this.aModel.applyProfile(profvoc);
+    this.aModel.applyProfile(profrules);
+    this.aModel.applyProfile(profext);
+    this.aModel.applyProfile(profsbvr);
+}
+
+helper initPackages(in createBusinessVoc: Boolean, in createModelVoc: Boolean)
+{
+	if createBusinessVoc != false then {
+		this.rulesPackage := object Package {
+			name := "SBVR Business Rules"
+		};
+		this.aModel.packagedElement += rulesPackage;
+		this.vocPackage := object Package {
+			name := "SBVR Business Vocabulary"
+		};
+		this.aModel.packagedElement += vocPackage;
+	} endif;
+	if createModelVoc != false then {
+		this.modelVocPackage := object Package {
+			name := "SBVR Model Vocabulary"
+		};
+		this.aModel.packagedElement += modelVocPackage;
+	} endif;
+}
+
+// ******* Business Vocabulary transformations
+
+abstract mapping NamedElement::transformElement() : Class
+when {properName(self.name) != null}
+{
+    name:= properName(self.name);
+    this.aModel.ownedType += result;
+    result.applyStereotype(steGeneral);
+	package:= vocPackage;
+	candidateGC += result;	
+} 
+
+abstract mapping NamedElement::transformElementChkDups() : Class 
+{
+	init {
+		var clazz: Class:= candidateGC->any(name = properName(self.name));
+		result := if clazz = null then self.map transformElement() else clazz endif;
+	}
+}
+
+mapping NamedElement::transformNamedElement() : PackageableElement
+{
+	init {
+		var objName: String := properCaseName(self.name);
+		if not self.name.isIndividualConcept() then {
+			result := candidateGC->any(name=objName);
+			if result = null then {
+				result:= object Class {
+					name := objName;
+				};
+				this.aModel.packagedElement += result; 
+				result.applyStereotype(steGeneral);
+				vocPackage.packagedElement += result;
+			} endif;
+		} else {
+			result := candidateGC->any(oclIsTypeOf(InstanceSpecification) and name=objName);
+			if result = null then {
+				result := object InstanceSpecification {
+					name := objName;
+				};
+				this.aModel.packagedElement += result; 
+				result.applyStereotype(steIndividual);
+				vocPackage.packagedElement += result;
+			} endif;
+		} endif;	
+	}
+}
+
+mapping Actor::transformActor() : Class
+{
+	init {
+		var aClass: Class := candidateGC->any(oclIsTypeOf(Class) and name = properName(self.name))![Class];
+		result := if aClass = null then self.map transformElement() else aClass endif;
+		result.setAnnotation("trace",self.getElementID(),"full");
+	}
+}
+
+mapping Classifier::transformBoundary() : PackageableElement
+when { self.ownedUseCase->size() > 0}  --Identify if it is a boundary representing classifier
+{
+	init {
+		var aClass: PackageableElement := candidateGC->any(name = properName(self.name));
+		result := if aClass = null then self.map transformNamedElement() else aClass endif;
+		result.setAnnotation("trace",self.getElementID(),"full");
+	}
+}
+
+mapping Package::transformBoundary() : PackageableElement
+{
+	init {
+		var aClass: PackageableElement := candidateGC->any(name = properName(self.name));
+		result := if aClass = null then self.map transformNamedElement() else aClass endif;
+		result.setAnnotation("trace",self.getElementID(),"full");
+	}
+}
+
+mapping Component::transformBoundary() : PackageableElement
+-- when {self.isStereotypedBy('StandardProfileL2::Subsystem')}  --Boundary can be represented using Component and Subsystem stereotype
+{
+	init {
+		var aClass: PackageableElement := candidateGC->any(name = properName(self.name));
+		result := if aClass = null then self.map transformNamedElement() else aClass endif;
+		result.setAnnotation("trace",self.getElementID(),"full");
+	}
+}
+
+mapping UseCase::transformUseCase() : Class
+when {self.name.nounFromBehavior() <> null}
+{
+	init {
+		var aClass: Class := candidateGC->any(oclIsTypeOf(Class) and name = self.name.nounFromBehavior())![Class];
+		result := if aClass = null then self.map transformElement() else aClass endif;
+		result.setAnnotation("trace",self.getElementID(),"partial");
+	}
+	name := self.name.nounFromBehavior();
+}
+
+mapping Association::transformUseCaseAssociation() : Association
+when { self.endType->selectByType(Actor)->size() = 1 and self.endType->selectByType(UseCase)->size() = 1 and self.bothNamesPresent() 
+and self.endType->selectByType(UseCase)->asOrderedSet()->first().name.nounFromBehavior() <> null }
+{
+    this.aModel.ownedType += result;
+    result.applyStereotype(steBinaryVC);
+    var usecase: UseCase := self.endType->select(oclIsTypeOf(UseCase))[UseCase]->asOrderedSet()->first();
+	name:= usecase.name.verbFromBehavior(); 
+	var prop1 : Property:= object Property
+	 {
+	   type:= self.endType->select(oclIsTypeOf(Actor))[Actor]->asOrderedSet()->first().map transformElementChkDups();
+	 };
+	var prop2 : Property:= object Property
+	 {	   	   
+	   type:= usecase.map transformUseCase()![Class];	
+	 }; 
+	memberEnd:= Sequence{prop2, prop1};
+	result.ownedEnd := Sequence{prop2, prop1}; 	
+	result.ownedEnd.applyStereotype(steRole);
+	result.setAnnotation("trace",self.getElementID(),"partial");
+	result.package:= vocPackage;
+}
+
+mapping Association::transformUseCaseAssociation2() : Class
+when { self.endType->selectByType(Actor)->size() = 1 and self.endType->selectByType(UseCase)->size() = 1 and self.bothNamesPresent()
+and self.endType->selectByType(UseCase)->asOrderedSet()->first().name.nounFromBehavior() = null}
+{
+    init {
+		result := self.endType->select(oclIsTypeOf(Actor))[Actor]->asOrderedSet()->first().map transformActor();
+	}
+	var usecase: UseCase := self.endType->select(oclIsTypeOf(UseCase))[UseCase]->asOrderedSet()->first();
+	var prop : Property:= object Property {
+	   name:= usecase.name.verbFromBehavior();
+	};
+	result.ownedAttribute += prop;
+	prop.setAnnotation("trace",usecase.getElementID(),"partial");
+	prop.applyStereotype(steCharacteristic); 
+}
+
+mapping Generalization::transformActorGeneralization() : Generalization
+when { self.general.oclIsTypeOf(Actor) and self.specific.oclIsTypeOf(Actor) and self.bothNamesPresent()}
+{
+    general := self.general.oclAsType(Actor).map transformActor();
+    specific:= self.specific.oclAsType(Actor).map transformActor();
+    result.applyStereotype(steCategorization);
+    result.setAnnotation("trace",self.getElementID(),"full");
+}
+
+mapping Generalization::useCaseGeneralization()
+when { self.general.oclIsTypeOf(UseCase) and self.specific.oclIsTypeOf(UseCase) and self.bothNamesPresent()}
+{
+	var genUC: UseCase := self.general.oclAsType(UseCase);
+	var actors: Collection(Actor) :=  Association.allInstances()->
+		select(a|a.endType->includes(genUC)).endType->selectByType(Actor);
+	actors->forEach(actor) {
+		var prop1 : Property:= object Property {
+			type:= actor.map transformNamedElement()![Class];
+		 };
+		var prop2 : Property:= object Property {	   	   
+		   type:= self.specific.oclAsType(UseCase).map transformUseCase();	 
+		 }; 
+		var aAssociation: Association := object Association {
+			name:= self.specific.oclAsType(UseCase).name.verbFromBehavior();
+			memberEnd:= Sequence{prop2, prop1};
+			ownedEnd := Sequence{prop2, prop1};
+		};
+		aAssociation.setAnnotation("trace",actor.getElementID(),"partial");
+		aAssociation.ownedEnd.applyStereotype(steRole);
+		this.aModel.ownedType += aAssociation;
+    	aAssociation.applyStereotype(steBinaryVC);
+    	aAssociation.package:= vocPackage;
+	}	
+}
+
+mapping Include::transformIncludeRelationships()  
+{
+	var aincluding: Bag(Actor) := getActorsOfUseCase(self.includingCase, self);
+	var aincluded: Bag(Actor) :=  getActorsOfUseCase(self.addition, self);
+	if aincluding->notEmpty() and aincluded->notEmpty() then {
+		aincluding->forEach(ai) {
+			aincluded->forEach(aii) {
+			    self.map createRuleFromInclude(ai, aii);   		 
+			};
+		};
+	} elif aincluding->notEmpty() and aincluded->isEmpty() then {
+		aincluding->forEach(ai) {
+			self.map createRuleFromInclude(ai, ai);   		 
+		};
+	} elif aincluding->isEmpty() and aincluded->notEmpty() then {
+		aincluded->forEach(aii) {
+			self.map createRuleFromInclude(aii, self.addition.owner![NamedElement]);   		 
+		};
+	} elif aincluding->isEmpty() and aincluded->isEmpty() then {
+		self.map createRuleFromInclude(self.includingCase.owner![NamedElement], self.addition.owner![NamedElement]);   		 
+	} endif;
+} 
+
+mapping Extend::transformExtendRelationships()  
+{
+	var aextended: Bag(Actor) := getActorsOfUseCase(self.extendedCase, self);
+	var aextending: Bag(Actor) := getActorsOfUseCase(self.extension, self); 
+	if aextended->notEmpty() and aextending->notEmpty() then {
+		aextended->forEach(ai) {
+			aextending->forEach(aii) {
+			     self.map createRuleFromExtend(ai, aii);
+			     self.extensionLocation->forEach(ep) {
+			     	var eptext: String := self.name.substituteAll("\n", " ");
+			     	if (eptext != null) then {
+						ep.map createRuleFromExtensionPoint(ai, aii, self);
+					} endif;
+			     };
+			};
+		};
+	} elif aextended->notEmpty() and aextending->isEmpty() then {
+		aextended->forEach(ai) {
+			self.map createRuleFromExtend(ai, ai);   
+			self.extensionLocation->forEach(ep) {
+		     	var eptext: String := self.name.substituteAll("\n", " ");
+		     	if (eptext != null) then {
+					ep.map createRuleFromExtensionPoint(ai, ai, self);
+				} endif;
+		     };		 
+		};
+	} elif aextended->isEmpty() and aextending->notEmpty() then {
+		aextended->forEach(aii) {
+			self.map createRuleFromExtend(aii, self.extendedCase.owner![NamedElement]);
+			self.extensionLocation->forEach(ep) {
+		     	var eptext: String := self.name.substituteAll("\n", " ");
+		     	if (eptext != null) then {
+					ep.map createRuleFromExtensionPoint(aii, aii, self);
+				} endif;
+		     };		   		 
+		};
+	} elif aextended->isEmpty() and aextending->isEmpty() then {
+		self.map createRuleFromExtend(self.extension.owner![NamedElement], self.extendedCase.owner![NamedElement]); 
+		self.extensionLocation->forEach(ep) {
+	     	var eptext: String := self.name.substituteAll("\n", " ");
+	     	if (eptext != null) then {
+				ep.map createRuleFromExtensionPoint(self.extension.owner![NamedElement], 
+						self.extendedCase.owner![NamedElement], self);
+			} endif;
+	     };  		 
+	} endif;
+} 
+
+helper getActorsOfUseCase(in usecase: UseCase, in excluded: DirectedRelationship) : Bag(Actor)
+{
+	var actors: Bag(Actor) := Association.allInstances()->select(endType->includes(usecase)).endType->select(oclIsTypeOf(Actor))[Actor];
+	var includes: Bag(DirectedRelationship) := object Bag(DirectedRelationship){};
+	includes += Include.allInstances()->select(addition = usecase);
+	includes += Extend.allInstances()->select(extension = usecase);
+	includes := includes->excluding(excluded);
+	while (includes->notEmpty()) {
+		var newIncludes: Bag(DirectedRelationship) := object Bag(DirectedRelationship){};
+		includes->forEach(include) {
+			var uc: UseCase := null;
+			if include.oclIsTypeOf(Include) then {
+				uc := include.oclAsType(Include).includingCase;
+			} elif include.oclIsTypeOf(Extend) then  {
+				uc := include.oclAsType(Extend).extendedCase;
+			} endif;
+			if uc != null then {
+				newIncludes += Include.allInstances()->select(addition = uc);
+				newIncludes += Extend.allInstances()->select(extension = uc);
+				actors += Association.allInstances()->select(endType->includes(usecase)).endType->select(oclIsTypeOf(Actor))[Actor];
+				if actors->notEmpty() then {
+					return actors;
+				} endif;
+			} endif;	
+		};
+		includes := newIncludes;
+	};
+	return actors;
+}
+
+mapping Include::createRuleFromInclude(in ai: NamedElement, in aii: NamedElement)
+{
+	var rule: String := "It is obligatory that ".concat(properCaseName(aii.name)).concat(' ')
+		   .concat(self.addition.name.verbFromBehavior()).concat(' ');
+	if (self.addition.name.nounFromBehavior() != null) then {
+		rule := rule.concat(self.addition.name.nounFromBehavior());
+	} endif;
+	rule := rule.concat(' if ').concat(properCaseName(ai.name)).concat(' ')
+		   .concat(self.includingCase.name.verbFromBehavior()).concat(' ');
+	if (self.includingCase.name.nounFromBehavior() != null) then {
+		rule := rule.concat(self.includingCase.name.nounFromBehavior());
+	} endif;
+	var constr : Constraint := object Constraint {
+	 	specification := object OpaqueExpression { body := rule; };
+	 };
+	 this.aModel.ownedRule += constr;
+	 constr.applyStereotype(steOperativeBR); 
+	 constr.context:= rulesPackage;
+}
+
+mapping Extend::createRuleFromExtend(in ai: NamedElement, in aii: NamedElement)
+{
+	var rule: String := "It is permitted that ".concat(properCaseName(aii.name)).concat(' ')
+		   .concat(self.extension.name.verbFromBehavior()).concat(' ');
+	if (self.extension.name.nounFromBehavior() != null) then {
+		rule := rule.concat(self.extension.name.nounFromBehavior());
+	} endif;
+	rule := rule.concat(' if ').concat(properCaseName(ai.name)).concat(' ')
+		   .concat(self.extendedCase.name.verbFromBehavior()).concat(' ');
+	if (self.extendedCase.name.nounFromBehavior() != null) then {
+		rule := rule.concat(self.extendedCase.name.nounFromBehavior());
+	} endif;
+	var constr : Constraint := object Constraint {
+	 	specification := object OpaqueExpression { body := rule; };
+	 };
+	 this.aModel.ownedRule += constr;
+	 constr.applyStereotype(steOperativeBR); 
+	 constr.context:= rulesPackage;
+}
+
+mapping ExtensionPoint::createRuleFromExtensionPoint(in ai: NamedElement, in aii: NamedElement, in extend: Extend)
+{
+	var rule: String := "It is obligatory that ".concat(properCaseName(aii.name)).concat(' ')
+		   .concat(extend.extension.name.verbFromBehavior()).concat(' ');
+	if (extend.extension.name.nounFromBehavior() != null) then {
+		rule := rule.concat(extend.extension.name.nounFromBehavior());
+	} endif;
+	rule := rule.concat(' if ').concat(properCaseName(ai.name)).concat(' ')
+		   .concat(extend.extendedCase.name.verbFromBehavior()).concat(' ');
+	if (extend.extendedCase.name.nounFromBehavior() != null) then {
+		rule := rule.concat(extend.extendedCase.name.nounFromBehavior());
+	} endif;
+	var eptext: String := self.name.substituteAll("\n", " ");
+	if (eptext != null) then {
+		rule:= rule.concat(' and ').concat(eptext);
+	} endif;
+	var constr : Constraint := object Constraint {
+	 	specification := object OpaqueExpression { body := rule; };
+	 };
+	 this.aModel.ownedRule += constr;
+	 constr.applyStereotype(steOperativeBR); 
+	 constr.context:= rulesPackage;
+}
+
+// ******* Model Vocabulary transformations
+
+abstract mapping NamedElement::transformElementMV(in prefix: String) : Class
+when {properName(self.name) != null}
+{
+    name:= prefix + " '" + properName(self.name) + "'";
+    this.aModel.ownedType += result;
+    result.applyStereotype(steGeneral);
+	package:= modelVocPackage;
+	candidateGC += result;	
+} 
+
+abstract mapping NamedElement::transformElementChkDupsMV(in prefix: String) : Class 
+{
+	init {
+		var clazz: Class:= candidateGC->any(name = prefix + " '" + properName(self.name) + "'");
+		result := if clazz = null then self.map transformElementMV(prefix) else clazz endif;
+	}
+}
+
+mapping NamedElement::transformNamedElementMV(in prefix: String) : PackageableElement
+{
+	init {
+		var objName: String := prefix + " '" + properCaseName(self.name) + "'";
+		result := candidateGC->any(name=objName);
+		if result = null then {
+			result:= object Class {
+				name := objName;
+			};
+			this.aModel.packagedElement += result; 
+			result.applyStereotype(steGeneral);
+			this.modelVocPackage.packagedElement += result;
+		} endif;	
+	}
+}
+
+mapping Actor::transformActorMV() : Class
+{
+	init {
+		var objName: String := "uml_actor '" + properName(self.name) + "'";
+		var aClass: Class := candidateGC->any(oclIsTypeOf(Class) and name = objName)![Class];
+		result := if aClass = null then self.map transformElementMV('uml_actor') else aClass endif;
+		result.setAnnotation("trace",self.getElementID(),"full");
+	}
+}
+
+mapping Classifier::transformBoundaryMV() : PackageableElement
+when { self.ownedUseCase->size() > 0}  --Identify if it is a boundary representing classifier
+{
+	init {
+		var objName: String := "system_boundary '" + properName(self.name) + "'";
+		var aClass: PackageableElement := candidateGC->any(name = objName);
+		result := if aClass = null then self.map transformNamedElementMV('system_boundary') else aClass endif;
+		result.setAnnotation("trace",self.getElementID(),"full");
+	}
+}
+
+mapping Package::transformBoundaryMV() : PackageableElement
+{
+	init {
+		var objName: String := "system_boundary '" + properName(self.name) + "'";
+		var aClass: PackageableElement := candidateGC->any(name = objName);
+		result := if aClass = null then self.map transformNamedElementMV('system_boundary') else aClass endif;
+		result.setAnnotation("trace",self.getElementID(),"full");
+	}
+}
+
+mapping Component::transformBoundaryMV() : PackageableElement
+-- when {self.isStereotypedBy('StandardProfileL2::Subsystem')}  --Boundary can be represented using Component and Subsystem stereotype
+{
+	init {
+		var objName: String := "system_boundary '" + properName(self.name) + "'";
+		var aClass: PackageableElement := candidateGC->any(name = objName);
+		result := if aClass = null then self.map transformNamedElementMV('system_boundary') else aClass endif;
+		result.setAnnotation("trace",self.getElementID(),"full");
+	}
+}
+
+mapping UseCase::transformUseCaseMV() : Class
+{
+	init {
+		var objName: String := "uml_use_case '" + properName(self.name) + "'";
+		var aClass: Class := candidateGC->any(oclIsTypeOf(Class) and name = objName)![Class];
+		result := if aClass = null then self.map transformElementChkDupsMV('uml_use_case') else aClass endif;
+		result.setAnnotation("trace",self.getElementID(),"partial");
+	}
+}
+
+mapping Association::transformUseCaseAssociationMV() : Association
+when { self.endType->selectByType(Actor)->size() = 1 and self.endType->selectByType(UseCase)->size() = 1 and self.bothNamesPresent()}
+{
+    this.aModel.ownedType += result;
+    result.applyStereotype(steBinaryVC);
+    var usecase: UseCase := self.endType->select(oclIsTypeOf(UseCase))[UseCase]->asOrderedSet()->first();
+	name:= "is_associated_with"; 
+	var prop1 : Property:= object Property
+	 {
+	   type:= self.endType->select(oclIsTypeOf(Actor))[Actor]->asOrderedSet()->first().map transformElementChkDupsMV('uml_actor');
+	 };
+	var prop2 : Property:= object Property
+	 {	   	   
+	   type:= usecase.map transformUseCaseMV();	
+	 }; 
+	memberEnd:= Sequence{prop2, prop1};
+	result.ownedEnd := Sequence{prop2, prop1}; 	
+	result.ownedEnd.applyStereotype(steRole);
+	result.setAnnotation("trace",self.getElementID(),"partial");
+	result.package:= modelVocPackage;
+}
+
+mapping Generalization::transformActorGeneralizationMV() : Generalization
+when { self.general.oclIsTypeOf(Actor) and self.specific.oclIsTypeOf(Actor) and self.bothNamesPresent()}
+{
+    general := self.general.oclAsType(Actor).map transformActorMV();
+    specific:= self.specific.oclAsType(Actor).map transformActorMV();
+    result.applyStereotype(steCategorization);
+    result.setAnnotation("trace",self.getElementID(),"full");
+}
+
+mapping Generalization::useCaseGeneralizationMV() : Generalization
+when { self.general.oclIsTypeOf(UseCase) and self.specific.oclIsTypeOf(UseCase) and self.bothNamesPresent()}
+{
+    general := self.general.oclAsType(UseCase).map transformUseCaseMV();
+    specific:= self.specific.oclAsType(UseCase).map transformUseCaseMV();
+    result.applyStereotype(steCategorization);
+    result.setAnnotation("trace",self.getElementID(),"full");
+}
+
+mapping Include::transformIncludeRelationshipsMV() : Association
+{
+	this.aModel.ownedType += result;
+    result.applyStereotype(steBinaryVC);
+	name:= "includes"; 
+	var prop1 : Property:= object Property
+	 {
+	   type:= self.includingCase.oclAsType(UseCase).map transformUseCaseMV();
+	 };
+	var prop2 : Property:= object Property
+	 {	   	   
+	   type:= self.addition.oclAsType(UseCase).map transformUseCaseMV();	
+	 }; 
+	memberEnd:= Sequence{prop2, prop1};
+	result.ownedEnd := Sequence{prop2, prop1}; 	
+	result.ownedEnd.applyStereotype(steRole);
+	result.setAnnotation("trace",self.getElementID(),"partial");
+	result.package:= modelVocPackage;
+}
+
+mapping Extend::transformExtendRelationshipsMV() : Association
+{
+	this.aModel.ownedType += result;
+    result.applyStereotype(steBinaryVC);
+	name:= "extends"; 
+	var prop1 : Property:= object Property
+	 {
+	   type:= self.extension.oclAsType(UseCase).map transformUseCaseMV();
+	 };
+	var prop2 : Property:= object Property
+	 {	   	   
+	   type:= self.extendedCase.oclAsType(UseCase).map transformUseCaseMV();	
+	 }; 
+	memberEnd:= Sequence{prop2, prop1};
+	result.ownedEnd := Sequence{prop2, prop1}; 	
+	result.ownedEnd.applyStereotype(steRole);
+	result.setAnnotation("trace",self.getElementID(),"partial");
+	result.package:= modelVocPackage;
+}  
+
+mapping ExtensionPoint::transformExtensionPointMV() : Class
+{
+    init {
+		var objName: String := "uml_extension_point '" + properName(self.name) + "'";
+		var aClass: Class := candidateGC->any(oclIsTypeOf(Class) and name = objName)![Class];
+		result := if aClass = null then self.map transformElementChkDupsMV('uml_extension_point') else aClass endif;
+		result.setAnnotation("trace",self.getElementID(),"partial");
+	}
+}
+
+
+
+
+
+

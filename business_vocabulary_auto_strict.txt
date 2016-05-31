@@ -1,0 +1,90 @@
+
+Model name: Case 4
+general concept klientas
+general concept pardavimø vadybininkas
+general concept sandëlininkas
+general concept sveèias
+general concept vadybininkas
+general concept vartotojas
+
+Model name: Case 3
+general concept administratorius
+general concept neregistruotas vartotojas
+general concept registruotas vartotojas
+
+Model name: Case 2
+general concept administratorius
+general concept is naudotojas
+general concept pagrindinis organizatorius
+general concept renginio iþdininkas
+general concept renginio komandos narys
+general concept renginio logistikos koordinatorius
+general concept renginio projektø koordinatorius
+general concept renginio ryðiø su ámonëmis koordinatorius
+general concept renginio socialinës dalies koordinatorius
+general concept renginio vieðøjø ryðiø koordinatorius
+general concept renginio þmogiðkøjø iðtekliø koordinatorius
+
+Model name: Case 10
+general concept kompiuteriø infrastruktûros administratorius
+general concept organizacijos darbuotojas
+general concept Ðalinimo posistemë
+
+Model name: Case 9
+general concept administratorius
+general concept aktyvus vartotojas
+general concept sveèias
+general concept vartotojas
+
+Model name: Case 8
+general concept administratorius
+general concept bendramintis
+general concept knygø mylëtojas
+general concept knygø pardavëjas
+general concept narys
+general concept neregistruotas vartotojas
+general concept registruotas sistemos vartotojas
+general concept sistemos vartotojas
+general concept tinklaraðèio autorius
+
+Model name: Case 5
+general concept finansø valdytojas
+general concept pajamø gavëjas
+general concept pinigø praleidëjas
+general concept sistemos administratorius
+general concept sistemos naudotojas
+general concept tëvai
+general concept uþduoèiø atlikëjas
+general concept uþduoèiø skirstytojas
+general concept vaikai
+general concept ðeimos narys
+
+Model name: Case 1
+general concept asngis
+general concept klientas
+general concept kurjeriø tarnyba
+general concept operatorius
+general concept sistemos administratorius
+general concept tiekëjas
+general concept vadybininkas
+general concept árangos servisas
+
+Model name: Case 6
+general concept administratorius
+general concept direktorius
+general concept finansø vadybininkas
+general concept gidas
+general concept gidø vadovas
+general concept it specialistas
+general concept marketingo vadybininkas
+general concept praneðimø priëmimo servisas
+general concept praneðimø siuntimo servisas
+general concept programëlës vartotojas
+general concept þmogiðkøjø iðtekliø vadybininkas
+
+Model name: Case 7
+general concept administratorius
+general concept is naudotojas
+general concept vieðøjø ryðiø specialistas
+general concept þaidimo analitikas
+general concept þaidëjas
