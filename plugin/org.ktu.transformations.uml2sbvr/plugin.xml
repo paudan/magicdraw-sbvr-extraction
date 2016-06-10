@@ -7,6 +7,7 @@
 	ownClassloader="true">
     <requires>
         <api version="1.0"/>
+		<required-plugin id="org.vetis.sbvr.md.VetisPlugin.v1.1" name="VeTis Business Rule Editor integration plugin"/>
         <required-plugin id="com.nomagic.magicdraw.diagramtable" name="Diagram Table"/>	
         <required-plugin id="org.vepsem.md.VepsemPlugin.v3.0" name="VEPSEM Model Transformation Plugin"/>
         <required-plugin id="com.nomagic.magicdraw.emfuml2xmi.v4" name="Eclipse UML2 (v4.x) XMI Export/Import"/>	

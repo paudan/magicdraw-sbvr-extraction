@@ -49,10 +49,19 @@ public class PluginUtilities {
         projdesc = ProjectDescriptorsFactory.createProjectDescriptor(uriprof);
         if (projectsManager.findAttachedProject(project, projdesc) == null)
             projectsManager.useModule(project, projdesc);
+        uriprof = new File("Integration profile.mdzip").toURI();
+        projdesc = ProjectDescriptorsFactory.createProjectDescriptor(uriprof);
+        if (projectsManager.findAttachedProject(project, projdesc) == null)
+            projectsManager.useModule(project, projdesc);
+        
     }
 
     public static Profile getCustomizationsProfile(Project project) {
         return StereotypesHelper.getProfileByURI(project, new File("SBVR customizations.mdxml").toURI().toString());
+    }
+    
+    public static Profile getIntegrationProfile(Project project) {
+        return StereotypesHelper.getProfileByURI(project, new File("Integration profile.mdzip").toURI().toString());
     }
     
     public static Package getConceptsRootPackage(Model owner) {

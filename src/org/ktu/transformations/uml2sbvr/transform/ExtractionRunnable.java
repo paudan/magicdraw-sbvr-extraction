@@ -230,7 +230,7 @@ public class ExtractionRunnable {
             ExtractionWorkflows.removeMarkingCommentElement();
             if (progressStatus.isCompleted() && showWizard && extractor != null) {
                 final JFrame mainframe = Application.getInstance().getMainFrame();
-                final ExtractionWizardDialog dlg = new ExtractionWizardDialog(mainframe, true, null, extractor);
+                final ExtractionWizardDialog dlg = new ExtractionWizardDialog(mainframe, null, true, null, extractor);
                 dlg.addWindowListener(new WindowAdapter() {
                     @Override
                     public void windowClosing(WindowEvent e) {

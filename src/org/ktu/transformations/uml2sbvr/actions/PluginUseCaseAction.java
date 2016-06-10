@@ -84,6 +84,7 @@ public class PluginUseCaseAction {
                     extractor.extractAll();
                     new VetisExporter(pkg != null ? pkg.getName() : diagram.getDiagram().getName()).exportProject(mainframe, extractor);
                 }
+                otDlg.setVisible(false);
             }
         });
         otDlg.setVisible(true);
@@ -104,7 +105,7 @@ public class PluginUseCaseAction {
                     extractor = new UseCaseSBVRExtractor(pkg, otDlg.isStrictSelected(), otDlg.isMMVocabularySelected());
                 else
                     extractor = new UseCaseSBVRExtractor(diagram, otDlg.isStrictSelected(), otDlg.isMMVocabularySelected());
-                final ExtractionWizardDialog dlg = new ExtractionWizardDialog(mainframe, true, pkg, extractor);
+                final ExtractionWizardDialog dlg = new ExtractionWizardDialog(mainframe, otDlg, true, pkg, extractor);
                 dlg.addWindowListener(new WindowAdapter() {
                     @Override
                     public void windowClosing(WindowEvent e) {

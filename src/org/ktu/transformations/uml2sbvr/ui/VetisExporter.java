@@ -58,6 +58,8 @@ public class VetisExporter {
             JOptionPane.showMessageDialog(frame, bundle.getString("ExtractionWizardDialog_41")
                     + projectPath + "." + bundle.getString("ExtractionWizardDialog_43"));
         }
+        if (projectPath == null)
+            return;
         VetisProducer exportObj = new VetisProducer(projectPath, projectName, includeModelVoc);
         exportObj.setGCCandidates(gcCandidates);
         exportObj.setVCCandidates(vcCandidates);

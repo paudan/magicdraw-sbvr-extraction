@@ -20,11 +20,15 @@ import com.nomagic.magicdraw.uml.symbols.PresentationElement;
 import com.nomagic.uml2.ext.jmi.helpers.ModelHelper;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.jmi.smartlistener.SmartListenerConfig;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Association;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Constraint;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Diagram;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Enumeration;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.EnumerationLiteral;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Expression;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
@@ -32,6 +36,7 @@ import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import com.nomagic.uml2.impl.ElementsFactory;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.logging.Level;
@@ -53,8 +58,40 @@ public class FactDiagramGenerator {
     private Profile profile;
     private Set<String> gcList = null;
     private Diagram table;
-    private boolean useModelVoc;
+    private final boolean useModelVoc;
     private static final ResourceBundle bundle = ResourceBundle.getBundle("org/ktu/transformations/uml2sbvr/messages");
+
+    // Integration constants
+    public static final String INTEGRATION_STEREOTYPE = "Integration";
+    public static final String INTEGRATION_PROFILE = "Integration Profile";
+    public static final String SOURCE_TAG = "sourceName";
+    public static final String TARGET_TAG = "targetName";
+    public static final String INTEGRATION_TYPE_TAG = "integrationType";
+
+    /** Enumeration of integration type values */
+    public static enum IntegrationType {
+
+        /** No integration (explicit value) */
+        NONE("none"),
+        /** Default integration: {@linkplain #FULL}, if the names of the source and target element names are the same; {@linkplain #PARTIAL} otherwise */
+        DEFAULT("default"),
+        /** Partial integration */
+        PARTIAL("partial"),
+        /** Full integration */
+        FULL("full"),
+        /** Undefined integration */
+        UNDEFINED("undefined");
+
+        private final String name;
+
+        public final String getName() {
+            return name;
+        }
+
+        private IntegrationType(String name) {
+            this.name = name;
+        }
+    }
 
     public Package getTargetPackage() {
         return targetPackage;
@@ -74,7 +111,7 @@ public class FactDiagramGenerator {
 
         @Override
         public String getRepresentedText(BaseElement element, boolean addColor, boolean fullSignature, boolean addId) {
-            return (addId ? RepresentationTextCreator.createId((Element) element, addColor) : "")
+            return (addId ? RepresentationTextCreator.createId((Element) element, addColor) : "") //NOI18N
                     + AbstractSBVRExtractor.extractElementText(element);
         }
 
@@ -101,6 +138,34 @@ public class FactDiagramGenerator {
         this.brCandidates = brCandidates;
     }
 
+    private static EnumerationLiteral getIntegrationTypeElement(IntegrationType type, Enumeration enumeration) {
+        if (enumeration == null)
+            return null;
+        for (EnumerationLiteral literal : enumeration.getOwnedLiteral())
+            if (literal.getName().equals(type.getName()))
+                return literal;
+        return null;
+    }
+
+    protected void createTrace(NamedElement source, NamedElement target, boolean isModelConcept) throws TraceException {
+        Abstraction abstraction = project.getElementsFactory().createAbstractionInstance();
+        Profile prof = PluginUtilities.getIntegrationProfile(project);
+        Stereotype st = StereotypesHelper.getStereotype(project, INTEGRATION_STEREOTYPE, prof);
+        if (st == null)
+            throw new TraceException(String.format(bundle.getString("FactDiagramGenerator.1"), INTEGRATION_STEREOTYPE));
+        StereotypesHelper.addStereotype(abstraction, st);
+        StereotypesHelper.createDefaultValues(abstraction, st, true);
+        abstraction.setOwner(project.getModel());
+        ModelHelper.setClientElement(abstraction, target);
+        ModelHelper.setSupplierElement(abstraction, source);
+        StereotypesHelper.setStereotypePropertyValue(abstraction, st, SOURCE_TAG, source.getName());
+        StereotypesHelper.setStereotypePropertyValue(abstraction, st, TARGET_TAG, target.getName());
+        Enumeration en = (Enumeration) ElementFinder.find(project.getModel(), Enumeration.class, "intType", true);
+        IntegrationType type = isModelConcept || source.getName().compareTo(target.getName()) == 0 ? IntegrationType.FULL : IntegrationType.PARTIAL;
+        EnumerationLiteral enLit = getIntegrationTypeElement(type, en);
+        StereotypesHelper.setStereotypePropertyValue(abstraction, st, INTEGRATION_TYPE_TAG, enLit);
+    }
+
     public void generate() {
         SessionManager sessionManager = SessionManager.getInstance();
         if (sessionManager.isSessionCreated())
@@ -113,14 +178,6 @@ public class FactDiagramGenerator {
         if (useModelVoc)
             mvPackage = (Package) ElementFinder.find(targetPackage, Package.class, PluginUtilities.SBVR_MODELVOC_PACKAGE_NAME, true);
         rulesPackage = (Package) ElementFinder.find(targetPackage, Package.class, PluginUtils.SBVR_RULES_PACKAGE_NAME, true);
-        /*String targetName = diagramName + " BV&BR";
-        Model model = project.getModel();
-        int ind = 1;
-        while (packageExists(model, targetName))
-            targetName = String.format("%s %s(%s %d)", diagramName, "BV&BR", "Copy", ind++);
-        targetPackage = elementsFactory.createPackageInstance();
-        targetPackage.setOwner(model);
-        targetPackage.setName(targetName);*/
         profile = PluginUtilities.getCustomizationsProfile(project);
         RepresentationTextCreator.addProvider(new RepresentationTextProviderImpl());
         try {
@@ -142,22 +199,33 @@ public class FactDiagramGenerator {
     private void generateGeneralConcepts() {
         if (gcCandidates == null || gcCandidates.size() == 0 || gcList == null)
             return;
-        for (String obj : gcCandidates.getListMap().keySet()) {
-            SBVRExpressionModel concept = gcCandidates.getListMap().get(obj);
-            createGeneralConcept(concept.toString(), concept.isModelVocabularyConcept());
-        }   
+        Map<List<String>, List<SBVRExpressionModel>> model = gcCandidates.getDataset();
+        for (List<String> obj : model.keySet()) {
+            SBVRExpressionModel concept = model.get(obj).get(0);
+            boolean createTrace = gcCandidates.isCreateTrace(obj, concept);
+            createGeneralConcept(concept.toString(), concept, createTrace);
+        }
     }
 
-    private PresentationElement createGeneralConcept(String concept, boolean mvConcept) {
+    private PresentationElement createGeneralConcept(String name, SBVRExpressionModel concept, boolean createTrace) {
         Stereotype stereotype = StereotypesHelper.getStereotype(project, "general concept", profile);
         com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class classel = elementsFactory.createClassInstance();
-        classel.setName(concept);
+        boolean mvConcept = concept.isModelVocabularyConcept();
+        classel.setName(name);
         if (StereotypesHelper.canApplyStereotype(classel, stereotype))
             StereotypesHelper.addStereotype(classel, stereotype);
         if (mvConcept && useModelVoc)
             classel.setOwner(mvPackage);
         else
             classel.setOwner(bvPackage);
+        List<Object> source = gcCandidates.getSourceData().get(concept);
+        if (createTrace)
+            for (Object src : source)
+                try {
+                    createTrace((NamedElement) src, classel, mvConcept);
+                } catch (TraceException ex) {
+                    Logger.getLogger(FactDiagramGenerator.class.getName()).log(Level.SEVERE, null, ex.getMessage());
+                }
         try {
             PresentationElementsManager manager = PresentationElementsManager.getInstance();
             PresentationElement gcelement = manager.createShapeElement(classel, targetDiagram);
@@ -165,6 +233,7 @@ public class FactDiagramGenerator {
             properties.addProperty(new BooleanProperty(PropertyID.SHOW_CONSTRAINTS, Boolean.FALSE));
             manager.setPresentationElementProperties(gcelement, properties);
             return gcelement;
+
         } catch (ReadOnlyElementException e) {
             Logger.getLogger(FactDiagramGenerator.class.getName()).log(Level.SEVERE, null, e);
         }
@@ -186,8 +255,17 @@ public class FactDiagramGenerator {
                         StereotypesHelper.addStereotype(constraint, stereotype);
                     constraint.setOwner(rulesPackage);
                     constraint.setName(concept.toString());
-                    // Bug with representing attached constraints - turned off currently
+                    // Bug with representing attached constraints - fixed currently
                     attachConstraint(concept, constraint);
+                    boolean createTrace = brCandidates.isCreateTrace(concepts, concept);
+                    List<Object> source = brCandidates.getSourceData().get(concept);
+                    if (createTrace)
+                        for (Object src : source)
+                            try {
+                                createTrace((NamedElement) src, constraint, concept.isModelVocabularyConcept());
+                            } catch (TraceException ex) {
+                                Logger.getLogger(FactDiagramGenerator.class.getName()).log(Level.SEVERE, null, ex.getMessage());
+                            }
                     GenericTableManager.addRowElement(table, constraint);
                 }
     }
@@ -204,14 +282,15 @@ public class FactDiagramGenerator {
 
                     // Ensure that necessary general concepts exist; if not, then they must be created
                     PresentationElement el1, el2 = null;
+                    boolean createTrace = vcCandidates.isCreateTrace(concepts, concept);
                     if (!gcList.contains(concept1))
-                        el1 = createGeneralConcept(concept1, concept.isModelVocabularyConcept());
+                        el1 = createGeneralConcept(concept1, concept, createTrace);
                     else
                         el1 = getElementWithName(targetDiagram, concept1);
                     String concept2 = concept.getExpressionElement(2);
                     if (concept2 != null && concept2.trim().length() > 0)
                         if (!gcList.contains(concept2))
-                            el2 = createGeneralConcept(concept2, concept.isModelVocabularyConcept());
+                            el2 = createGeneralConcept(concept2, concept, createTrace);
                         else
                             el2 = getElementWithName(targetDiagram, concept2);
                     if (el2 != null) {
@@ -223,10 +302,18 @@ public class FactDiagramGenerator {
                         ModelHelper.setSupplierElement(association, el2.getElement());
                         ModelHelper.setNavigable(ModelHelper.getFirstMemberEnd(association), true);
                         ModelHelper.setNavigable(ModelHelper.getSecondMemberEnd(association), true);
+                        if (StereotypesHelper.canApplyStereotype(association, stereotype))
+                            StereotypesHelper.addStereotype(association, stereotype);
+                        List<Object> source = vcCandidates.getSourceData().get(concept);
+                        if (createTrace)
+                            for (Object src : source)
+                                try {
+                                    createTrace((NamedElement) src, association, concept.isModelVocabularyConcept());
+                                } catch (TraceException ex) {
+                                    Logger.getLogger(FactDiagramGenerator.class.getName()).log(Level.SEVERE, null, ex.getMessage());
+                                }
                         try {
                             ModelElementsManager.getInstance().addElement(association, pkg);
-                            if (StereotypesHelper.canApplyStereotype(association, stereotype))
-                                StereotypesHelper.addStereotype(association, stereotype);
                             PresentationElementsManager manager = PresentationElementsManager.getInstance();
                             PresentationElement assocel = manager.createPathElement(association, el1, el2);
                             PropertyManager properties = new PropertyManager();
@@ -238,6 +325,9 @@ public class FactDiagramGenerator {
                     } else {
                         // Create unary verb concept
                         Property attr = elementsFactory.createPropertyInstance();
+                        Stereotype charactSt = StereotypesHelper.getStereotype(project, "characteristic", profile);
+                        if (StereotypesHelper.canApplyStereotype(attr, charactSt))
+                            StereotypesHelper.addStereotype(attr, charactSt);
                         attr.setName(verb.replace(" ", "_"));
                         attr.setOwner(el1.getElement());
                     }
@@ -273,5 +363,5 @@ public class FactDiagramGenerator {
         columnIds.add("QPROP:Element:constrainedElement");
         GenericTableManager.addColumnsById(table, columnIds);
     }
-    
+
 }

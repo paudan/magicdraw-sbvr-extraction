@@ -1,10 +1,14 @@
 package org.ktu.transformations.uml2sbvr.ui;
 
+import com.nomagic.magicdraw.core.Application;
+import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.PrintWriter;
@@ -14,6 +18,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
@@ -30,6 +35,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import org.ktu.transformations.uml2sbvr.PluginUtilities;
 import org.ktu.transformations.uml2sbvr.extract.AbstractSBVRExtractor;
@@ -52,6 +58,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
     private AbstractSBVRExtractor extractor;
     private boolean extractModelVoc;
     private NamedElement diagramPackage;
+    private OptionsDialog optDlg;
 
     private static final ResourceBundle bundle = ResourceBundle.getBundle("org/ktu/transformations/uml2sbvr/ui/Bundle");
 
@@ -68,11 +75,12 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         bundle.getString("ExtractionWizardDialog_47"), bundle.getString("ExtractionWizardDialog_22"),
         bundle.getString("ExtractionWizardDialog_21"), bundle.getString("ExtractionWizardDialog_22")};
 
-    public ExtractionWizardDialog(Frame parent, boolean modal, NamedElement diagramPackage, AbstractSBVRExtractor extractor) {
+    public ExtractionWizardDialog(Frame parent, OptionsDialog optDlg, boolean modal, NamedElement diagramPackage, AbstractSBVRExtractor extractor) {
         super(parent, modal);
         this.diagramPackage = diagramPackage;
         this.extractor = extractor;
         this.extractModelVoc = extractor.isExtractModelVocabulary();
+        this.optDlg = optDlg;
         initComponents();
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -153,6 +161,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             }
         });
     }
+
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -547,13 +556,17 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
                         }
                     }
                 }.exportProject(null, gcCandidates, vcCandidates, brCandidates, extractModelVoc);
-
+            Project proj = Application.getInstance().getProject();
+            if (PluginUtilities.getCustomizationsProfile(proj) == null)
+                PluginUtilities.addSBVRProfiles();
             FactDiagramGenerator generator = new FactDiagramGenerator(projName, extractModelVoc);
             generator.setGCCandidates(gcCandidates);
             generator.setVCCandidates(vcCandidates);
             generator.setBRCandidates(brCandidates);
             generator.generate();
             setVisible(false);
+            if (optDlg != null)
+                optDlg.setVisible(false);
         } else
             nextStep(1);
     }//GEN-LAST:event_JButton2ActionPerformed
@@ -624,9 +637,9 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         final int tabcount = jTabbedPane1.getTabCount();
         for (int i = 0; i < tabcount; i++)
             jTabbedPane1.setEnabledAt(i, index == i);
-        if (index == tabcount - 3 && step > 0) {
+        if (index == tabcount - 3 && step > 0)
             updateTableModel(JTable1, messages_gcTable, gcCandidates, jRadioButton3.isSelected() ? null : jRadioButton2.isSelected());
-        } else if (index == tabcount - 2) {
+        else if (index == tabcount - 2) {
             gcCandidates.setAllIdentified(step > 0);
             if (step > 0) {
                 extractor.createVerbConceptCandidates();
@@ -650,28 +663,42 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             JButton2.setText(bundle.getString("ExtractionWizardDialog_29"));
     }
 
-    private void updateTableModel(JTable JTable1, String[] messages, FilteredCandidateConceptModel modeldata,
-            Boolean modelVoc) {
-        TableModel tmodel = JTable1.getModel();
+    private void updateTableModel(final JTable table, String[] messages, FilteredCandidateConceptModel modeldata, Boolean modelVoc) {
+        TableModel tmodel = table.getModel();
         if (tmodel == null || !(tmodel instanceof CandidateTableModel))
-            JTable1.setModel(new CandidateTableModel(modeldata, messages));
-        CandidateTableModel model = (CandidateTableModel) JTable1.getModel();
+            table.setModel(new CandidateTableModel(modeldata, messages));
+        CandidateTableModel model = (CandidateTableModel) table.getModel();
         if (modelVoc == null)
             model.setDefaultView();
         else if (modelVoc.equals(Boolean.TRUE))
             model.setModelVocabularyView();
         else if (modelVoc.equals(Boolean.FALSE))
             model.setBusinessVocabularyView();
-        JTable1.getColumnModel().getColumn(0).setMinWidth(20);
-        JTable1.getColumnModel().getColumn(0).setPreferredWidth(20);
-        JTable1.getColumnModel().getColumn(0).setMaxWidth(20);
-        JTable1.getColumnModel().getColumn(3).setMinWidth(75);
-        JTable1.getColumnModel().getColumn(3).setPreferredWidth(75);
-        JTable1.getColumnModel().getColumn(3).setMaxWidth(75);
-        JTable1.getColumnModel().getColumn(4).setMinWidth(75);
-        JTable1.getColumnModel().getColumn(4).setPreferredWidth(75);
-        JTable1.getColumnModel().getColumn(4).setMaxWidth(75);
-        JTable1.updateUI();
+        table.getColumnModel().getColumn(0).setMinWidth(20);
+        table.getColumnModel().getColumn(0).setPreferredWidth(20);
+        table.getColumnModel().getColumn(0).setMaxWidth(20);
+        table.getColumnModel().getColumn(3).setMinWidth(75);
+        table.getColumnModel().getColumn(3).setPreferredWidth(75);
+        table.getColumnModel().getColumn(3).setMaxWidth(75);
+        TableColumn tc = table.getColumnModel().getColumn(4);
+        tc.setMinWidth(75);
+        tc.setPreferredWidth(75);
+        tc.setMaxWidth(75);
+        tc.setCellEditor(table.getDefaultEditor(Boolean.class));
+        tc.setCellRenderer(table.getDefaultRenderer(Boolean.class));
+        tc.setHeaderRenderer(new CheckBoxHeader(new ItemListener() {
+
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                Object source = e.getSource();
+                if (source instanceof AbstractButton == false)
+                    return;
+                for (int x = 0, y = table.getRowCount(); x < y; x++)
+                    table.setValueAt(e.getStateChange() == ItemEvent.SELECTED, x, 4);
+            }
+
+        }, "Create trace"));
+        table.updateUI();
     }
 
     private void preview(int step) {

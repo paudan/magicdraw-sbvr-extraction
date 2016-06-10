@@ -9,24 +9,33 @@ import java.util.Set;
 
 public class FilteredCandidateConceptModel extends AbstractCandidateConceptModel {
 
-    private Map<List<String>, List<Boolean>> selected;
+    private Map<List<String>, List<Boolean>> selected, traceOpt;
 
     public FilteredCandidateConceptModel() {
         super();
         selected = new HashMap<>();
+        traceOpt = new HashMap<>();
     }
 
     public void setSelectedState(List<String> concepts, SBVRExpressionModel model, Boolean state) {
         selected.get(concepts).set(data.get(concepts).indexOf(model), state);
     }
 
-    public boolean isSelected(List<String> concepts, SBVRExpressionModel model) {
+    public Boolean isSelected(List<String> concepts, SBVRExpressionModel model) {
         return selected.get(concepts).get(data.get(concepts).indexOf(model));
+    }
+    
+    public void setCreateTrace(List<String> concepts, SBVRExpressionModel model, Boolean state) {
+        traceOpt.get(concepts).set(data.get(concepts).indexOf(model), state);
+    }
+
+    public Boolean isCreateTrace(List<String> concepts, SBVRExpressionModel model) {
+        return traceOpt.get(concepts).get(data.get(concepts).indexOf(model));
     }
 
     @Override
-    public boolean add(List<String> concepts, SBVRExpressionModel candidate) {
-        boolean added = super.add(concepts, candidate);
+    public boolean add(List<String> concepts, SBVRExpressionModel candidate, List<Object> source) {
+        boolean added = super.add(concepts, candidate, source);
         if (added) {
             List<Boolean> res = selected.get(concepts);
             if (res == null) {
@@ -34,12 +43,19 @@ public class FilteredCandidateConceptModel extends AbstractCandidateConceptModel
                 selected.put(concepts, res);
             }
             res.add(Boolean.TRUE);
+            List<Boolean> trace = traceOpt.get(concepts);
+            if (trace == null) {
+                trace = new ArrayList<>();
+                traceOpt.put(concepts, trace);
+            }
+            trace.add(Boolean.FALSE);
         }
         return added;
     }
 
     @Override
     public void remove(List<String> concepts, SBVRExpressionModel candidate) {
+        super.remove(concepts, candidate);
         List<Boolean> res = selected.get(concepts);
         if (res != null)
             res.remove(data.get(concepts).indexOf(candidate));

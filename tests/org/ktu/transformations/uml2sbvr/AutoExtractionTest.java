@@ -12,10 +12,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,22 +42,16 @@ public class AutoExtractionTest extends MagicDrawTestCase {
         super();
         filename = "tests\\resources\\UseCase test diagrams.mdzip";
         stats = new HashMap<>();
-        // Remove any existing log and statistics files
+        // Try to remove any existing log and statistics files
         try {
-            Path path = FileSystems.getDefault().getPath("business_vocabulary_auto.txt");
-            Files.delete(path);
-            path = FileSystems.getDefault().getPath("model_vocabulary_auto.txt");
-            Files.delete(path);
-            path = FileSystems.getDefault().getPath("business_rules_auto.txt");
-            Files.delete(path);
-            path = FileSystems.getDefault().getPath("business_vocabulary_auto_strict.txt");
-            Files.delete(path);
-            path = FileSystems.getDefault().getPath("model_vocabulary_auto_strict.txt");
-            Files.delete(path);
-            path = FileSystems.getDefault().getPath("business_rules_auto_strict.txt");
-            Files.delete(path);
-            path = FileSystems.getDefault().getPath("stats.csv");
-            Files.delete(path);
+            FileSystem fs = FileSystems.getDefault();
+            Files.delete(fs.getPath("business_vocabulary_auto.txt"));
+            Files.delete(fs.getPath("model_vocabulary_auto.txt"));
+            Files.delete(fs.getPath("business_rules_auto.txt"));
+            Files.delete(fs.getPath("business_vocabulary_auto_strict.txt"));
+            Files.delete(fs.getPath("model_vocabulary_auto_strict.txt"));
+            Files.delete(fs.getPath("business_rules_auto_strict.txt"));
+            Files.delete(fs.getPath("stats.csv"));
         } catch (NoSuchFileException | DirectoryNotEmptyException x) {
         } catch (IOException x) {
             System.err.println(x);

@@ -1,6 +1,7 @@
 package org.ktu.transformations.uml2sbvr.models;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -12,17 +13,19 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
     protected Map<List<String>, List<SBVRExpressionModel>> data;
     // Decision whether particular combinations of element rumblings can be used for manual extraction
     protected Map<List<String>, Boolean> flag;
+    protected Map<SBVRExpressionModel, List<Object>> source;
 
     public AbstractCandidateConceptModel() {
         data = new HashMap<>();
         flag = new HashMap<>();
+        source = new HashMap<>();
     }
 
     protected static AbstractCandidateConceptModel createInstance() {
         return null;
     }
 
-    public boolean add(List<String> concepts, SBVRExpressionModel candidate) {
+    public boolean add(List<String> concepts, SBVRExpressionModel candidate, List<Object> sourceElements) {
         if (concepts == null || concepts.isEmpty())
             return false;
         List<SBVRExpressionModel> res = data.get(concepts);
@@ -34,6 +37,7 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
                 if (sbvr.originalEqualsTo(candidate))
                     return false;
         res.add(candidate);
+        source.put(candidate, sourceElements);
         return true;
     }
 
@@ -41,8 +45,13 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
         if (concepts == null || concepts.isEmpty())
             return;
         List<SBVRExpressionModel> res = data.get(concepts);
-        if (res != null)
-            res.remove(candidate);
+        if (res == null)
+            return;
+        res.remove(candidate);
+        if (res.isEmpty()) {
+            data.remove(concepts);
+            source.remove(concepts);
+        }
     }
 
     public void removeAll() {
@@ -50,6 +59,7 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
             data.get(concepts).clear();
         data.clear();
         flag.clear();
+        source.clear();
     }
 
     public void set(List<String> concepts, int index, SBVRExpressionModel candidate) {
@@ -59,9 +69,9 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
     }
 
     public SBVRExpressionModel get(String concepts[], int index) {
-        if (concepts == null || concepts.length == 0 || data.get(concepts) == null)
+        if (concepts == null || concepts.length == 0 || data.get(Arrays.asList(concepts)) == null)
             return null;
-        return data.get(concepts).get(index);
+        return data.get(Arrays.asList(concepts)).get(index);
     }
 
     public int indexOf(List<String> concepts, String candidate) {
@@ -98,6 +108,10 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
         return data;
     }
 
+    public Map<SBVRExpressionModel, List<Object>> getSourceData() {
+        return source;
+    }
+
     public boolean manualExtractionPossible(ArrayList<String> concepts) {
         return flag.get(concepts) != null ? flag.get(concepts) : false;
     }
@@ -113,13 +127,13 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
     public void setManualExtraction(List<String> concepts) {
         if (concepts == null || concepts.isEmpty())
             return;
-        flag.put(concepts, new Boolean(true));
+        flag.put(concepts, Boolean.TRUE);
     }
 
     public void setAutomaticExtraction(List<String> concepts) {
         if (concepts == null || concepts.isEmpty())
             return;
-        flag.put(concepts, new Boolean(false));
+        flag.put(concepts, Boolean.FALSE);
     }
 
     public void setAllIdentified(boolean value) {
@@ -136,8 +150,18 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
             if (data.get(concept) != null)
                 for (SBVRExpressionModel sbvr : data.get(concept))
                     obj.add(sbvr.clone());
-            copy.data.put(concept, obj);
+            copy.data.put(concept, obj);  
         }
+        for (SBVRExpressionModel sbvr: source.keySet()) {
+            List<Object> src = new ArrayList<>();
+            if (source.get(sbvr) != null)
+                for (Object o : source.get(sbvr))
+                    src.add(o);
+            copy.source.put(sbvr, src);
+        }
+        copy.flag = new HashMap<>();
+        for (List<String> concept : flag.keySet())
+            copy.flag.put(concept, flag.get(concept));
     }
 
     public static String getConceptsRepresentation(List<String> elemdata) {

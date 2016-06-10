@@ -6,7 +6,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -280,17 +279,12 @@ public class EditCandidateDialog extends JDialog {
                         SBVRExpressionModel model = new SBVRExpressionModel();
                         model.addGeneralConcept((String) obj[1], true);
                         model.setAuto(false);
-                        parentDlg.gcCandidates.add((ArrayList<String>) obj[0], model);
+                        List<String> candidates = (List<String>) obj[0];
+                        parentDlg.gcCandidates.add(candidates, model, data.getSourceData().get(candidates));
                         parentDlg.getGCTableModel().addRow(new Object[]{true, 
                             dlg.getComboBox().getSelectedItem().toString(), model.toHTMLString(true, null), false});
 
                     }
-                /*        		if (vcTemp.size() > 0)
-                 for (Object [] obj: vcTemp)
-                 vcData.add((String [])obj[0], (String)obj[1], (Boolean)obj[2]);
-                 if (vcTableModelTemp.size() > 0)
-                 for (Object [] obj: vcTableModelTemp)
-                 vcTableModel.addRow(obj);*/
             }
             SBVRExpressionModel model = new SBVRExpressionModel();
             String split[] = candidate.split(" ");
@@ -301,7 +295,7 @@ public class EditCandidateDialog extends JDialog {
                     model.addVerbConcept(split[i].replace("_", " "), true);
             model.setAuto(false);
             if (operation == Operation.NEW) {
-                data.add(elements, model);
+                data.add(elements, model, data.getSourceData().get(elements));
                 tablemodel.addRow(new Object[]{true, dlg.getComboBox().getSelectedItem(), model.toHTMLString(true, null), false});
             } else {
                 editedConcept.modify(model);
