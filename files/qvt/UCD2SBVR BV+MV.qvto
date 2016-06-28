@@ -21,6 +21,8 @@ main() {
     src.objectsOfType(Component)->select(inPackage(srcPackage)).map transformBoundary();
     src.objectsOfType(Association)->select(inPackage(srcPackage)).map transformUseCaseAssociation();
 	src.objectsOfType(Association)->select(inPackage(srcPackage)).map transformUseCaseAssociation2();
+	src.objectsOfType(UseCase)->select(inPackage(srcPackage)).map transformIndirectAssociations();
+	src.objectsOfType(UseCase)->select(inPackage(srcPackage)).map transformIndirectAssociations2();
     src.objectsOfType(Generalization)->select(inPackage(srcPackage)).map transformActorGeneralization();
     src.objectsOfType(Generalization)->select(inPackage(srcPackage)).map useCaseGeneralization();
     src.objectsOfType(Include)->select(inPackage(srcPackage)).map transformIncludeRelationships();

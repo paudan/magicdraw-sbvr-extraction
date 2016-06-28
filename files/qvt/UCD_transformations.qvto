@@ -165,25 +165,33 @@ mapping Association::transformUseCaseAssociation() : Association
 when { self.endType->selectByType(Actor)->size() = 1 and self.endType->selectByType(UseCase)->size() = 1 and self.bothNamesPresent() 
 and self.endType->selectByType(UseCase)->asOrderedSet()->first().name.nounFromBehavior() <> null }
 {
-    this.aModel.ownedType += result;
-    result.applyStereotype(steBinaryVC);
-    var usecase: UseCase := self.endType->select(oclIsTypeOf(UseCase))[UseCase]->asOrderedSet()->first();
-	name:= usecase.name.verbFromBehavior(); 
-	var prop1 : Property:= object Property
-	 {
-	   type:= self.endType->select(oclIsTypeOf(Actor))[Actor]->asOrderedSet()->first().map transformElementChkDups();
-	 };
-	var prop2 : Property:= object Property
-	 {	   	   
-	   type:= usecase.map transformUseCase()![Class];	
-	 }; 
-	memberEnd:= Sequence{prop2, prop1};
-	result.ownedEnd := Sequence{prop2, prop1}; 	
-	result.ownedEnd.applyStereotype(steRole);
-	result.setAnnotation("trace",self.getElementID(),"partial");
-	result.package:= vocPackage;
+    init {
+	    var usecase: UseCase := self.endType->select(oclIsTypeOf(UseCase))[UseCase]->asOrderedSet()->first();
+		var actor: Actor := self.endType->select(oclIsTypeOf(Actor))[Actor]->asOrderedSet()->first();
+		result := createVerbConceptFromUseCase(actor, usecase);
+		result.setAnnotation("trace",self.getElementID(),"partial");
+	}
 }
 
+mapping UseCase::transformIndirectAssociations()
+when {self.name.nounFromBehavior() <> null} {
+	var includes: Set(Include) := Include.allInstances()->select(addition = self);
+	var extends_: Set(Extend) := Extend.allInstances()->select(extension = self);
+	if (includes->notEmpty() or extends_->notEmpty()) {
+		var actors := getActorsOfUseCase(self, null); 
+		if (actors->notEmpty()) {
+			actors->forEach(actor) {
+				var assoc: Association := createVerbConceptFromUseCase(actor, self);
+				assoc.setAnnotation("trace",self.getElementID(),"partial");
+			};
+		} else {
+			var assoc: Association := createVerbConceptFromUseCase(self.owner![NamedElement], self);
+			assoc.setAnnotation("trace",self.getElementID(),"partial");
+		} endif;
+	} endif;
+}
+
+-- A specific case, when UseCase contains no noun. Then it is treated as unary verb concept, represented as Property with characteristic stereotype
 mapping Association::transformUseCaseAssociation2() : Class
 when { self.endType->selectByType(Actor)->size() = 1 and self.endType->selectByType(UseCase)->size() = 1 and self.bothNamesPresent()
 and self.endType->selectByType(UseCase)->asOrderedSet()->first().name.nounFromBehavior() = null}
@@ -198,6 +206,35 @@ and self.endType->selectByType(UseCase)->asOrderedSet()->first().name.nounFromBe
 	result.ownedAttribute += prop;
 	prop.setAnnotation("trace",usecase.getElementID(),"partial");
 	prop.applyStereotype(steCharacteristic); 
+}
+
+-- The same rule is applied for the previous case
+mapping UseCase::transformIndirectAssociations2()
+when {self.name.nounFromBehavior() = null} {
+	var includes: Set(Include) := Include.allInstances()->select(addition = self);
+	var extends_: Set(Extend) := Extend.allInstances()->select(extension = self);
+	if (includes->notEmpty() or extends_->notEmpty()) {
+		var actors := getActorsOfUseCase(self, null); 
+		if (actors->notEmpty()) {
+			actors->forEach(actor) {
+				var prop : Property:= object Property {
+				   name:= self.name.verbFromBehavior();
+				};
+				var res: Class := actor.map transformElementChkDups();
+				res.ownedAttribute += prop;
+				prop.setAnnotation("trace",self.getElementID(),"partial");
+				prop.applyStereotype(steCharacteristic);
+			};
+		} else {
+			var prop : Property:= object Property {
+			   name:= self.name.verbFromBehavior();
+			};
+			var res: Class := self.owner![NamedElement].map transformElementChkDups();
+			res.ownedAttribute += prop;
+			prop.setAnnotation("trace",self.getElementID(),"partial");
+			prop.applyStereotype(steCharacteristic);
+		} endif;
+	} endif;
 }
 
 mapping Generalization::transformActorGeneralization() : Generalization
@@ -325,7 +362,7 @@ helper getActorsOfUseCase(in usecase: UseCase, in excluded: DirectedRelationship
 			if uc != null then {
 				newIncludes += Include.allInstances()->select(addition = uc);
 				newIncludes += Extend.allInstances()->select(extension = uc);
-				actors += Association.allInstances()->select(endType->includes(usecase)).endType->select(oclIsTypeOf(Actor))[Actor];
+				actors += Association.allInstances()->select(endType->includes(uc)).endType->select(oclIsTypeOf(Actor))[Actor];
 				if actors->notEmpty() then {
 					return actors;
 				} endif;
@@ -334,6 +371,26 @@ helper getActorsOfUseCase(in usecase: UseCase, in excluded: DirectedRelationship
 		includes := newIncludes;
 	};
 	return actors;
+}
+
+helper createVerbConceptFromUseCase(in actor: NamedElement, in usecase: UseCase) : Association
+{
+	var prop1 : Property:= object Property {
+	   type:= actor.map transformElementChkDups();
+	};
+	var prop2 : Property:= object Property {	   	   
+	   type:= usecase.map transformUseCase()![Class];	
+	};
+	var assoc: Association := object Association {
+		name:= usecase.name.verbFromBehavior(); 
+		memberEnd:= Sequence{prop2, prop1};
+		ownedEnd := Sequence{prop2, prop1}; 	
+		ownedEnd.applyStereotype(steRole);
+	};
+	aModel.ownedType += assoc;
+    assoc.applyStereotype(steBinaryVC);
+    assoc.package:= vocPackage;
+	return assoc;
 }
 
 mapping Include::createRuleFromInclude(in ai: NamedElement, in aii: NamedElement)
@@ -577,9 +634,3 @@ mapping ExtensionPoint::transformExtensionPointMV() : Class
 		result.setAnnotation("trace",self.getElementID(),"partial");
 	}
 }
-
-
-
-
-
-

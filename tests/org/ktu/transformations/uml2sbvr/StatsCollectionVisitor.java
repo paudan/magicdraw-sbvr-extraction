@@ -126,9 +126,9 @@ public class StatsCollectionVisitor extends Visitor {
             if (el instanceof Association && ((Association)el).getHumanName().startsWith("association")) {
                 Association assoc = (Association) el;
                 List<Property> ends = assoc.getMemberEnd();
-                String name = ends.get(0).getType().getHumanName();
+                String name = ends.get(1).getType().getHumanName();
                 name += " " + assoc.getName() + " ";
-                name += ends.get(1).getType().getHumanName();
+                name += ends.get(0).getType().getHumanName();
                 vcItems.add(name);
             } else if (el instanceof Class) {
                 gcItems.add(el.getHumanName());

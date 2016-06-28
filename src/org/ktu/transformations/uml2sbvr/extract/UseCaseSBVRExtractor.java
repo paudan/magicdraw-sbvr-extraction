@@ -218,10 +218,10 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                             createRuleFromExtend(ai, aai, extended, extension);
                 else if (aextended.isEmpty() && aextension.size() > 0)
                     for (Actor aai : aextension)
-                        createRuleFromInclude(extended.getOwner(), aai, extended, extension);
+                        createRuleFromExtend(extended.getOwner(), aai, extended, extension);
                 else if (aextended.size() > 0 && aextension.isEmpty())
                     for (Actor ai : aextended)
-                        createRuleFromExtend(ai, ai, extended, extension);
+                        createRuleFromExtend(ai, extension.getOwner(), extended, extension);
                 else if (aextended.isEmpty() && aextension.isEmpty())
                     // UseCases are executed by their owning boundaries
                     createRuleFromExtend(extended.getOwner(), extension.getOwner(), extended, extension);
@@ -437,18 +437,17 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
 
     private Collection<Element> getDiagramElements(Collection<Element> colelem, DiagramPresentationElement diagram) {
         Collection<Element> newelem = new HashSet<>();
-        Collection<com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package> packages = new HashSet<>();
+        Collection<Package> packages = new HashSet<>();
         for (Element element : colelem)
-            if (element instanceof com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package
-                    && diagram.findPresentationElement(element, null) != null)
-                packages.add((com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package) element);
+            if (element instanceof Package && diagram.findPresentationElement(element, null) != null)
+                packages.add((Package) element);
         while (!packages.isEmpty()) {
-            Collection<com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package> newPack = new HashSet<>();
-            for (com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package pack : packages) {
+            Collection<Package> newPack = new HashSet<>();
+            for (Package pack : packages) {
                 for (Element el : pack.getOwnedElement())
                     if (diagram.findPresentationElement(el, null) != null)
                         newelem.add(el);
-                for (com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package innerPack : pack.getNestedPackage())
+                for (Package innerPack : pack.getNestedPackage())
                     if (diagram.findPresentationElement(innerPack, null) != null)
                         newPack.add(innerPack);
             }
@@ -466,8 +465,12 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
         if (bname != null && vname != null && gclist.contains(bname)) {
             SBVRExpressionModel candidate = new SBVRExpressionModel();
             candidate.addIdentifiedExpression(map.get(bname)).addVerbConcept(vname, false);
-            if (uc != null && gclist.contains(uc))
-                candidate.addIdentifiedExpression(map.get(uc));
+            if (uc != null) {
+                if (gclist.contains(uc))
+                    candidate.addIdentifiedExpression(map.get(uc));
+                else
+                    candidate.addUnidentifiedText(uc);
+            }
             candidate.setAuto(true);
             List<String> concept = Arrays.asList(getProperName(actor), getProperName(usecase));
             vc_candidates.add(concept, candidate, new ArrayList<Object>(Arrays.asList(actor, usecase)));

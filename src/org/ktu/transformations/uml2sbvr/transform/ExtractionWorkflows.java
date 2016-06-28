@@ -332,7 +332,7 @@ public class ExtractionWorkflows extends Workflows {
         Visitor visitor = new Visitor() {
             @Override
             public void visitPackage(Package element, VisitorContext context) {
-                if (element.getOwnedComment() == null)
+                if (element == null || element.getOwnedComment() == null)
                     return;
                 for (Comment comment : element.getOwnedComment())
                     if (comment.getBody() != null && comment.getBody().compareTo("_trans_owner_") == 0)
@@ -343,10 +343,10 @@ public class ExtractionWorkflows extends Workflows {
                         }
             }
         };
-        Collection srcPackages = ElementFinder.getChildren(model, new Class[]{Package.class}, true, true);
+        Collection srcPackages = ElementFinder.getChildren(model, new Class[]{com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package.class}, true, true);
         for (Object e : srcPackages)
             try {
-                ((Package) e).accept(visitor);
+                ((com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package) e).accept(visitor);
             } catch (Exception ex) {
                 Logger.getLogger(ExtractionWorkflows.class.getName()).log(Level.SEVERE, null, ex);
             }
