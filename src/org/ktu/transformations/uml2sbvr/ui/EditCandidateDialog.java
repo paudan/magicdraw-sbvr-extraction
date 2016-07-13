@@ -59,7 +59,7 @@ public class EditCandidateDialog extends JDialog {
     private SBVRExpressionModel editedConcept;
     private final ExtractionWizardDialog parentDlg;
     private List<String> elements;
-    private int previousHeight;
+    private Map<String, List<String>> map;
 
     public EditCandidateDialog(ExtractionWizardDialog parent, String title, boolean modal,
             Operation operation, ConceptType type) {
@@ -77,12 +77,15 @@ public class EditCandidateDialog extends JDialog {
             this.tablemodel = parent.getBRTableModel();
         }
         this.operation = operation;
+        map = new HashMap<>();
         initComponents();
+        for (List<String> element : data.manualExtractionCandidates())
+            map.put(AbstractCandidateConceptModel.getConceptsRepresentation(element), element);
+        comboBox.setModel(new DefaultComboBoxModel(map.keySet().toArray()));
         if (operation == Operation.NEW)
             init_new();
         else
             init_edit();
-        previousHeight = getPreviewLabel().getHeight();
     }
 
     @SuppressWarnings("unchecked")
@@ -190,10 +193,6 @@ public class EditCandidateDialog extends JDialog {
     private void init_new() {
         final EditCandidateDialog dlg = this;
         dlg.setTitle("Add new candidate concept");
-        final Map<String, List<String>> map = new HashMap<>();
-        for (List<String> element : data.manualExtractionCandidates())
-            map.put(AbstractCandidateConceptModel.getConceptsRepresentation(element), element);
-        comboBox.setModel(new DefaultComboBoxModel(map.keySet().toArray()));
         comboBox.addItemListener(new ItemListener() {
 
             @Override
@@ -233,6 +232,11 @@ public class EditCandidateDialog extends JDialog {
                     bundle.getString("EditCandidateDialog_6"), JOptionPane.OK_OPTION);
             return false;
         }
+        // Replace multiple whitespaces
+        candidate = candidate.replaceAll("\\s+", " ");
+        // Fix processing for general concepts
+        if (type == ConceptType.GENERAL_CONCEPT)
+            candidate = candidate.replaceAll(" ", "_");
         boolean exists = false;
         boolean no_mod = (operation == Operation.EDIT && candidate.compareTo(editedConcept.toUnderscoreString()) != 0);
         if (type == ConceptType.GENERAL_CONCEPT) {
@@ -259,7 +263,7 @@ public class EditCandidateDialog extends JDialog {
             gcTempList = new HashSet<>();
             vcTempList = new HashSet<>();
             if (type == ConceptType.VERB_CONCEPT) {
-                String split[] = candidate.split(" ");
+                String split[] = candidate.split("\\s+");
                 Vector<String> gcs = new Vector<>();
                 for (int i = 0; i < split.length; i += 2)		// Again, we follow VC pattern
                     gcs.add(split[i]);
@@ -287,18 +291,17 @@ public class EditCandidateDialog extends JDialog {
 
             if (!canadd)
                 return false;
-            else
-                if (gcTemp.size() > 0)
-                    for (Object[] obj : gcTemp) {
-                        SBVRExpressionModel model = new SBVRExpressionModel();
-                        model.addGeneralConcept((String) obj[1], true);
-                        model.setAuto(false);
-                        List<String> candidates = (List<String>) obj[0];
-                        parentDlg.gcCandidates.add(candidates, model, data.getSourceData().get(candidates));
-                        parentDlg.getGCTableModel().addRow(new Object[]{true,
-                            dlg.getComboBox().getSelectedItem().toString(), model.toHTMLString(true, null), false});
+            else if (gcTemp.size() > 0)
+                for (Object[] obj : gcTemp) {
+                    SBVRExpressionModel gcModel = new SBVRExpressionModel();
+                    gcModel.addGeneralConcept((String) obj[1], true);
+                    gcModel.setAuto(false);
+                    List<String> candidates = (List<String>) obj[0];
+                    parentDlg.gcCandidates.add(candidates, gcModel, data.getSourceData().get(candidates));
+                    parentDlg.getGCTableModel().addRow(new Object[]{true,
+                        map.get(dlg.getComboBox().getSelectedItem().toString()), gcModel, Boolean.FALSE, Boolean.FALSE});
 
-                    }
+                }
             SBVRExpressionModel model = new SBVRExpressionModel();
             String split[] = candidate.split(" ");
             for (int i = 0; i < split.length; i++)
@@ -309,10 +312,11 @@ public class EditCandidateDialog extends JDialog {
             model.setAuto(false);
             if (operation == Operation.NEW) {
                 data.add(elements, model, data.getSourceData().get(elements));
-                tablemodel.addRow(new Object[]{true, dlg.getComboBox().getSelectedItem(), model.toHTMLString(true, null), false});
+                tablemodel.addRow(new Object[]{ true, 
+                    map.get(dlg.getComboBox().getSelectedItem().toString()), model, Boolean.FALSE, Boolean.FALSE});
             } else {
                 editedConcept.modify(model);
-                tablemodel.setValueAt(dlg.getPreviewLabel().getText(), candidateIndex, 2);
+                tablemodel.setValueAt(model, candidateIndex, 2);
             }
         }
         return !exists;
@@ -368,7 +372,7 @@ public class EditCandidateDialog extends JDialog {
         for (int i = 0; i < cand_concepts.length; i++)
             if (!gcCandidates.contains(cand_concepts[i].replaceAll("_", " ")))
                 gcTempList.add(cand_concepts[i]);
-        if (gcTempList.size() == 0)
+        if (gcTempList.isEmpty())
             return true;
         String conceptstr = new String();
         for (String str : gcTempList)
@@ -408,15 +412,19 @@ public class EditCandidateDialog extends JDialog {
     }
 
     private String underscoreToHTML(String text) {
-        String result = new String();
-        String split[] = text.trim().split("\\s+");
-        for (int i = 0; i < split.length; i++) {
-            // Apply pattern <general concept><verb concept><general concept><verb concept>....
-            String tmp = split[i].trim().replace("_", " ");
-            result += (i % 2 == 0 ? String.format(SBVRExpressionModel.CGC_FORMAT, tmp)
-                    : String.format(SBVRExpressionModel.CVC_FORMAT, tmp)).trim() + " ";
+        if (this.type == ConceptType.GENERAL_CONCEPT)
+            return String.format(SBVRExpressionModel.CGC_FORMAT, text.replaceAll(" ", "_"));
+        else {
+            String result = new String();
+            String split[] = text.trim().split("\\s+");
+            for (int i = 0; i < split.length; i++) {
+                // Apply pattern <general concept><verb concept><general concept><verb concept>....
+                String tmp = split[i].trim().replace("_", " ");
+                result += (i % 2 == 0 ? String.format(SBVRExpressionModel.CGC_FORMAT, tmp)
+                        : String.format(SBVRExpressionModel.CVC_FORMAT, tmp)).trim() + " ";
+            }
+            return result.trim();
         }
-        return result.trim();
     }
     private void btnCancelActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnCancelActionPerformed
         dispose();
