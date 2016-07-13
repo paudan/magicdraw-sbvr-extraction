@@ -18,14 +18,13 @@ import javax.swing.table.TableColumnModel;
 @SuppressWarnings("serial")
 class CheckBoxHeader extends JCheckBox implements TableCellRenderer, MouseListener {
 
-    protected CheckBoxHeader rendererComponent;
+    //protected CheckBoxHeader rendererComponent;
     protected int column;
     protected boolean mousePressed = false;
     protected String headerString;
 
     public CheckBoxHeader(ItemListener itemListener) {
-        rendererComponent = this;
-        rendererComponent.addItemListener(itemListener);
+        addItemListener(itemListener);
         headerString = "Check All";
     }
 
@@ -40,16 +39,16 @@ class CheckBoxHeader extends JCheckBox implements TableCellRenderer, MouseListen
         if (table != null) {
             JTableHeader header = table.getTableHeader();
             if (header != null) {
-                rendererComponent.setForeground(header.getForeground());
-                rendererComponent.setBackground(header.getBackground());
-                rendererComponent.setFont(header.getFont());
-                header.addMouseListener(rendererComponent);
+                setForeground(header.getForeground());
+                setBackground(header.getBackground());
+                setFont(header.getFont());
+                header.addMouseListener(this);
             }
         }
         setColumn(column);
-        rendererComponent.setText(headerString);
+        setText(headerString);
         setBorder(UIManager.getBorder("TableHeader.cellBorder"));
-        return rendererComponent;
+        return this;
     }
 
     protected void setColumn(int column) {
@@ -67,9 +66,8 @@ class CheckBoxHeader extends JCheckBox implements TableCellRenderer, MouseListen
             JTable tableView = header.getTable();
             TableColumnModel columnModel = tableView.getColumnModel();
             int viewColumn = columnModel.getColumnIndexAtX(e.getX());
-            int column = tableView.convertColumnIndexToModel(viewColumn);
-
-            if (viewColumn == this.column && e.getClickCount() == 1 && column != -1)
+            int column_ = tableView.convertColumnIndexToModel(viewColumn);
+            if (viewColumn == this.column && e.getClickCount() == 1 && column_ != -1)
                 doClick();
         }
     }

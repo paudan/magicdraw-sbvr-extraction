@@ -548,6 +548,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
 
     private Collection<Actor> getActorsOfUseCase(UseCase including, DirectedRelationship exclude) {
         Collection<Actor> actors = new HashSet<>();
+        Collection<DirectedRelationship> visited = new HashSet<>();
         actors = addActors(actors, including);
         Collection<DirectedRelationship> includes = new HashSet<>();
         for (Include include : including.get_includeOfAddition())
@@ -568,10 +569,11 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                     uc = ((Extend) include).getExtendedCase();
                 if (uc != null) {
                     for (Include incl : uc.get_includeOfAddition())
-                        if (candidateElements.contains(incl))
+                        // Exclude previously visited relationships
+                        if (candidateElements.contains(incl) && !visited.contains(incl))
                             newIncludes.add(incl);
                     for (Extend extend : uc.get_extendOfExtendedCase())
-                        if (candidateElements.contains(extend))
+                        if (candidateElements.contains(extend) && !visited.contains(extend))
                             newIncludes.add(extend);
                     actors = addActors(actors, uc);
                     // The first actors which are found is set to be executing the given UseCase
@@ -579,6 +581,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                         return actors;
                 }
             }
+            visited.addAll(includes);
             includes = newIncludes;
         }
         return actors;

@@ -337,7 +337,8 @@ public class FactDiagramGenerator {
     private PresentationElement getElementWithName(DiagramPresentationElement targetDiagram, String name) {
         List<PresentationElement> elements = targetDiagram.getPresentationElements();
         for (PresentationElement element : elements)
-            if (element.getElement().getHumanName().substring("general concept".length() + 1).compareTo(name) == 0)
+            if (element.getElement() instanceof NamedElement &&  
+                    ((NamedElement)element.getElement()).getName().compareTo(name) == 0)
                 return element;
         return null;
     }

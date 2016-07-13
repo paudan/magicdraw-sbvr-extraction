@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class FilteredCandidateConceptModel extends AbstractCandidateConceptModel {
+public class FilteredCandidateConceptModel extends AbstractCandidateConceptModel  {
 
     private Map<List<String>, List<Boolean>> selected, traceOpt;
 
@@ -30,6 +30,8 @@ public class FilteredCandidateConceptModel extends AbstractCandidateConceptModel
     }
 
     public Boolean isCreateTrace(List<String> concepts, SBVRExpressionModel model) {
+        if (traceOpt.get(concepts) == null)
+            return null;
         return traceOpt.get(concepts).get(data.get(concepts).indexOf(model));
     }
 

@@ -175,8 +175,10 @@
               <SubComponents>
                 <Component class="javax.swing.JTable" name="JTable1">
                   <Properties>
-                    <Property name="autoCreateRowSorter" type="boolean" value="true"/>
                     <Property name="name" type="java.lang.String" value="JTable1" noResource="true"/>
+                    <Property name="rowSorter" type="javax.swing.RowSorter" editor="org.netbeans.modules.form.ComponentChooserEditor">
+                      <ComponentRef name="null"/>
+                    </Property>
                   </Properties>
                 </Component>
               </SubComponents>
@@ -188,6 +190,9 @@
                 </Property>
                 <Property name="name" type="java.lang.String" value="JButton6" noResource="true"/>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="JButton6ActionPerformed"/>
+              </Events>
             </Component>
             <Component class="javax.swing.JButton" name="jButton5">
               <Properties>
@@ -321,7 +326,6 @@
               <SubComponents>
                 <Component class="javax.swing.JTable" name="JTable4">
                   <Properties>
-                    <Property name="autoCreateRowSorter" type="boolean" value="true"/>
                     <Property name="name" type="java.lang.String" value="JTable4" noResource="true"/>
                   </Properties>
                 </Component>
@@ -407,6 +411,9 @@
                 </Property>
                 <Property name="name" type="java.lang.String" value="JButton9" noResource="true"/>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="JButton9ActionPerformed"/>
+              </Events>
             </Component>
           </SubComponents>
         </Container>
@@ -484,7 +491,6 @@
               <SubComponents>
                 <Component class="javax.swing.JTable" name="JTable5">
                   <Properties>
-                    <Property name="autoCreateRowSorter" type="boolean" value="true"/>
                     <Property name="name" type="java.lang.String" value="JTable5" noResource="true"/>
                   </Properties>
                 </Component>
@@ -497,6 +503,9 @@
                 </Property>
                 <Property name="name" type="java.lang.String" value="JButton12" noResource="true"/>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="JButton12ActionPerformed"/>
+              </Events>
             </Component>
             <Component class="javax.swing.JButton" name="jButton11">
               <Properties>

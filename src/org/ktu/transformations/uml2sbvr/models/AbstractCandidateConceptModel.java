@@ -103,6 +103,10 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
     public int size() {
         return data.size();
     }
+    
+    public boolean isEmpty() {
+        return data.isEmpty();
+    }
 
     public Map<List<String>, List<SBVRExpressionModel>> getDataset() {
         return data;

@@ -1,5 +1,6 @@
 package org.ktu.transformations.uml2sbvr.ui;
 
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -18,11 +19,14 @@ import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.LayoutStyle;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import org.ktu.transformations.uml2sbvr.models.AbstractCandidateConceptModel;
 import org.ktu.transformations.uml2sbvr.models.CandidateTableModel;
@@ -92,11 +96,11 @@ public class EditCandidateDialog extends JDialog {
         textArea = new JTextArea();
         btnCancel = new JButton();
         btnSave = new JButton();
-        previewLabel = new JLabel();
+        jScrollPane3 = new JScrollPane();
+        previewLabel = new JEditorPane();
 
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setTitle(bundle.getString("EditCandidateDialog.title")); // NOI18N
-        setAlwaysOnTop(true);
         setType(Type.UTILITY);
 
         jLabel1.setText(bundle.getString("EditCandidateDialog.jLabel1.text")); // NOI18N
@@ -104,7 +108,9 @@ public class EditCandidateDialog extends JDialog {
         jLabel2.setText(bundle.getString("EditCandidateDialog.jLabel2.text")); // NOI18N
 
         textArea.setColumns(20);
+        textArea.setFont(new Font("Tahoma", 0, 11)); // NOI18N
         textArea.setRows(5);
+        textArea.setWrapStyleWord(true);
         textArea.addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent evt) {
                 textAreaKeyReleased(evt);
@@ -121,7 +127,15 @@ public class EditCandidateDialog extends JDialog {
 
         btnSave.setText(bundle.getString("EditCandidateDialog.btnSave.text")); // NOI18N
 
+        jScrollPane3.setBorder(null);
+        jScrollPane3.setForeground(UIManager.getDefaults().getColor("Label.background"));
+        jScrollPane3.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
+        previewLabel.setEditable(false);
+        previewLabel.setBackground(UIManager.getDefaults().getColor("control"));
+        previewLabel.setContentType("text/html"); // NOI18N
         previewLabel.setText(bundle.getString("EditCandidateDialog.previewLabel.text")); // NOI18N
+        jScrollPane3.setViewportView(previewLabel);
 
         GroupLayout layout = new GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -142,8 +156,8 @@ public class EditCandidateDialog extends JDialog {
                         .addComponent(jLabel2)
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                            .addComponent(previewLabel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 273, Short.MAX_VALUE))))
+                            .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+                            .addComponent(jScrollPane3))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
@@ -156,8 +170,8 @@ public class EditCandidateDialog extends JDialog {
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel2)
                     .addComponent(jScrollPane1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(previewLabel, GroupLayout.DEFAULT_SIZE, 18, Short.MAX_VALUE)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 67, Short.MAX_VALUE)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(btnCancel)
@@ -172,13 +186,13 @@ public class EditCandidateDialog extends JDialog {
     public JButton getBtnCancel() {
         return btnCancel;
     }
-    
-        private void init_new() {
+
+    private void init_new() {
         final EditCandidateDialog dlg = this;
         dlg.setTitle("Add new candidate concept");
         final Map<String, List<String>> map = new HashMap<>();
         for (List<String> element : data.manualExtractionCandidates())
-            map.put(AbstractCandidateConceptModel.getConceptsRepresentation(element), elements);
+            map.put(AbstractCandidateConceptModel.getConceptsRepresentation(element), element);
         comboBox.setModel(new DefaultComboBoxModel(map.keySet().toArray()));
         comboBox.addItemListener(new ItemListener() {
 
@@ -273,7 +287,7 @@ public class EditCandidateDialog extends JDialog {
 
             if (!canadd)
                 return false;
-            else {
+            else
                 if (gcTemp.size() > 0)
                     for (Object[] obj : gcTemp) {
                         SBVRExpressionModel model = new SBVRExpressionModel();
@@ -281,11 +295,10 @@ public class EditCandidateDialog extends JDialog {
                         model.setAuto(false);
                         List<String> candidates = (List<String>) obj[0];
                         parentDlg.gcCandidates.add(candidates, model, data.getSourceData().get(candidates));
-                        parentDlg.getGCTableModel().addRow(new Object[]{true, 
+                        parentDlg.getGCTableModel().addRow(new Object[]{true,
                             dlg.getComboBox().getSelectedItem().toString(), model.toHTMLString(true, null), false});
 
                     }
-            }
             SBVRExpressionModel model = new SBVRExpressionModel();
             String split[] = candidate.split(" ");
             for (int i = 0; i < split.length; i++)
@@ -307,14 +320,10 @@ public class EditCandidateDialog extends JDialog {
 
     private void updatePreviewLabel(EditCandidateDialog dlg) {
         if (type == ConceptType.GENERAL_CONCEPT)
-            dlg.getPreviewLabel().setText("<html>" + 
-                    String.format(SBVRExpressionModel.CGC_FORMAT, dlg.getTextArea().getText()) + "</html>"); 
+            dlg.getPreviewLabel().setText("<html>"
+                    + String.format(SBVRExpressionModel.CGC_FORMAT, dlg.getTextArea().getText()) + "</html>");
         else if (type == ConceptType.VERB_CONCEPT)
-            dlg.getPreviewLabel().setText("<html>" + underscoreToHTML(dlg.getTextArea().getText()) + "</html>"); 
-        int height = dlg.getPreviewLabel().getHeight();
-        if (height != previousHeight)
-            previousHeight = height;
-        dlg.setSize(dlg.getWidth(), 240 + previousHeight);
+            dlg.getPreviewLabel().setText("<html>" + underscoreToHTML(dlg.getTextArea().getText()) + "</html>");
     }
 
     public JComboBox getComboBox() {
@@ -324,8 +333,8 @@ public class EditCandidateDialog extends JDialog {
     public JTextArea getTextArea() {
         return textArea;
     }
-    
-    public JLabel getPreviewLabel() {
+
+    public JEditorPane getPreviewLabel() {
         return previewLabel;
     }
 
@@ -400,7 +409,7 @@ public class EditCandidateDialog extends JDialog {
 
     private String underscoreToHTML(String text) {
         String result = new String();
-        String split[] = text.trim().split(" ");
+        String split[] = text.trim().split("\\s+");
         for (int i = 0; i < split.length; i++) {
             // Apply pattern <general concept><verb concept><general concept><verb concept>....
             String tmp = split[i].trim().replace("_", " ");
@@ -424,7 +433,8 @@ public class EditCandidateDialog extends JDialog {
     private JLabel jLabel1;
     private JLabel jLabel2;
     private JScrollPane jScrollPane1;
-    private JLabel previewLabel;
+    private JScrollPane jScrollPane3;
+    private JEditorPane previewLabel;
     private JTextArea textArea;
     // End of variables declaration//GEN-END:variables
 }

@@ -18,9 +18,12 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.Collator;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -34,6 +37,17 @@ public class StatsCollectionVisitor extends Visitor {
     private Map<String, Map<String, Map<String, Integer[]>>> stats;
     private final String packageName, prefix;
     private String diagramName;
+
+    private class StringComparator implements Comparator<String> {
+
+        @Override
+        public int compare(String o1, String o2) {
+            Collator usCollator = Collator.getInstance(Locale.getDefault());
+            usCollator.setStrength(Collator.PRIMARY);
+            return usCollator.compare(o1, o2);
+        }
+
+    }
 
     public StatsCollectionVisitor(Boolean strict, Map<String, Map<String, Map<String, Integer[]>>> stats, String packageName, String prefix) {
         this.strict = strict;
@@ -85,7 +99,7 @@ public class StatsCollectionVisitor extends Visitor {
                 outbr.println("Model name: " + packageName);
                 if (diagramName != null)
                     outbr.println("Diagram: " + diagramName);
-                Set<String> items = new TreeSet<>();
+                Set<String> items = new TreeSet<>(new StringComparator());
                 for (Element el : element.getOwnedElement()) {
                     String name = el.getHumanName();
                     if (el instanceof Constraint) {
@@ -121,9 +135,11 @@ public class StatsCollectionVisitor extends Visitor {
         writer.println("Model name: " + packageName);
         if (diagramName != null)
             writer.println("Diagram: " + diagramName);
-        Set<String> gcItems = new TreeSet<>(), vcItems = new TreeSet<>(), ucItems = new TreeSet<>();
+        Set<String> gcItems = new TreeSet<>(new StringComparator()), 
+                vcItems = new TreeSet<>(new StringComparator()), 
+                ucItems = new TreeSet<>(new StringComparator());
         for (Element el : element.getOwnedElement())
-            if (el instanceof Association && ((Association)el).getHumanName().startsWith("association")) {
+            if (el instanceof Association && ((Association) el).getHumanName().startsWith("association")) {
                 Association assoc = (Association) el;
                 List<Property> ends = assoc.getMemberEnd();
                 String name = ends.get(1).getType().getHumanName();

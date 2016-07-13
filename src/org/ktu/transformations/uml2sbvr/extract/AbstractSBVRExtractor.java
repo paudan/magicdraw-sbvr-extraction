@@ -218,16 +218,23 @@ public abstract class AbstractSBVRExtractor {
             readElements(diagram);
     }
     
+    // TODO: Needed recursive support for reading deeper element trees 
     protected Collection<Element> getPackageElements(Package model) {
         Collection<Element> newelem = new HashSet<>();
         newelem.add(model);
         newelem.addAll(model.getOwnedElement());
+        /*for (Element e : model.getOwnedElement())
+            if (!(e instanceof com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package))
+                newelem.addAll(e.getOwnedElement());*/
         Collection<Package> packages = new HashSet<>();
         packages.addAll(model.getNestedPackage());
         while (!packages.isEmpty()) {
             Collection<Package> newPack = new HashSet<>();
             for (Package pack : packages) {
                 newelem.addAll(pack.getOwnedElement());
+                for (Element e : pack.getOwnedElement())
+                    if (!(e instanceof com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package))
+                        newelem.addAll(e.getOwnedElement());
                 newPack.addAll(pack.getNestedPackage());
             }
             packages = newPack;

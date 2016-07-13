@@ -100,29 +100,12 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         copy_brCandidates = brCandidates.clone();
         vcCandidates.removeAll();
         brCandidates.removeAll();
-        updateTableModel(JTable1, messages_gcTable, gcCandidates, jRadioButton3.isSelected() ? null : jRadioButton2.isSelected());
+        updateTableModel(JTable1, messages_gcTable, gcCandidates,
+                jRadioButton3.isSelected() ? null : jRadioButton2.isSelected(), false);
         int tabcount = jTabbedPane1.getTabCount();
         jTabbedPane1.setEnabledAt(tabcount - 2, false);
         jTabbedPane1.setEnabledAt(tabcount - 1, false);
         JButton3.setEnabled(false);
-        JButton6.addActionListener(new java.awt.event.ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                preview(1);
-            }
-        });
-        JButton9.addActionListener(new java.awt.event.ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                preview(2);
-            }
-        });
-        JButton12.addActionListener(new java.awt.event.ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                preview(3);
-            }
-        });
         final ExtractionWizardDialog thisDlg = this;
         JTable1.addMouseListener(new MouseAdapter() {
             @Override
@@ -161,7 +144,6 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             }
         });
     }
-
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -222,12 +204,17 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
 
         jScrollPane2.setName("jScrollPane2"); // NOI18N
 
-        JTable1.setAutoCreateRowSorter(true);
         JTable1.setName("JTable1"); // NOI18N
+        JTable1.setRowSorter(null);
         jScrollPane2.setViewportView(JTable1);
 
         JButton6.setText(bundle.getString("ExtractionWizardDialog.JButton6.text")); // NOI18N
         JButton6.setName("JButton6"); // NOI18N
+        JButton6.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                JButton6ActionPerformed(evt);
+            }
+        });
 
         jButton5.setText(bundle.getString("ExtractionWizardDialog.jButton5.text")); // NOI18N
         jButton5.setName("jButton5"); // NOI18N
@@ -312,7 +299,6 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
 
         jScrollPane3.setName("jScrollPane3"); // NOI18N
 
-        JTable4.setAutoCreateRowSorter(true);
         JTable4.setName("JTable4"); // NOI18N
         jScrollPane3.setViewportView(JTable4);
 
@@ -365,6 +351,11 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
 
         JButton9.setText(bundle.getString("ExtractionWizardDialog.JButton9.text")); // NOI18N
         JButton9.setName("JButton9"); // NOI18N
+        JButton9.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                JButton9ActionPerformed(evt);
+            }
+        });
 
         GroupLayout jPanel3Layout = new GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
@@ -422,12 +413,16 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
 
         jScrollPane4.setName("jScrollPane4"); // NOI18N
 
-        JTable5.setAutoCreateRowSorter(true);
         JTable5.setName("JTable5"); // NOI18N
         jScrollPane4.setViewportView(JTable5);
 
         JButton12.setText(bundle.getString("ExtractionWizardDialog.JButton12.text")); // NOI18N
         JButton12.setName("JButton12"); // NOI18N
+        JButton12.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                JButton12ActionPerformed(evt);
+            }
+        });
 
         jButton11.setText(bundle.getString("ExtractionWizardDialog.jButton11.text")); // NOI18N
         jButton11.setName("jButton11"); // NOI18N
@@ -594,41 +589,53 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
 
     private void jRadioButton1ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jRadioButton1ActionPerformed
         if (jRadioButton1.isSelected())
-            updateTableModel(JTable1, messages_gcTable, gcCandidates, false);
+            updateTableModel(JTable1, messages_gcTable, gcCandidates, false, false);
     }//GEN-LAST:event_jRadioButton1ActionPerformed
 
     private void jRadioButton2ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jRadioButton2ActionPerformed
         if (jRadioButton2.isSelected())
-            updateTableModel(JTable1, messages_gcTable, gcCandidates, true);
+            updateTableModel(JTable1, messages_gcTable, gcCandidates, true, false);
     }//GEN-LAST:event_jRadioButton2ActionPerformed
 
     private void jRadioButton3ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jRadioButton3ActionPerformed
         if (jRadioButton3.isSelected())
-            updateTableModel(JTable1, messages_gcTable, gcCandidates, null);
+            updateTableModel(JTable1, messages_gcTable, gcCandidates, null, false);
     }//GEN-LAST:event_jRadioButton3ActionPerformed
 
     private void jRadioButton4ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jRadioButton4ActionPerformed
         if (jRadioButton4.isSelected())
-            updateTableModel(JTable4, messages_vcTable, vcCandidates, false);
+            updateTableModel(JTable4, messages_vcTable, vcCandidates, false, false);
     }//GEN-LAST:event_jRadioButton4ActionPerformed
 
     private void jRadioButton5ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jRadioButton5ActionPerformed
         if (jRadioButton5.isSelected())
-            updateTableModel(JTable4, messages_vcTable, vcCandidates, true);
+            updateTableModel(JTable4, messages_vcTable, vcCandidates, true, false);
     }//GEN-LAST:event_jRadioButton5ActionPerformed
 
     private void jRadioButton6ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jRadioButton6ActionPerformed
         if (jRadioButton6.isSelected())
-            updateTableModel(JTable4, messages_vcTable, vcCandidates, null);
+            updateTableModel(JTable4, messages_vcTable, vcCandidates, null, false);
     }//GEN-LAST:event_jRadioButton6ActionPerformed
+
+    private void JButton6ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_JButton6ActionPerformed
+        preview(1);
+    }//GEN-LAST:event_JButton6ActionPerformed
+
+    private void JButton9ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_JButton9ActionPerformed
+        preview(2);
+    }//GEN-LAST:event_JButton9ActionPerformed
+
+    private void JButton12ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_JButton12ActionPerformed
+        preview(3);
+    }//GEN-LAST:event_JButton12ActionPerformed
 
     private void restoreDefault() {
         gcCandidates = copy_gcCandidates;
         vcCandidates = copy_vcCandidates;
         brCandidates = copy_brCandidates;
-        updateTableModel(JTable1, messages_gcTable, gcCandidates, jRadioButton3.isSelected() ? null : jRadioButton2.isSelected());
-        updateTableModel(JTable4, messages_vcTable, vcCandidates, jRadioButton6.isSelected() ? null : jRadioButton5.isSelected());
-        updateTableModel(JTable5, messages_brTable, brCandidates, null);
+        updateTableModel(JTable1, messages_gcTable, gcCandidates, jRadioButton3.isSelected() ? null : jRadioButton2.isSelected(), true);
+        updateTableModel(JTable4, messages_vcTable, vcCandidates, jRadioButton6.isSelected() ? null : jRadioButton5.isSelected(), true);
+        updateTableModel(JTable5, messages_brTable, brCandidates, null, true);
     }
 
     private void nextStep(int step) {
@@ -638,22 +645,24 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         for (int i = 0; i < tabcount; i++)
             jTabbedPane1.setEnabledAt(i, index == i);
         if (index == tabcount - 3 && step > 0)
-            updateTableModel(JTable1, messages_gcTable, gcCandidates, jRadioButton3.isSelected() ? null : jRadioButton2.isSelected());
-        else if (index == tabcount - 2) {
+            updateTableModel(JTable1, messages_gcTable, gcCandidates,
+                    jRadioButton3.isSelected() ? null : jRadioButton2.isSelected(), false);
+        else if (index == tabcount - 2 && vcCandidates.isEmpty()) {
             gcCandidates.setAllIdentified(step > 0);
             if (step > 0) {
                 extractor.createVerbConceptCandidates();
                 if (extractModelVoc)
                     extractor.createModelVocabularyCandidates();
                 vcCandidates = (FilteredCandidateConceptModel) extractor.getVCCandidateModel();
-                updateTableModel(JTable4, messages_vcTable, vcCandidates, jRadioButton6.isSelected() ? null : jRadioButton5.isSelected());
+                updateTableModel(JTable4, messages_vcTable, vcCandidates,
+                        jRadioButton6.isSelected() ? null : jRadioButton5.isSelected(), false);
             }
-        } else if (index == tabcount - 1) {
+        } else if (index == tabcount - 1 && brCandidates.isEmpty()) {
             vcCandidates.setAllIdentified(step > 0);
             if (step > 0) {
                 extractor.createBusinessRuleCandidates();
                 brCandidates = (FilteredCandidateConceptModel) extractor.getBRCandidateModel();
-                updateTableModel(JTable5, messages_brTable, brCandidates, null);
+                updateTableModel(JTable5, messages_brTable, brCandidates, null, false);
             }
         }
         JButton3.setEnabled(index != 0);
@@ -663,9 +672,10 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             JButton2.setText(bundle.getString("ExtractionWizardDialog_29"));
     }
 
-    private void updateTableModel(final JTable table, String[] messages, FilteredCandidateConceptModel modeldata, Boolean modelVoc) {
+    private void updateTableModel(final JTable table, String[] messages, FilteredCandidateConceptModel modeldata,
+            Boolean modelVoc, boolean restore) {
         TableModel tmodel = table.getModel();
-        if (tmodel == null || !(tmodel instanceof CandidateTableModel))
+        if (tmodel == null || !(tmodel instanceof CandidateTableModel) || restore)
             table.setModel(new CandidateTableModel(modeldata, messages));
         CandidateTableModel model = (CandidateTableModel) table.getModel();
         if (modelVoc == null)

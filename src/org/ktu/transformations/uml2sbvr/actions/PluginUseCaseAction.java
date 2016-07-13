@@ -3,16 +3,12 @@ package org.ktu.transformations.uml2sbvr.actions;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.ui.dialogs.MDDialogParentProvider;
-import com.nomagic.magicdraw.uml.DiagramTypeConstants;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
-import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Diagram;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Collection;
-import java.util.HashSet;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import org.ktu.transformations.uml2sbvr.PluginUtilities;
@@ -110,9 +106,11 @@ public class PluginUseCaseAction {
                     @Override
                     public void windowClosing(WindowEvent e) {
                         dlg.setVisible(false);
+                        otDlg.setVisible(false);
                     }
                 });
                 dlg.setVisible(true);
+                otDlg.setVisible(false);
             }
 
         });
