@@ -12,6 +12,7 @@ import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.PrintWriter;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,9 +42,12 @@ import org.ktu.transformations.uml2sbvr.PluginUtilities;
 import org.ktu.transformations.uml2sbvr.extract.AbstractSBVRExtractor;
 import org.ktu.transformations.uml2sbvr.extract.FactDiagramGenerator;
 import org.ktu.transformations.uml2sbvr.models.CandidateTableModel;
+import org.ktu.transformations.uml2sbvr.models.CandidateTableModel.CandidateEntry;
 import org.ktu.transformations.uml2sbvr.models.FilteredCandidateConceptModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel.ExpressionType;
+import org.ktu.transformations.uml2sbvr.ui.EditCandidateDialog.ConceptType;
+import org.ktu.transformations.uml2sbvr.ui.EditCandidateDialog.Operation;
 
 /**
  *
@@ -111,10 +115,17 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
-                    EditCandidateDialog dlg = new EditCandidateDialog(thisDlg, bundle.getString("ExtractionWizardDialog_32"),
-                            true, EditCandidateDialog.Operation.EDIT, EditCandidateDialog.ConceptType.GENERAL_CONCEPT);
-                    dlg.setCandidateIndex(JTable1.getSelectedRow());
-                    dlg.setVisible(true);
+                    int row = JTable1.getSelectedRow();
+                    int actual = JTable1.convertRowIndexToModel(row);
+                    if (getGCTableModel().getEntryAt(actual).getExpression().isModelVocabularyConcept())
+                        JOptionPane.showMessageDialog(thisDlg, bundle.getString("ExtractionWizardDialog_56"),
+                                bundle.getString("ExtractionWizardDialog_57"), JOptionPane.WARNING_MESSAGE);
+                    else {
+                        EditCandidateDialog dlg = new EditCandidateDialog(thisDlg, bundle.getString("ExtractionWizardDialog_32"),
+                                true, Operation.EDIT, ConceptType.GENERAL_CONCEPT);
+                        dlg.setCandidateIndex(actual);
+                        dlg.setVisible(true);
+                    }
                 } else if (e.getClickCount() == 1)
                     applyFilter(JTable1, gcCandidates);
             }
@@ -123,10 +134,17 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
-                    EditCandidateDialog dlg = new EditCandidateDialog(thisDlg, bundle.getString("ExtractionWizardDialog_33"), true,
-                            EditCandidateDialog.Operation.EDIT, EditCandidateDialog.ConceptType.VERB_CONCEPT);
-                    dlg.setCandidateIndex(JTable4.getSelectedRow());
-                    dlg.setVisible(true);
+                    int row = JTable4.getSelectedRow();
+                    int actual = JTable4.convertRowIndexToModel(row);
+                    if (getVCTableModel().getEntryAt(actual).getExpression().isModelVocabularyConcept())
+                        JOptionPane.showMessageDialog(thisDlg, bundle.getString("ExtractionWizardDialog_56"),
+                                bundle.getString("ExtractionWizardDialog_57"), JOptionPane.WARNING_MESSAGE);
+                    else {
+                        EditCandidateDialog dlg = new EditCandidateDialog(thisDlg, bundle.getString("ExtractionWizardDialog_33"), true,
+                                Operation.EDIT, ConceptType.VERB_CONCEPT);
+                        dlg.setCandidateIndex(actual);
+                        dlg.setVisible(true);
+                    }
                 } else if (e.getClickCount() == 1)
                     applyFilter(JTable4, vcCandidates);
             }
@@ -136,8 +154,10 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     EditCandidateDialog dlg = new EditCandidateDialog(thisDlg, bundle.getString("ExtractionWizardDialog_34"), true,
-                            EditCandidateDialog.Operation.EDIT, EditCandidateDialog.ConceptType.BUSINESS_RULE);
-                    dlg.setCandidateIndex(JTable5.getSelectedRow());
+                            Operation.EDIT, ConceptType.BUSINESS_RULE);
+                    int row = JTable5.getSelectedRow();
+                    int actual = JTable5.convertRowIndexToModel(row);
+                    dlg.setCandidateIndex(actual);
                     dlg.setVisible(true);
                 } else if (e.getClickCount() == 1)
                     applyFilter(JTable5, brCandidates);
@@ -204,8 +224,8 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
 
         jScrollPane2.setName("jScrollPane2"); // NOI18N
 
+        JTable1.setAutoCreateRowSorter(true);
         JTable1.setName("JTable1"); // NOI18N
-        JTable1.setRowSorter(null);
         jScrollPane2.setViewportView(JTable1);
 
         JButton6.setText(bundle.getString("ExtractionWizardDialog.JButton6.text")); // NOI18N
@@ -299,6 +319,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
 
         jScrollPane3.setName("jScrollPane3"); // NOI18N
 
+        JTable4.setAutoCreateRowSorter(true);
         JTable4.setName("JTable4"); // NOI18N
         jScrollPane3.setViewportView(JTable4);
 
@@ -413,6 +434,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
 
         jScrollPane4.setName("jScrollPane4"); // NOI18N
 
+        JTable5.setAutoCreateRowSorter(true);
         JTable5.setName("JTable5"); // NOI18N
         jScrollPane4.setViewportView(JTable5);
 
@@ -524,12 +546,12 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
 
     private void jButton11ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jButton11ActionPerformed
         new EditCandidateDialog(this, bundle.getString("ExtractionWizardDialog_34"), true,
-                EditCandidateDialog.Operation.NEW, EditCandidateDialog.ConceptType.BUSINESS_RULE).setVisible(true);
+                Operation.NEW, ConceptType.BUSINESS_RULE).setVisible(true);
     }//GEN-LAST:event_jButton11ActionPerformed
 
     private void jButton4ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         new EditCandidateDialog(this, bundle.getString("ExtractionWizardDialog_32"), true,
-                EditCandidateDialog.Operation.NEW, EditCandidateDialog.ConceptType.GENERAL_CONCEPT).setVisible(true);
+                Operation.NEW, ConceptType.GENERAL_CONCEPT).setVisible(true);
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void JButton2ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_JButton2ActionPerformed
@@ -584,7 +606,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
 
     private void jButton8ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
         new EditCandidateDialog(this, bundle.getString("ExtractionWizardDialog_33"), true,
-                EditCandidateDialog.Operation.NEW, EditCandidateDialog.ConceptType.VERB_CONCEPT).setVisible(true);
+                Operation.NEW, ConceptType.VERB_CONCEPT).setVisible(true);
     }//GEN-LAST:event_jButton8ActionPerformed
 
     private void jRadioButton1ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jRadioButton1ActionPerformed
@@ -629,10 +651,19 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         preview(3);
     }//GEN-LAST:event_JButton12ActionPerformed
 
+    public void addReplacement(String original, String replacement, SBVRExpressionModel expression, ConceptType type) {
+        if (type == ConceptType.GENERAL_CONCEPT)
+            extractor.getGCReplacements().put(original, new SimpleImmutableEntry<>(replacement, expression));
+        else if (type == ConceptType.VERB_CONCEPT)
+            extractor.getVCReplacements().put(original, new SimpleImmutableEntry<>(replacement, expression));
+    }
+
     private void restoreDefault() {
-        gcCandidates = copy_gcCandidates;
-        vcCandidates = copy_vcCandidates;
-        brCandidates = copy_brCandidates;
+        gcCandidates = copy_gcCandidates.clone();
+        vcCandidates = copy_vcCandidates.clone();
+        brCandidates = copy_brCandidates.clone();
+        extractor.getGCReplacements().clear();
+        extractor.getVCReplacements().clear();
         updateTableModel(JTable1, messages_gcTable, gcCandidates, jRadioButton3.isSelected() ? null : jRadioButton2.isSelected(), true);
         updateTableModel(JTable4, messages_vcTable, vcCandidates, jRadioButton6.isSelected() ? null : jRadioButton5.isSelected(), true);
         updateTableModel(JTable5, messages_brTable, brCandidates, null, true);
@@ -644,11 +675,13 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         final int tabcount = jTabbedPane1.getTabCount();
         for (int i = 0; i < tabcount; i++)
             jTabbedPane1.setEnabledAt(i, index == i);
-        if (index == tabcount - 3 && step > 0)
+        boolean identifiedFlag = step > 0;
+        if (index == tabcount - 3) {
+            gcCandidates.setAllIdentified(identifiedFlag);
             updateTableModel(JTable1, messages_gcTable, gcCandidates,
                     jRadioButton3.isSelected() ? null : jRadioButton2.isSelected(), false);
-        else if (index == tabcount - 2 && vcCandidates.isEmpty()) {
-            gcCandidates.setAllIdentified(step > 0);
+        } else if (index == tabcount - 2) {
+            gcCandidates.setAllIdentified(identifiedFlag);
             if (step > 0) {
                 extractor.createVerbConceptCandidates();
                 if (extractModelVoc)
@@ -657,8 +690,8 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
                 updateTableModel(JTable4, messages_vcTable, vcCandidates,
                         jRadioButton6.isSelected() ? null : jRadioButton5.isSelected(), false);
             }
-        } else if (index == tabcount - 1 && brCandidates.isEmpty()) {
-            vcCandidates.setAllIdentified(step > 0);
+        } else if (index == tabcount - 1) {
+            vcCandidates.setAllIdentified(identifiedFlag);
             if (step > 0) {
                 extractor.createBusinessRuleCandidates();
                 brCandidates = (FilteredCandidateConceptModel) extractor.getBRCandidateModel();
@@ -805,9 +838,15 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         if (table.getSelectedColumn() == 0) {
             CandidateTableModel model = (CandidateTableModel) table.getModel();
             int row = table.getSelectedRow();
+            row = table.convertRowIndexToModel(row);
+            CandidateEntry entry = model.getEntryAt(row);
             boolean value = (Boolean) model.getValueAt(row, table.getSelectedColumn());
-            data.setSelectedState(model.getElementsAt(row), model.getExpressionModelAt(row), value);
+            data.setSelectedState(entry.getElements(), entry.getExpression(), value);
         }
+    }
+
+    public AbstractSBVRExtractor getExtractor() {
+        return extractor;
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -15,24 +15,57 @@ public class CandidateTableModel extends DefaultTableModel {
     private final boolean[] canEdit = new boolean[]{
         true, false, false, false, true
     };
+    
+    public static class CandidateEntry {
+        
+        private List<String> elements;
+        private SBVRExpressionModel expression;
+        private Boolean selected, trace;
+        private String original;
 
-    private final List<List<String>> elements;
-    private final List<SBVRExpressionModel> expressions;
-    private final List<Boolean> selected, traces;
-    private final FilteredCandidateConceptModel data;
-    private final Vector<String> cols;
-    private final Vector<Object> cgc;
+        public CandidateEntry(List<String> elements, SBVRExpressionModel expression, 
+                Boolean selected, Boolean trace, String original) {
+            this.elements = elements;
+            this.expression = expression;
+            this.selected = selected;
+            this.trace = trace;
+            this.original = original;
+        }
+
+        public List<String> getElements() {
+            return elements;
+        }
+
+        public SBVRExpressionModel getExpression() {
+            return expression;
+        }
+
+        public Boolean getSelected() {
+            return selected;
+        }
+
+        public Boolean getTrace() {
+            return trace;
+        }
+
+        public String getOriginalString() {
+            return original;
+        }
+
+    }
+    
+    protected final FilteredCandidateConceptModel data;
+    protected List<CandidateEntry> entries;
+    protected final Vector<String> cols;
+    protected final Vector<Object> cgc;
 
     public CandidateTableModel(FilteredCandidateConceptModel dataset, String[] messages) {
         super();
         this.data = dataset;
+        entries = new ArrayList<>();
         cols = new Vector<>(Arrays.asList(messages).subList(0, 4));
         cols.add(0, "");
         cgc = new Vector<>();
-        elements = new ArrayList<>();
-        expressions = new ArrayList<>();
-        selected = new ArrayList<>();
-        traces = new ArrayList<>();
         setDefaultView();
     }
 
@@ -74,10 +107,11 @@ public class CandidateTableModel extends DefaultTableModel {
     }
     
     private void addEntries(List<String> concepts, SBVRExpressionModel obj, Boolean trace) {
-        elements.add(concepts);
-        expressions.add(obj);
-        selected.add(true);
-        traces.add(trace);
+        entries.add(new CandidateEntry(concepts, obj, true, trace, obj.toString()));
+    }
+    
+    public CandidateEntry getEntryAt(Integer index) {
+        return entries.get(index);
     }
 
     @Override
@@ -101,9 +135,7 @@ public class CandidateTableModel extends DefaultTableModel {
 
     private void clearView() {
         cgc.clear();
-        elements.clear();
-        expressions.clear();
-        selected.clear();
+        entries.clear();
     }
 
     @Override
@@ -116,40 +148,24 @@ public class CandidateTableModel extends DefaultTableModel {
         return canEdit[columnIndex];
     }
 
-    public List<String> getElementsAt(int index) {
-        if (index >= elements.size())
-            return new ArrayList<>();
-        return elements.get(index);
-    }
-
-    public boolean getSelectedAt(int index) {
-        if (index >= selected.size())
-            return false;
-        return selected.get(index);
-    }
-
-    public SBVRExpressionModel getExpressionModelAt(int index) {
-        if (index >= expressions.size())
-            return null;
-        return expressions.get(index);
-    }
-
     @Override
     public void setValueAt(Object rowData, int row, int column) {
         Object repr = column == 2 ? ((SBVRExpressionModel) rowData).toHTMLString(true, Boolean.TRUE) : rowData;
         super.setValueAt(repr, row, column);
+        CandidateEntry entry = getEntryAt(row);
         switch (column) {
             case 1:
-                elements.set(row, (List<String>) rowData);
+                entry.elements = (List<String>) rowData;
                 break;
             case 2:
-                expressions.set(row, (SBVRExpressionModel) rowData);
+                entry.expression = (SBVRExpressionModel) rowData;
                 break;
             case 3:
-                selected.set(row, (Boolean) rowData);
+                entry.selected = (Boolean) rowData;
                 break;
             case 4:
-                data.setCreateTrace(getElementsAt(row), getExpressionModelAt(row),
+                entry.trace = (Boolean) rowData;
+                data.setCreateTrace(entry.elements, entry.expression,
                         Boolean.parseBoolean(getValueAt(row, column).toString()));
                 break;
             default:

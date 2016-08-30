@@ -37,21 +37,14 @@ public class SBVRExpressionModel implements Cloneable {
     private List<String> expressions;
     private boolean auto;
     private SBVRExpressionModel general_concept;
-    private final List<SBVRExpressionModel> synonymous_forms;
+    private List<SBVRExpressionModel> synonymous_forms;
     private boolean mmVocConcept;               // Is it a SBVR concept which belongs metamodel vocabulary?
     private List<Boolean> identified;   	// Identified by the user previously
-    // Last user modifications
-    private List<String> modifications;
-    private List<ExpressionType> types_modified;
-    private List<Boolean> identified_mod;
 
     public SBVRExpressionModel() {
         types = new ArrayList<>();
         expressions = new ArrayList<>();
         identified = new ArrayList<>();
-        modifications = new ArrayList<>();
-        types_modified = new ArrayList<>();
-        identified_mod = new ArrayList<>();
         synonymous_forms = new ArrayList<>();
         general_concept = null;
         // By default, this SBVRExpressionModel does not represent a model vocabulary concept
@@ -62,9 +55,6 @@ public class SBVRExpressionModel implements Cloneable {
         types.add(ExpressionType.GENERAL_CONCEPT);
         expressions.add(expression);
         identified.add(isIdentified);
-        modifications.add(expression);
-        types_modified.add(ExpressionType.GENERAL_CONCEPT);
-        identified_mod.add(isIdentified);
         return this;
     }
 
@@ -72,9 +62,6 @@ public class SBVRExpressionModel implements Cloneable {
         types.add(ExpressionType.INDIVIDUAL_CONCEPT);
         expressions.add(expression);
         identified.add(isIdentified);
-        modifications.add(expression);
-        types_modified.add(ExpressionType.INDIVIDUAL_CONCEPT);
-        identified_mod.add(isIdentified);
         return this;
     }
 
@@ -82,9 +69,6 @@ public class SBVRExpressionModel implements Cloneable {
         types.add(ExpressionType.VERB_CONCEPT);
         expressions.add(expression);
         identified.add(isIdentified);
-        modifications.add(expression);
-        types_modified.add(ExpressionType.VERB_CONCEPT);
-        identified_mod.add(isIdentified);
         return this;
     }
 
@@ -92,9 +76,6 @@ public class SBVRExpressionModel implements Cloneable {
         types.add(ExpressionType.RULE_TYPE);
         expressions.add(type.toString());
         identified.add(true);
-        modifications.add(type.toString());
-        types_modified.add(ExpressionType.RULE_TYPE);
-        identified_mod.add(true);
         return this;
     }
 
@@ -102,9 +83,6 @@ public class SBVRExpressionModel implements Cloneable {
         types.add(ExpressionType.RULE_IF);
         expressions.add("if"); 
         identified.add(true);
-        modifications.add("if"); 
-        types_modified.add(ExpressionType.RULE_IF);
-        identified_mod.add(true);
         return this;
     }
 
@@ -112,9 +90,6 @@ public class SBVRExpressionModel implements Cloneable {
         types.add(ExpressionType.GENERIC);
         expressions.add(expression);
         identified.add(false);
-        modifications.add(expression);
-        types_modified.add(ExpressionType.GENERIC);
-        identified_mod.add(false);
         return this;
     }
 
@@ -122,19 +97,17 @@ public class SBVRExpressionModel implements Cloneable {
         types.addAll(model.types);
         expressions.addAll(model.expressions);
         identified.addAll(model.identified);
-        modifications.addAll(model.modifications);
-        types_modified.addAll(model.types_modified);
-        identified_mod.addAll(model.identified_mod);
         return this;
     }
 
-    public void modify(SBVRExpressionModel modification) {
-        modifications.clear();
-        types_modified.clear();
-        identified_mod.clear();
-        modifications.addAll(modification.modifications);
-        types_modified.addAll(modification.types_modified);
-        identified_mod.addAll(modification.identified_mod);
+    public void replace(SBVRExpressionModel modification) {
+        types = modification.types;
+        expressions = modification.expressions;
+        identified = modification.identified;
+        auto = modification.auto;
+        general_concept = modification.general_concept;
+        mmVocConcept = modification.mmVocConcept;
+        synonymous_forms = modification.synonymous_forms;
     }
 
     public boolean isAuto() {
@@ -148,8 +121,6 @@ public class SBVRExpressionModel implements Cloneable {
     public void setIdentified(boolean value) {
         for (int i = 0; i < identified.size(); i++)
             identified.set(i, value);
-        for (int i = 0; i < identified_mod.size(); i++)
-            identified_mod.set(i, value);
     }
 
     public boolean originalEqualsTo(SBVRExpressionModel model) {
@@ -161,19 +132,19 @@ public class SBVRExpressionModel implements Cloneable {
     }
 
     public String getExpressionElement(int index) {
-        if (modifications.size() <= index)
+        if (expressions.size() <= index)
             return null;
-        return modifications.get(index);
+        return expressions.get(index);
     }
 
     public ExpressionType getExpressionType(int index) {
-        if (types_modified.size() <= index)
+        if (types.size() <= index)
             return null;
-        return types_modified.get(index);
+        return types.get(index);
     }
 
     public int length() {
-        return modifications.size();
+        return expressions.size();
     }
 
     private String getString(List<String> expressions) {
@@ -185,34 +156,30 @@ public class SBVRExpressionModel implements Cloneable {
         return res.toString().trim();
     }
 
-    public String toOriginalString() {
+    public String toString() {
         return getString(expressions);
     }
 
-    public String toString() {
-        return getString(modifications);
-    }
-
     public String toUnderscoreString() {
-        if (modifications.isEmpty())
+        if (expressions.isEmpty())
             return null;
         StringBuilder res = new StringBuilder();
-        for (int i = 0; i < modifications.size(); i++)
-            res.append(types_modified.get(i) == ExpressionType.RULE_TYPE ? modifications.get(i)
-                    : modifications.get(i).replaceAll(" ", "_")).append(" ");
+        for (int i = 0; i < expressions.size(); i++)
+            res.append(types.get(i) == ExpressionType.RULE_TYPE ? expressions.get(i)
+                    : expressions.get(i).replaceAll(" ", "_")).append(" ");
         // Remove underscore before "'" in model vocabulary concepts
         return res.toString().trim().replace("_'", " '");
     }
 
-    public String toHTMLString(boolean addHtml, Boolean identified) {
-        if (modifications.isEmpty())
+    public String toHTMLString(boolean addHtml, Boolean showIdentified) {
+        if (expressions.isEmpty())
             return null;
         StringBuilder res = new StringBuilder();
         if (addHtml)
             res.append("<html>"); 
-        for (int i = 0; i < modifications.size(); i++)
-            res.append(String.format(getFormat(types_modified.get(i),
-                    identified != null ? identified : identified_mod.get(i)), modifications.get(i))).append(" "); 
+        for (int i = 0; i < expressions.size(); i++) 
+            res.append(String.format(getFormat(types.get(i),
+                    showIdentified != null ? showIdentified : identified.get(i)), expressions.get(i))).append(" "); 
         if (addHtml)
             res.append("</html>"); 
         return res.toString().trim();
@@ -241,15 +208,6 @@ public class SBVRExpressionModel implements Cloneable {
         copy.identified = new ArrayList<>();
         for (Boolean ident : identified)
             copy.identified.add(ident);
-        copy.modifications = new ArrayList<>();
-        for (String ident : modifications)
-            copy.modifications.add(ident);
-        copy.types_modified = new ArrayList<>();
-        for (ExpressionType type : types_modified)
-            copy.types_modified.add(type);
-        copy.identified_mod = new ArrayList<>();
-        for (Boolean ident : identified_mod)
-            copy.identified_mod.add(ident);
         copy.auto = auto;
         return copy;
     }
@@ -289,9 +247,8 @@ public class SBVRExpressionModel implements Cloneable {
     }
 
     public void addSynonymousForm(SBVRExpressionModel model) {
-        if (model == null)
-            return;
-        synonymous_forms.add(model);
+        if (model != null)
+            synonymous_forms.add(model);
     }
     
     

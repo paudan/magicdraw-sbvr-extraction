@@ -109,24 +109,13 @@ public class FilteredCandidateConceptModel extends AbstractCandidateConceptModel
     }
 
     @Override
-    public Set<String> getCandidatesListOrigText() {
-        Set<String> candidates = new HashSet<>();
-        for (List<String> concept : data.keySet())
-            if (data.get(concept) != null)
-                for (int i = 0; i < data.get(concept).size(); i++)
-                    if (selected.get(concept).get(i))
-                        candidates.add(data.get(concept).get(i).toOriginalString());
-        return candidates;
-    }
-
-    @Override
     public HashMap<String, SBVRExpressionModel> getListMap() {
         HashMap<String, SBVRExpressionModel> map = new HashMap<>();
         for (List<String> concept : data.keySet())
             if (data.get(concept) != null)
                 for (int i = 0; i < data.get(concept).size(); i++)
                     if (selected.get(concept).get(i))
-                        map.put(data.get(concept).get(i).toOriginalString(), data.get(concept).get(i));
+                        map.put(data.get(concept).get(i).toString(), data.get(concept).get(i));
         return map;
     }
 

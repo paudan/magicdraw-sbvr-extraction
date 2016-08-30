@@ -40,22 +40,12 @@ public class DefaultCandidateConceptModel extends AbstractCandidateConceptModel 
     }
 
     @Override
-    public Set<String> getCandidatesListOrigText() {
-        Set<String> candidates = new HashSet<String>();
-        for (List<String> concept : data.keySet())
-            if (data.get(concept) != null)
-                for (SBVRExpressionModel sbvr : data.get(concept))
-                    candidates.add(sbvr.toOriginalString());
-        return candidates;
-    }
-
-    @Override
     public Map<String, SBVRExpressionModel> getListMap() {
         Map<String, SBVRExpressionModel> map = new HashMap<>();
         for (List<String> concept : data.keySet())
             if (data.get(concept) != null)
                 for (SBVRExpressionModel sbvr : data.get(concept))
-                    map.put(sbvr.toOriginalString(), sbvr);
+                    map.put(sbvr.toString(), sbvr);
         return map;
     }
 }

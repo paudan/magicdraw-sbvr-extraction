@@ -175,10 +175,8 @@
               <SubComponents>
                 <Component class="javax.swing.JTable" name="JTable1">
                   <Properties>
+                    <Property name="autoCreateRowSorter" type="boolean" value="true"/>
                     <Property name="name" type="java.lang.String" value="JTable1" noResource="true"/>
-                    <Property name="rowSorter" type="javax.swing.RowSorter" editor="org.netbeans.modules.form.ComponentChooserEditor">
-                      <ComponentRef name="null"/>
-                    </Property>
                   </Properties>
                 </Component>
               </SubComponents>
@@ -326,6 +324,7 @@
               <SubComponents>
                 <Component class="javax.swing.JTable" name="JTable4">
                   <Properties>
+                    <Property name="autoCreateRowSorter" type="boolean" value="true"/>
                     <Property name="name" type="java.lang.String" value="JTable4" noResource="true"/>
                   </Properties>
                 </Component>
@@ -491,6 +490,7 @@
               <SubComponents>
                 <Component class="javax.swing.JTable" name="JTable5">
                   <Properties>
+                    <Property name="autoCreateRowSorter" type="boolean" value="true"/>
                     <Property name="name" type="java.lang.String" value="JTable5" noResource="true"/>
                   </Properties>
                 </Component>

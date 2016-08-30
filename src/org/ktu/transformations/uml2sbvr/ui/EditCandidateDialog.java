@@ -30,6 +30,7 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import org.ktu.transformations.uml2sbvr.models.AbstractCandidateConceptModel;
 import org.ktu.transformations.uml2sbvr.models.CandidateTableModel;
+import org.ktu.transformations.uml2sbvr.models.CandidateTableModel.CandidateEntry;
 import org.ktu.transformations.uml2sbvr.models.FilteredCandidateConceptModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel;
 
@@ -37,29 +38,25 @@ import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel;
 public class EditCandidateDialog extends JDialog {
 
     public enum ConceptType {
-
         GENERAL_CONCEPT, VERB_CONCEPT, BUSINESS_RULE
     }
 
     public enum Operation {
-
         NEW, EDIT
     }
 
     private static final ResourceBundle bundle = ResourceBundle.getBundle("org/ktu/transformations/uml2sbvr/ui/Bundle");
-
     private FilteredCandidateConceptModel data;
     private CandidateTableModel tablemodel;
-    private String entry;
     private int candidateIndex;
     private Set<String> gcTempList, vcTempList;
     private final ConceptType type;
     private final Operation operation;
     private Vector<Object[]> gcTemp, vcTemp;
-    private SBVRExpressionModel editedConcept;
     private final ExtractionWizardDialog parentDlg;
-    private List<String> elements;
     private Map<String, List<String>> map;
+    private SBVRExpressionModel editedConcept;
+    private CandidateEntry item;
 
     public EditCandidateDialog(ExtractionWizardDialog parent, String title, boolean modal,
             Operation operation, ConceptType type) {
@@ -159,7 +156,7 @@ public class EditCandidateDialog extends JDialog {
                         .addComponent(jLabel2)
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+                            .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 396, Short.MAX_VALUE)
                             .addComponent(jScrollPane3))))
                 .addContainerGap())
         );
@@ -174,7 +171,7 @@ public class EditCandidateDialog extends JDialog {
                     .addComponent(jLabel2)
                     .addComponent(jScrollPane1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 67, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 99, Short.MAX_VALUE)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(btnCancel)
@@ -219,13 +216,15 @@ public class EditCandidateDialog extends JDialog {
         btnSave.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (performUpdate(dlg, elements))
+                if (performUpdate(dlg, item.getElements()))
                     dlg.setVisible(false);
             }
         });
+        
     }
 
     private boolean performUpdate(EditCandidateDialog dlg, List<String> elements) {
+        editedConcept = item != null ? item.getExpression() : null;
         String candidate = dlg.getTextArea().getText().trim();
         if (candidate.trim().length() == 0) {
             JOptionPane.showMessageDialog(dlg, bundle.getString("EditCandidateDialog_3"),
@@ -315,7 +314,8 @@ public class EditCandidateDialog extends JDialog {
                 tablemodel.addRow(new Object[]{ true, 
                     map.get(dlg.getComboBox().getSelectedItem().toString()), model, Boolean.FALSE, Boolean.FALSE});
             } else {
-                editedConcept.modify(model);
+                parentDlg.addReplacement(editedConcept.toString(), candidate.replaceAll("_", " "), model, type);
+                editedConcept.replace(model);
                 tablemodel.setValueAt(model, candidateIndex, 2);
             }
         }
@@ -345,11 +345,10 @@ public class EditCandidateDialog extends JDialog {
     @SuppressWarnings("unchecked")
     public void setCandidateIndex(int candidateIndex) {
         this.candidateIndex = candidateIndex;
-        editedConcept = tablemodel.getExpressionModelAt(candidateIndex);
-        elements = tablemodel.getElementsAt(candidateIndex);
-        entry = tablemodel.getValueAt(candidateIndex, 1).toString();
-        comboBox.setModel(new DefaultComboBoxModel(new String[]{entry}));
+        item = tablemodel.getEntryAt(candidateIndex);
+        comboBox.setModel(new DefaultComboBoxModel(new String[]{tablemodel.getValueAt(candidateIndex, 1).toString()}));
         comboBox.setEnabled(false);
+        editedConcept = item.getExpression();
         textArea.setText(editedConcept.toUnderscoreString());
         previewLabel.setText(editedConcept.toHTMLString(true, null));
         updatePreviewLabel(this);
@@ -364,7 +363,7 @@ public class EditCandidateDialog extends JDialog {
     }
 
     private String removeElementName(String str) {
-        return str.startsWith("Extension Point") ? str.substring(16) : str.substring(str.indexOf(" "));
+        return parentDlg.getExtractor().removeMetaconceptName(str);
     }
 
     private boolean checkGCCandidates(String cand_concepts[], List<String> elements) {

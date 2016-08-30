@@ -61,8 +61,6 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
     protected void extractVerbConceptCandidates() {
         if (strictOnly)
             return;
-        Map<String, SBVRExpressionModel> map = gc_candidates.getListMap();
-        Set<String> gclist = map.keySet();
         Iterator<Element> iterator = candidateElements.iterator();
         while (iterator.hasNext()) {
             Element el = iterator.next();
@@ -89,10 +87,14 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                 if (general.getClassType().equals(Actor.class) && specific.getClassType().equals(Actor.class)) {
                     String gen_name = extractElementText(general);
                     String spec_name = extractElementText(specific);
-                    if (gen_name != null && spec_name != null && gclist.contains(gen_name) && gclist.contains(spec_name)) {
+                    if (gen_name != null && spec_name != null) {
+                        SBVRExpressionModel first = getGeneralConcept(gen_name);
+                        SBVRExpressionModel second = getGeneralConcept(spec_name);
+                        if (first == null || second == null)
+                            continue;
                         SBVRExpressionModel candidate = new SBVRExpressionModel();
-                        candidate.addIdentifiedExpression(map.get(gen_name)).addVerbConcept("generalizes", true)
-                                .addIdentifiedExpression(map.get(spec_name));
+                        candidate.addIdentifiedExpression(first).addVerbConcept("generalizes", true)
+                                .addIdentifiedExpression(second);
                         candidate.setAuto(true);
                         List<String> concept = Arrays.asList(getProperName(general), getProperName(specific));
                         vc_candidates.add(concept, candidate, new ArrayList<Object>(Arrays.asList(general, specific, el)));
@@ -139,34 +141,37 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                     if (eptext == null)
                         continue;
                     List<String> idgcs = new ArrayList<>();
-                    for (String gc : gclist)
-                        if (eptext.contains(gc))
-                            idgcs.add(gc);
+                    String gcand = containsGCCandidate(eptext);
+                    if (gcand != null)
+                        idgcs.add(gcand);
                     if (idgcs.size() > 0 && (!extractedAuto || (extractedAuto && extractedStrict))) {
                         SBVRExpressionModel candidate = new SBVRExpressionModel();
                         if (idgcs.size() == 1) {
                             String gc = idgcs.get(0);
-                            if (eptext.startsWith(gc))
-                                candidate.addIdentifiedExpression(map.get(gc))
+                            SBVRExpressionModel gcExpr = getGeneralConcept(gc);
+                            if (eptext.startsWith(gc) && gcExpr != null)
+                                candidate.addIdentifiedExpression(gcExpr)
                                         .addUnidentifiedText(eptext.substring(gc.length()).trim());
-                            else if (eptext.endsWith(gc))
+                            else if (eptext.endsWith(gc) && gcExpr != null)
                                 candidate.addUnidentifiedText(eptext.substring(0, eptext.length() - gc.length()))
-                                        .addIdentifiedExpression(map.get(gc));
+                                        .addIdentifiedExpression(gcExpr);
                         } else if (idgcs.size() == 2) {
                             String gc1 = idgcs.get(0);
                             String gc2 = idgcs.get(1);
-                            if (eptext.startsWith(gc1) && eptext.endsWith(gc2)
+                            SBVRExpressionModel gcExpr1 = getGeneralConcept(gc1);
+                            SBVRExpressionModel gcExpr2 = getGeneralConcept(gc2);
+                            if (eptext.startsWith(gc1) && eptext.endsWith(gc2) && gcExpr1 != null && gcExpr2 != null
                                     && eptext.length() - gc2.length() > gc1.length() + 1)
-                                candidate.addIdentifiedExpression(map.get(gc1))
+                                candidate.addIdentifiedExpression(gcExpr1)
                                         .addUnidentifiedText(eptext.substring(gc1.length(), eptext.length() - gc2.length()))
-                                        .addIdentifiedExpression(map.get(gc2));
-                            else if (eptext.startsWith(gc2) && eptext.endsWith(gc1)
+                                        .addIdentifiedExpression(gcExpr2);
+                            else if (eptext.startsWith(gc2) && eptext.endsWith(gc1) && gcExpr1 != null && gcExpr2 != null
                                     && eptext.length() - gc1.length() > gc2.length() + 1)
-                                candidate.addIdentifiedExpression(map.get(gc2))
+                                candidate.addIdentifiedExpression(gcExpr2)
                                         .addUnidentifiedText(eptext.substring(gc2.length() + 1, eptext.length() - gc1.length()))
-                                        .addIdentifiedExpression(map.get(gc1));
+                                        .addIdentifiedExpression(gcExpr1);
                         }
-                        vc_candidates.add(Arrays.asList(name), candidate, Arrays.asList((Object)ep));
+                        vc_candidates.add(Arrays.asList(name), candidate, Arrays.asList((Object) ep));
                     }
                     vc_candidates.setManualExtraction(Arrays.asList(getProperName(ep)));
                 }
@@ -177,8 +182,6 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
     protected void extractBusinessRuleCandidates() {
         if (strictOnly)
             return;
-        Map<String, SBVRExpressionModel> vcmap = vc_candidates.getListMap();
-        Collection<String> vclist = vcmap.keySet();
         Iterator<Element> iterator = candidateElements.iterator();
         while (iterator.hasNext()) {
             Element el = iterator.next();
@@ -236,19 +239,21 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                         if (aainame != null && extnamevc != null) {
                             SBVRExpressionModel candidate = new SBVRExpressionModel();
                             candidate.addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION);
-                            if (extnamegc != null && vclist.contains(aainame + " " + extnamevc + " " + extnamegc))
-                                candidate.addIdentifiedExpression(vcmap.get(aainame + " " + extnamevc + " " + extnamegc));
-                            else if (extnamegc == null && vclist.contains(aainame + " " + extnamevc))
-                                candidate.addIdentifiedExpression(vcmap.get(aainame + " " + extnamevc));
+                            if (extnamegc != null) {
+                                SBVRExpressionModel binary = getVerbConcept(aainame + " " + extnamevc + " " + extnamegc);
+                                if (binary != null)
+                                    candidate.addIdentifiedExpression(binary);
+                            } else {
+                                SBVRExpressionModel unary = getVerbConcept(aainame + " " + extnamevc);
+                                if (unary != null)
+                                    candidate.addIdentifiedExpression(unary);
+                            }
                             candidate.addIfExpression();
                             // Try to map ExtensionPoint to already identified verb concepts
-                            boolean found = false;
-                            for (String str : vclist)
-                                if (epname.startsWith(str)) {
-                                    found = true;
-                                    candidate.addIdentifiedExpression(vcmap.get(str));
-                                }
-                            if (!found)
+                            SBVRExpressionModel sbvr = getVerbConcept(epname);
+                            if (sbvr != null)
+                                candidate.addIdentifiedExpression(sbvr);
+                            else
                                 candidate.addUnidentifiedText(epname);
                             candidate.setAuto(false);
                             List<String> concept = Arrays.asList(getProperName(ep), getProperName(aai), getProperName(extension));
@@ -336,7 +341,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                     candidate.addGeneralConcept(String.format("association_condition '%s'", condition), false);
                     candidate.setModelVocabularyConcept(true);
                     List<String> concepts = Arrays.asList(condition);
-                    gc_candidates.add(concepts, candidate, Arrays.asList((Object)cons));
+                    gc_candidates.add(concepts, candidate, Arrays.asList((Object) cons));
                     gc_candidates.setAutomaticExtraction(concepts);
                     candidate.setAuto(true);
                     candidate.setModelVocabularyConcept(true);
@@ -403,7 +408,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
         candidate.setAuto(true);
         candidate.setModelVocabularyConcept(true);
         List<String> concepts = Arrays.asList(name);
-        gc_candidates.add(concepts, candidate, Arrays.asList((Object)el));
+        gc_candidates.add(concepts, candidate, Arrays.asList((Object) el));
         gc_candidates.setAutomaticExtraction(concepts);
         return name;
     }
@@ -463,11 +468,15 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
         String bname = extractElementText(actor);
         String vname = extractUseCaseVC(usecase);
         if (bname != null && vname != null && gclist.contains(bname)) {
+            SBVRExpressionModel first = getGeneralConcept(bname);
+            if (first == null)
+                return;
             SBVRExpressionModel candidate = new SBVRExpressionModel();
-            candidate.addIdentifiedExpression(map.get(bname)).addVerbConcept(vname, false);
+            candidate.addIdentifiedExpression(first).addVerbConcept(vname, false);
             if (uc != null) {
-                if (gclist.contains(uc))
-                    candidate.addIdentifiedExpression(map.get(uc));
+                SBVRExpressionModel second = getGeneralConcept(uc);
+                if (second != null)
+                    candidate.addIdentifiedExpression(second);
                 else
                     candidate.addUnidentifiedText(uc);
             }
@@ -479,31 +488,29 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private void createRuleFromInclude(Element ai, Element aai, UseCase including, UseCase included) {
-        Map<String, SBVRExpressionModel> vcmap = vc_candidates.getListMap();
-        Collection<String> vclist = vcmap.keySet();
         String ainame = extractElementText(ai);
         String inclname = extractUseCaseVC(including);
         String inclnamegc = extractUseCaseGC(including);
         String aainame = extractElementText(aai);
         String inclname2 = extractUseCaseVC(included);
         String inclnamegc2 = extractUseCaseGC(included);
-        boolean hasBinary1 = inclnamegc2 != null && vclist.contains(aainame + " " + inclname2 + " " + inclnamegc2);
-        boolean hasUnary1 = inclnamegc2 == null && vclist.contains(aainame + " " + inclname2);
-        boolean hasBinary2 = inclnamegc != null && vclist.contains(ainame + " " + inclname + " " + inclnamegc);
-        boolean hasUnary2 = inclnamegc == null && vclist.contains(ainame + " " + inclnamegc);
+        SBVRExpressionModel binary1 = inclnamegc2 != null ? getVerbConcept(aainame + " " + inclname2 + " " + inclnamegc2) : null; 
+        SBVRExpressionModel unary1 = inclnamegc2 != null ? getVerbConcept(aainame + " " + inclname2) : null;
+        SBVRExpressionModel binary2 = inclnamegc != null ? getVerbConcept(ainame + " " + inclname + " " + inclnamegc) : null; 
+        SBVRExpressionModel unary2 = inclnamegc != null ? getVerbConcept(ainame + " " + inclname) : null;    
         if (ainame != null && inclname != null && aainame != null && inclname2 != null
-                && (hasBinary1 || hasUnary1) && (hasBinary2 || hasUnary2)) {
+                && (binary1 != null || unary1 != null) && (binary2 != null || unary2 != null)) {
             SBVRExpressionModel candidate = new SBVRExpressionModel();
             candidate.addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION);
-            if (hasBinary1)
-                candidate.addIdentifiedExpression(vcmap.get(aainame + " " + inclname2 + " " + inclnamegc2));
-            else if (hasUnary1)
-                candidate.addIdentifiedExpression(vcmap.get(aainame + " " + inclnamegc2));
+            if (binary1 != null)
+                candidate.addIdentifiedExpression(binary1);
+            else if (unary1 != null)
+                candidate.addIdentifiedExpression(unary1);
             candidate.addIfExpression();
-            if (hasBinary2)
-                candidate.addIdentifiedExpression(vcmap.get(ainame + " " + inclname + " " + inclnamegc));
-            else if (hasUnary2)
-                candidate.addIdentifiedExpression(vcmap.get(ainame + " " + inclnamegc));
+            if (binary2 != null)
+                candidate.addIdentifiedExpression(binary2);
+            else if (unary2 != null)
+                candidate.addIdentifiedExpression(unary2);
             candidate.setAuto(true);
             List<String> concept = Arrays.asList(getProperName(ai), getProperName(including),
                     getProperName(aai), getProperName(included));
@@ -513,31 +520,29 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private void createRuleFromExtend(Element ai, Element aai, UseCase extended, UseCase extension) {
-        Map<String, SBVRExpressionModel> vcmap = vc_candidates.getListMap();
-        Collection<String> vclist = vcmap.keySet();
         String ainame = extractElementText(ai);
         String extname = extractUseCaseVC(extended);
         String extnamegc = extractUseCaseGC(extended);
         String aainame = extractElementText(aai);
         String extname2 = extractUseCaseVC(extension);
         String extnamegc2 = extractUseCaseGC(extension);
-        boolean hasBinary1 = extnamegc2 != null && vclist.contains(aainame + " " + extname2 + " " + extnamegc2);
-        boolean hasUnary1 = extnamegc2 == null && vclist.contains(aainame + " " + extname2);
-        boolean hasBinary2 = extnamegc != null && vclist.contains(ainame + " " + extname + " " + extnamegc);
-        boolean hasUnary2 = extnamegc == null && vclist.contains(ainame + " " + extname);
+        SBVRExpressionModel binary1 = extnamegc2 != null ? getVerbConcept(aainame + " " + extname2 + " " + extnamegc2) : null; 
+        SBVRExpressionModel unary1 = extnamegc2 != null ? getVerbConcept(aainame + " " + extname2) : null;
+        SBVRExpressionModel binary2 = extnamegc != null ? getVerbConcept(ainame + " " + extname + " " + extnamegc) : null; 
+        SBVRExpressionModel unary2 = extnamegc != null ? getVerbConcept(ainame + " " + extname) : null;
         if (ainame != null && extname != null && aainame != null && extname2 != null
-                && (hasBinary1 || hasUnary1) && (hasBinary2 || hasUnary2)) {
+                && (binary1 != null || unary1 != null) && (binary2 != null || unary2 != null)) {
             SBVRExpressionModel candidate = new SBVRExpressionModel();
             candidate.addRuleExpression(SBVRExpressionModel.RuleType.PERMISSION);
-            if (hasBinary1)
-                candidate.addIdentifiedExpression(vcmap.get(aainame + " " + extname2 + " " + extnamegc2));
-            else if (hasUnary1)
-                candidate.addIdentifiedExpression(vcmap.get(aainame + " " + extname2));
+            if (binary1 != null)
+                candidate.addIdentifiedExpression(binary1);
+            else if (unary1 != null)
+                candidate.addIdentifiedExpression(unary1);
             candidate.addIfExpression();
-            if (hasBinary2)
-                candidate.addIdentifiedExpression(vcmap.get(ainame + " " + extname + " " + extnamegc));
-            else if (hasUnary2)
-                candidate.addIdentifiedExpression(vcmap.get(ainame + " " + extname));
+            if (binary2 != null)
+                candidate.addIdentifiedExpression(binary2);
+            else if (unary2 != null)
+                candidate.addIdentifiedExpression(unary2);
             candidate.setAuto(true);
             List<String> concept = Arrays.asList(getProperName(ai), getProperName(extended),
                     getProperName(aai), getProperName(extension));
@@ -604,8 +609,13 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
         candidate.addGeneralConcept(name, false);
         candidate.setAuto(true);
         List<String> concepts = Arrays.asList(getProperName(el));
-        gc_candidates.add(concepts, candidate, Arrays.asList((Object)el));
+        gc_candidates.add(concepts, candidate, Arrays.asList((Object) el));
         gc_candidates.setAutomaticExtraction(concepts);
         return candidate;
+    }
+
+    @Override
+    public String removeMetaconceptName(String name) {
+        return name.startsWith("Extension Point") ? name.substring(16) : name.substring(name.indexOf(" "));
     }
 }

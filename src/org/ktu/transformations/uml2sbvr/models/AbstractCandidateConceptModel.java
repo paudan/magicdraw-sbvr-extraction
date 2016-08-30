@@ -96,8 +96,6 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
 
     public abstract Set<String> getCandidatesListText();
 
-    public abstract Set<String> getCandidatesListOrigText();
-
     public abstract Map<String, SBVRExpressionModel> getListMap();
 
     public int size() {
@@ -140,11 +138,15 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
         flag.put(concepts, Boolean.FALSE);
     }
 
-    public void setAllIdentified(boolean value) {
+    public void setAllIdentified(Boolean value) {
         for (List<String> concept : data.keySet())
             if (data.get(concept) != null)
-                for (SBVRExpressionModel sbvr : data.get(concept))
-                    sbvr.setIdentified(value);
+                for (SBVRExpressionModel sbvr : data.get(concept)) {
+                    if (value.equals(Boolean.TRUE))
+                        sbvr.setIdentified(value);
+                    else if (value.equals(Boolean.FALSE) && sbvr.isAuto())
+                        sbvr.setIdentified(value);
+                }
     }
 
     protected void copyInstance(AbstractCandidateConceptModel copy) {

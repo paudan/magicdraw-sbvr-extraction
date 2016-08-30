@@ -35,6 +35,7 @@ import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import com.nomagic.uml2.impl.ElementsFactory;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -199,11 +200,16 @@ public class FactDiagramGenerator {
     private void generateGeneralConcepts() {
         if (gcCandidates == null || gcCandidates.size() == 0 || gcList == null)
             return;
+        Set<String> generated = new HashSet<>();
         Map<List<String>, List<SBVRExpressionModel>> model = gcCandidates.getDataset();
         for (List<String> obj : model.keySet()) {
             SBVRExpressionModel concept = model.get(obj).get(0);
             boolean createTrace = gcCandidates.isCreateTrace(obj, concept);
-            createGeneralConcept(concept.toString(), concept, createTrace);
+            String gcStr = concept.toString();
+            if (!generated.contains(gcStr)) {
+                generated.add(gcStr);
+                createGeneralConcept(gcStr, concept, createTrace);
+            }
         }
     }
 
