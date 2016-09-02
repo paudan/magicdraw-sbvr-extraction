@@ -35,7 +35,7 @@ public class DefaultCandidateConceptModel extends AbstractCandidateConceptModel 
     @Override
     public DefaultCandidateConceptModel clone() {
         DefaultCandidateConceptModel copy = new DefaultCandidateConceptModel();
-        this.copyInstance(copy);
+        copy = (DefaultCandidateConceptModel) this.copyInstance(copy);
         return copy;
     }
 

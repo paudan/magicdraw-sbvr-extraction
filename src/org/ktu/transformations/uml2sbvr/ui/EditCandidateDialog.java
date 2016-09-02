@@ -33,15 +33,18 @@ import org.ktu.transformations.uml2sbvr.models.CandidateTableModel;
 import org.ktu.transformations.uml2sbvr.models.CandidateTableModel.CandidateEntry;
 import org.ktu.transformations.uml2sbvr.models.FilteredCandidateConceptModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel;
+import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel.RuleType;
 
 @SuppressWarnings("serial")
 public class EditCandidateDialog extends JDialog {
 
     public enum ConceptType {
+
         GENERAL_CONCEPT, VERB_CONCEPT, BUSINESS_RULE
     }
 
     public enum Operation {
+
         NEW, EDIT
     }
 
@@ -220,7 +223,7 @@ public class EditCandidateDialog extends JDialog {
                     dlg.setVisible(false);
             }
         });
-        
+
     }
 
     private boolean performUpdate(EditCandidateDialog dlg, List<String> elements) {
@@ -268,29 +271,26 @@ public class EditCandidateDialog extends JDialog {
                     gcs.add(split[i]);
                 String[] arr = new String[gcs.size()];
                 canadd = checkGCCandidates(gcs.toArray(arr), elements);
-            } /*else if (type == ConceptType.BUSINESS_RULE) {
-             String [] split = candidate.replaceAll("</*html>", "").split("</span>"); 
-             Vector<String> gcs = new Vector<String>();
-             for (int i = 0; i < split.length; i++) 
-             if (split[i].contains("color: teal")) //$NON-NLS-1$
-             gcs.add(split[i]);
-             String[] arr = new String[gcs.size()];
-             canadd = checkGCCandidates(gcs.toArray(arr), elements, dlg.getComboBox().getSelectedItem().toString());
-        		
-             // If all possible GC candidates are in GC candidates we check verb concept candidates
-             if (canadd) {
-             gcs = new Vector<String>();
-             for (int i = 0; i < split.length-1; i++) 
-             if (split[i].contains("color: teal") && split[i+1].contains("color: blue")) 
-             gcs.add(split[i] + " " + split[i+1]); 
-             arr = new String[gcs.size()];
-             canadd = checkVCCandidates(gcs.toArray(arr), elements, dlg.getComboBox().getSelectedItem().toString());
-             }
-             }*/
+            } else if (type == ConceptType.BUSINESS_RULE) {
+                String cand = candidate.replace(RuleType.OBLIGATION.toString(), "").replace(RuleType.PERMISSION.toString(), "").trim();
+                String[] vcs = cand.split("(if|and)");
+                for (int i = 0; i < vcs.length; i++)
+                    vcs[i] = vcs[i].trim();
+                Vector<String> gcs = new Vector<>();
+                for (String vc : vcs) {
+                    String[] items = vc.split("\\s+");
+                    for (int i = 0; i < items.length; i += 2)
+                        gcs.add(items[i].trim());
+                }
+                String[] arr = new String[gcs.size()];
+                canadd = checkGCCandidates(gcs.toArray(arr), elements);
+                if (canadd)
+                    canadd = checkVCCandidates(vcs, elements);
+            }
 
             if (!canadd)
                 return false;
-            else if (gcTemp.size() > 0)
+            if (gcTemp.size() > 0)
                 for (Object[] obj : gcTemp) {
                     SBVRExpressionModel gcModel = new SBVRExpressionModel();
                     gcModel.addGeneralConcept((String) obj[1], true);
@@ -301,19 +301,61 @@ public class EditCandidateDialog extends JDialog {
                         map.get(dlg.getComboBox().getSelectedItem().toString()), gcModel, Boolean.FALSE, Boolean.FALSE});
 
                 }
+            if (vcTemp.size() > 0)
+                for (Object[] obj : vcTemp) {
+                    SBVRExpressionModel vcModel = new SBVRExpressionModel();
+                    String[] items = ((String) obj[1]).split("\\s+");
+                    for (int i = 0; i < items.length; i++)
+                        if (i % 2 == 0)
+                            vcModel.addGeneralConcept(items[i].replaceAll("_", ""), true);
+                        else
+                            vcModel.addVerbConcept(items[i].replaceAll("_", ""), true);
+                    vcModel.setAuto(false);
+                    List<String> candidates = (List<String>) obj[0];
+                    parentDlg.gcCandidates.add(candidates, vcModel, data.getSourceData().get(candidates));
+                    parentDlg.getVCTableModel().addRow(new Object[]{true,
+                        map.get(dlg.getComboBox().getSelectedItem().toString()), vcModel, Boolean.FALSE, Boolean.FALSE});
+
+                }
             SBVRExpressionModel model = new SBVRExpressionModel();
-            String split[] = candidate.split(" ");
-            for (int i = 0; i < split.length; i++)
-                if (i % 2 == 0)
-                    model.addGeneralConcept(split[i].replace("_", " "), true);
-                else
-                    model.addVerbConcept(split[i].replace("_", " "), true);
+            if (type == ConceptType.GENERAL_CONCEPT || type == ConceptType.VERB_CONCEPT) {
+                String split[] = candidate.split("\\s+");
+                for (int i = 0; i < split.length; i++)
+                    if (i % 2 == 0)
+                        model.addGeneralConcept(split[i].replace("_", " "), true);
+                    else
+                        model.addVerbConcept(split[i].replace("_", " "), true);
+            } else if (type == ConceptType.BUSINESS_RULE){
+                String cand = candidate;
+                if (candidate.startsWith(RuleType.OBLIGATION.toString())) {
+                    model.addRuleExpression(RuleType.OBLIGATION);
+                    cand = candidate.replace(RuleType.OBLIGATION.toString(), "");
+                } else if (candidate.startsWith(RuleType.PERMISSION.toString())) {
+                    model.addRuleExpression(RuleType.PERMISSION);
+                    cand = candidate.replace(RuleType.PERMISSION.toString(), "");
+                }
+                String split[] = cand.split("\\s+");
+                int s = 0;
+                for (int i = 0; i < split.length; i++) {
+                    if (split[i].compareToIgnoreCase("and") == 0) {
+                        model.addAndExpression();
+                        s = 0;
+                    } else if (split[i].compareToIgnoreCase("or") == 0) {
+                        model.addOrExpression();
+                        s = 0;
+                    } else s++;
+                    if (s % 2 == 0)
+                        model.addGeneralConcept(split[i].replace("_", " "), true);
+                    else
+                        model.addVerbConcept(split[i].replace("_", " "), true);
+                }
+            }
             model.setAuto(false);
             if (operation == Operation.NEW) {
                 data.add(elements, model, data.getSourceData().get(elements));
-                tablemodel.addRow(new Object[]{ true, 
+                tablemodel.addRow(new Object[]{true,
                     map.get(dlg.getComboBox().getSelectedItem().toString()), model, Boolean.FALSE, Boolean.FALSE});
-            } else {
+            } else {   
                 parentDlg.addReplacement(editedConcept.toString(), candidate.replaceAll("_", " "), model, type);
                 editedConcept.replace(model);
                 tablemodel.setValueAt(model, candidateIndex, 2);
@@ -389,10 +431,10 @@ public class EditCandidateDialog extends JDialog {
         return true;
     }
 
-    private boolean checkVCCandidates(String concepts[], String elements[]) {
+    private boolean checkVCCandidates(String concepts[], List<String> elements) {
         Set<String> vcCandidates = parentDlg.vcCandidates.getCandidatesListText();
         for (int i = 0; i < concepts.length; i++)
-            if (!vcCandidates.contains(concepts[i].replaceAll("_", " ")))
+            if (!vcCandidates.contains(concepts[i].replaceAll("_", " ").trim()))
                 vcTempList.add(concepts[i].trim());
         String conceptstr = new String();
         for (String str : vcTempList)

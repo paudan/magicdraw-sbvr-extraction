@@ -97,13 +97,19 @@ public class FilteredCandidateConceptModel extends AbstractCandidateConceptModel
     @Override
     public FilteredCandidateConceptModel clone() {
         FilteredCandidateConceptModel copy = new FilteredCandidateConceptModel();
-        super.copyInstance(copy);
-        copy.selected = new HashMap<>();
-        for (List<String> concept : selected.keySet()) {
+        copy = (FilteredCandidateConceptModel) super.copyInstance(copy);
+        copy.selected = cloneBool(selected);
+        copy.traceOpt = cloneBool(traceOpt);
+        return copy;
+    }
+    
+    private Map<List<String>, List<Boolean>> cloneBool(Map<List<String>, List<Boolean>> map) {
+        Map<List<String>, List<Boolean>> copy = new HashMap<>();
+        for (List<String> concept : map.keySet()) {
             List<Boolean> bool = new ArrayList<>();
             for (int i = 0; i < data.get(concept).size(); i++)
-                bool.add(selected.get(concept).get(i));
-            copy.selected.put(concept, bool);
+                bool.add(map.get(concept).get(i));
+            copy.put(concept, bool);
         }
         return copy;
     }

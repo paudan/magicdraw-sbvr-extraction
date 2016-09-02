@@ -149,7 +149,7 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
                 }
     }
 
-    protected void copyInstance(AbstractCandidateConceptModel copy) {
+    protected AbstractCandidateConceptModel copyInstance(AbstractCandidateConceptModel copy) {
         copy.data = new HashMap<>();
         for (List<String> concept : data.keySet()) {
             List<SBVRExpressionModel> obj = new ArrayList<>();
@@ -168,6 +168,7 @@ public abstract class AbstractCandidateConceptModel implements Cloneable {
         copy.flag = new HashMap<>();
         for (List<String> concept : flag.keySet())
             copy.flag.put(concept, flag.get(concept));
+        return copy;
     }
 
     public static String getConceptsRepresentation(List<String> elemdata) {

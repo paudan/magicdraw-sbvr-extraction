@@ -593,15 +593,22 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
     }//GEN-LAST:event_JButton3ActionPerformed
 
     private void jButton7ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
-        restoreDefault();
+        vcCandidates = copy_vcCandidates.clone();
+        extractor.getVCReplacements().clear();
+        updateTableModel(JTable4, messages_vcTable, vcCandidates, jRadioButton6.isSelected() ? null : jRadioButton5.isSelected(), true);
     }//GEN-LAST:event_jButton7ActionPerformed
 
     private void jButton5ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-        restoreDefault();
+        gcCandidates = copy_gcCandidates.clone();
+        extractor.getGCReplacements().clear();
+        updateTableModel(JTable1, messages_gcTable, gcCandidates, jRadioButton3.isSelected() ? null : jRadioButton2.isSelected(), true);
+        extractor.createVerbConceptCandidates();
+        extractor.createBusinessRuleCandidates();
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jButton10ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
-        restoreDefault();
+        brCandidates = copy_brCandidates.clone();
+        updateTableModel(JTable5, messages_brTable, brCandidates, null, true);
     }//GEN-LAST:event_jButton10ActionPerformed
 
     private void jButton8ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
@@ -657,18 +664,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         else if (type == ConceptType.VERB_CONCEPT)
             extractor.getVCReplacements().put(original, new SimpleImmutableEntry<>(replacement, expression));
     }
-
-    private void restoreDefault() {
-        gcCandidates = copy_gcCandidates.clone();
-        vcCandidates = copy_vcCandidates.clone();
-        brCandidates = copy_brCandidates.clone();
-        extractor.getGCReplacements().clear();
-        extractor.getVCReplacements().clear();
-        updateTableModel(JTable1, messages_gcTable, gcCandidates, jRadioButton3.isSelected() ? null : jRadioButton2.isSelected(), true);
-        updateTableModel(JTable4, messages_vcTable, vcCandidates, jRadioButton6.isSelected() ? null : jRadioButton5.isSelected(), true);
-        updateTableModel(JTable5, messages_brTable, brCandidates, null, true);
-    }
-
+    
     private void nextStep(int step) {
         int index = jTabbedPane1.getSelectedIndex() + step;
         jTabbedPane1.setSelectedIndex(index);
@@ -683,6 +679,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         } else if (index == tabcount - 2) {
             gcCandidates.setAllIdentified(identifiedFlag);
             if (step > 0) {
+                extractor.getGCCandidateModel().setAllIdentified(identifiedFlag);
                 extractor.createVerbConceptCandidates();
                 if (extractModelVoc)
                     extractor.createModelVocabularyCandidates();
@@ -693,6 +690,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         } else if (index == tabcount - 1) {
             vcCandidates.setAllIdentified(identifiedFlag);
             if (step > 0) {
+                extractor.getVCCandidateModel().setAllIdentified(identifiedFlag);
                 extractor.createBusinessRuleCandidates();
                 brCandidates = (FilteredCandidateConceptModel) extractor.getBRCandidateModel();
                 updateTableModel(JTable5, messages_brTable, brCandidates, null, false);
