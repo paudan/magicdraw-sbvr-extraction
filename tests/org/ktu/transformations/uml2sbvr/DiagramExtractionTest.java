@@ -32,7 +32,7 @@ import org.junit.Test;
 import org.ktu.transformations.uml2sbvr.extract.AbstractSBVRExtractor;
 import org.ktu.transformations.uml2sbvr.extract.FactDiagramGenerator;
 import org.ktu.transformations.uml2sbvr.extract.UseCaseSBVRExtractor;
-import org.ktu.transformations.uml2sbvr.models.FilteredCandidateConceptModel;
+import org.ktu.transformations.uml2sbvr.models.FilteredConceptModel;
 import vepsem.PluginUtils;
 
 public class DiagramExtractionTest extends MagicDrawTestCase {
@@ -115,14 +115,15 @@ public class DiagramExtractionTest extends MagicDrawTestCase {
             StatsCollectionVisitor pkgvisitor = new StatsCollectionVisitor(strict, stats, packageName, "diagram");
             pkgvisitor.setDiagramName(diagramName);
             AbstractSBVRExtractor extractor = new UseCaseSBVRExtractor(diagram, strict, extractModel);
-            extractor.setGCCandidateModel(new FilteredCandidateConceptModel());
-            extractor.setVCCandidateModel(new FilteredCandidateConceptModel());
-            extractor.setBRCandidateModel(new FilteredCandidateConceptModel());
+            extractor.setGCCandidateModel(new FilteredConceptModel());
+            extractor.setVCCandidateModel(new FilteredConceptModel());
+            extractor.setBRCandidateModel(new FilteredConceptModel());
             extractor.extractAll();
-            FilteredCandidateConceptModel gcCandidates, vcCandidates, brCandidates;
-            gcCandidates = (FilteredCandidateConceptModel) extractor.getGCCandidateModel();
-            vcCandidates = (FilteredCandidateConceptModel) extractor.getVCCandidateModel();
-            brCandidates = (FilteredCandidateConceptModel) extractor.getBRCandidateModel();
+            FilteredConceptModel gcCandidates;
+            FilteredConceptModel vcCandidates, brCandidates;
+            gcCandidates = (FilteredConceptModel) extractor.getGCCandidateModel();
+            vcCandidates = (FilteredConceptModel) extractor.getVCCandidateModel();
+            brCandidates = (FilteredConceptModel) extractor.getBRCandidateModel();
             FactDiagramGenerator generator = new FactDiagramGenerator(diagramName, extractModel);
             generator.setGCCandidates(gcCandidates);
             generator.setVCCandidates(vcCandidates);

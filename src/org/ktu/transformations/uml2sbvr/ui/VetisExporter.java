@@ -16,7 +16,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import org.ktu.transformations.uml2sbvr.extract.AbstractSBVRExtractor;
 import org.ktu.transformations.uml2sbvr.extract.VetisProducer;
-import org.ktu.transformations.uml2sbvr.models.AbstractCandidateConceptModel;
+import org.ktu.transformations.uml2sbvr.models.AbstractConceptModel;
 
 /**
  *
@@ -37,8 +37,8 @@ public class VetisExporter {
                 extractor.isExtractModelVocabulary());
     }
     
-    public void exportProject(JFrame frame, AbstractCandidateConceptModel gcCandidates, 
-            AbstractCandidateConceptModel vcCandidates, AbstractCandidateConceptModel brCandidates, boolean includeModelVoc) {
+    public void exportProject(JFrame frame, AbstractConceptModel gcCandidates, 
+            AbstractConceptModel vcCandidates, AbstractConceptModel brCandidates, boolean includeModelVoc) {
         String projectPath = null;
         JFileChooser chooser = new JFileChooser();
         chooser.setCurrentDirectory(new java.io.File("."));

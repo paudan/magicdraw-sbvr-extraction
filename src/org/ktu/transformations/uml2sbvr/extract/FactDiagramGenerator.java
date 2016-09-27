@@ -43,9 +43,11 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.ktu.transformations.uml2sbvr.PluginUtilities;
-import org.ktu.transformations.uml2sbvr.models.FilteredCandidateConceptModel;
+import org.ktu.transformations.uml2sbvr.models.ConceptExtractionEntry;
+import org.ktu.transformations.uml2sbvr.models.FilteredConceptModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel.ExpressionType;
+import org.ktu.transformations.uml2sbvr.models.SourceEntry;
 import vepsem.PluginUtils;
 
 public class FactDiagramGenerator {
@@ -55,7 +57,7 @@ public class FactDiagramGenerator {
     private Package targetPackage, bvPackage, mvPackage, rulesPackage;
     private final ElementsFactory elementsFactory;
     private DiagramPresentationElement targetDiagram;
-    private FilteredCandidateConceptModel gcCandidates, vcCandidates, brCandidates;
+    private FilteredConceptModel gcCandidates, vcCandidates, brCandidates;
     private Profile profile;
     private Set<String> gcList = null;
     private Diagram table;
@@ -126,16 +128,16 @@ public class FactDiagramGenerator {
         elementsFactory = project.getElementsFactory();
     }
 
-    public void setGCCandidates(FilteredCandidateConceptModel gcCandidates) {
+    public void setGCCandidates(FilteredConceptModel gcCandidates) {
         this.gcCandidates = gcCandidates;
         gcList = gcCandidates.getCandidatesListText();
     }
 
-    public void setVCCandidates(FilteredCandidateConceptModel vcCandidates) {
+    public void setVCCandidates(FilteredConceptModel vcCandidates) {
         this.vcCandidates = vcCandidates;
     }
 
-    public void setBRCandidates(FilteredCandidateConceptModel brCandidates) {
+    public void setBRCandidates(FilteredConceptModel brCandidates) {
         this.brCandidates = brCandidates;
     }
 
@@ -201,19 +203,19 @@ public class FactDiagramGenerator {
         if (gcCandidates == null || gcCandidates.size() == 0 || gcList == null)
             return;
         Set<String> generated = new HashSet<>();
-        Map<List<String>, List<SBVRExpressionModel>> model = gcCandidates.getDataset();
-        for (List<String> obj : model.keySet()) {
-            SBVRExpressionModel concept = model.get(obj).get(0);
+        Map<SourceEntry, ConceptExtractionEntry> model = gcCandidates.getDataset();
+        for (SourceEntry obj : model.keySet()) {
+            SBVRExpressionModel concept = model.get(obj).getCandidate(0);
             boolean createTrace = gcCandidates.isCreateTrace(obj, concept);
             String gcStr = concept.toString();
             if (!generated.contains(gcStr)) {
                 generated.add(gcStr);
-                createGeneralConcept(gcStr, concept, createTrace);
+                createGeneralConcept(gcStr, concept, createTrace, obj);
             }
         }
     }
 
-    private PresentationElement createGeneralConcept(String name, SBVRExpressionModel concept, boolean createTrace) {
+    private PresentationElement createGeneralConcept(String name, SBVRExpressionModel concept, boolean createTrace, SourceEntry srcEntry) {
         Stereotype stereotype = StereotypesHelper.getStereotype(project, "general concept", profile);
         com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class classel = elementsFactory.createClassInstance();
         boolean mvConcept = concept.isModelVocabularyConcept();
@@ -224,7 +226,7 @@ public class FactDiagramGenerator {
             classel.setOwner(mvPackage);
         else
             classel.setOwner(bvPackage);
-        List<Object> source = gcCandidates.getSourceData().get(concept);
+        List<Object> source = srcEntry.getSourceObjects();
         if (createTrace)
             for (Object src : source)
                 try {
@@ -250,9 +252,10 @@ public class FactDiagramGenerator {
         if (brCandidates == null || brCandidates.size() == 0)
             return;
         Stereotype stereotype = StereotypesHelper.getStereotype(project, "operative business rule", profile);
-        for (List<String> concepts : brCandidates.getDataset().keySet())
-            for (SBVRExpressionModel concept : brCandidates.getDataset().get(concepts))
-                if (brCandidates.isSelected(concepts, concept)) {
+        for (SourceEntry sourceEntry : brCandidates.getDataset().keySet()) {
+            List<SBVRExpressionModel> sbvrList = brCandidates.getDataset().get(sourceEntry).getCandidates();
+            for (SBVRExpressionModel concept : sbvrList)
+                if (brCandidates.isSelected(sourceEntry, concept)) {
                     Constraint constraint = elementsFactory.createConstraintInstance();
                     Expression expression = elementsFactory.createExpressionInstance();
                     expression.setSymbol(concept.toString());
@@ -263,8 +266,8 @@ public class FactDiagramGenerator {
                     constraint.setName(concept.toString());
                     // Bug with representing attached constraints - fixed currently
                     attachConstraint(concept, constraint);
-                    boolean createTrace = brCandidates.isCreateTrace(concepts, concept);
-                    List<Object> source = brCandidates.getSourceData().get(concept);
+                    boolean createTrace = brCandidates.isCreateTrace(sourceEntry, concept);
+                    List<Object> source = sourceEntry.getSourceObjects();
                     if (createTrace)
                         for (Object src : source)
                             try {
@@ -274,29 +277,31 @@ public class FactDiagramGenerator {
                             }
                     GenericTableManager.addRowElement(table, constraint);
                 }
+        }
     }
 
     private void generateVerbConcepts() {
         if (vcCandidates == null || vcCandidates.size() == 0)
             return;
         Stereotype stereotype = StereotypesHelper.getStereotype(project, "verb concept", profile);
-        for (List<String> concepts : vcCandidates.getDataset().keySet())
-            for (SBVRExpressionModel concept : vcCandidates.getDataset().get(concepts))
-                if (vcCandidates.isSelected(concepts, concept)) {
+        for (SourceEntry sourceEntry : vcCandidates.getDataset().keySet()) {
+            List<SBVRExpressionModel> sbvrList = vcCandidates.getDataset().get(sourceEntry).getCandidates();
+            for (SBVRExpressionModel concept : sbvrList)
+                if (vcCandidates.isSelected(sourceEntry, concept)) {
                     String concept1 = concept.getExpressionElement(0);
                     String verb = concept.getExpressionElement(1);
 
                     // Ensure that necessary general concepts exist; if not, then they must be created
                     PresentationElement el1, el2 = null;
-                    boolean createTrace = vcCandidates.isCreateTrace(concepts, concept);
+                    boolean createTrace = vcCandidates.isCreateTrace(sourceEntry, concept);
                     if (!gcList.contains(concept1))
-                        el1 = createGeneralConcept(concept1, concept, createTrace);
+                        el1 = createGeneralConcept(concept1, concept, createTrace, sourceEntry);
                     else
                         el1 = getElementWithName(targetDiagram, concept1);
                     String concept2 = concept.getExpressionElement(2);
                     if (concept2 != null && concept2.trim().length() > 0)
                         if (!gcList.contains(concept2))
-                            el2 = createGeneralConcept(concept2, concept, createTrace);
+                            el2 = createGeneralConcept(concept2, concept, createTrace, sourceEntry);
                         else
                             el2 = getElementWithName(targetDiagram, concept2);
                     if (el2 != null) {
@@ -310,7 +315,7 @@ public class FactDiagramGenerator {
                         ModelHelper.setNavigable(ModelHelper.getSecondMemberEnd(association), true);
                         if (StereotypesHelper.canApplyStereotype(association, stereotype))
                             StereotypesHelper.addStereotype(association, stereotype);
-                        List<Object> source = vcCandidates.getSourceData().get(concept);
+                        List<Object> source = sourceEntry.getSourceObjects();
                         if (createTrace)
                             for (Object src : source)
                                 try {
@@ -338,6 +343,7 @@ public class FactDiagramGenerator {
                         attr.setOwner(el1.getElement());
                     }
                 }
+        }
     }
 
     private PresentationElement getElementWithName(DiagramPresentationElement targetDiagram, String name) {

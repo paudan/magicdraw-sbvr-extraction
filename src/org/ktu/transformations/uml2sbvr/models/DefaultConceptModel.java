@@ -6,45 +6,45 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class DefaultCandidateConceptModel extends AbstractCandidateConceptModel {
+public class DefaultConceptModel extends AbstractConceptModel {
 
-    public DefaultCandidateConceptModel() {
+    public DefaultConceptModel() {
         super();
     }
 
     @Override
     public Set<String> getCandidatesListText() {
         Set<String> candidates = new HashSet<>();
-        for (List<String> concept : data.keySet())
+        for (SourceEntry concept : data.keySet())
             if (data.get(concept) != null)
-                for (SBVRExpressionModel sbvr : data.get(concept))
+                for (SBVRExpressionModel sbvr : data.get(concept).getCandidates())
                     candidates.add(sbvr.toString());
         return candidates;
     }
 
     @Override
-    public Set<String> getCandidatesList() {
+    public Set<String> getCandidatesListHTML() {
         Set<String> candidates = new HashSet<>();
-        for (List<String> concept : data.keySet())
+        for (SourceEntry concept : data.keySet())
             if (data.get(concept) != null)
-                for (SBVRExpressionModel sbvr : data.get(concept))
+                for (SBVRExpressionModel sbvr : data.get(concept).getCandidates())
                     candidates.add(sbvr.toHTMLString(true, null));
         return candidates;
     }
 
     @Override
-    public DefaultCandidateConceptModel clone() {
-        DefaultCandidateConceptModel copy = new DefaultCandidateConceptModel();
-        copy = (DefaultCandidateConceptModel) this.copyInstance(copy);
+    public DefaultConceptModel clone() {
+        DefaultConceptModel copy = new DefaultConceptModel();
+        copy = (DefaultConceptModel) this.copyInstance(copy);
         return copy;
     }
 
     @Override
     public Map<String, SBVRExpressionModel> getListMap() {
         Map<String, SBVRExpressionModel> map = new HashMap<>();
-        for (List<String> concept : data.keySet())
+        for (SourceEntry concept : data.keySet())
             if (data.get(concept) != null)
-                for (SBVRExpressionModel sbvr : data.get(concept))
+                for (SBVRExpressionModel sbvr : data.get(concept).getCandidates())
                     map.put(sbvr.toString(), sbvr);
         return map;
     }

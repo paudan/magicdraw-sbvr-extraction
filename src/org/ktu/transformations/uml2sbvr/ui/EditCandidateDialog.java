@@ -28,12 +28,12 @@ import javax.swing.LayoutStyle;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
-import org.ktu.transformations.uml2sbvr.models.AbstractCandidateConceptModel;
 import org.ktu.transformations.uml2sbvr.models.CandidateTableModel;
 import org.ktu.transformations.uml2sbvr.models.CandidateTableModel.CandidateEntry;
-import org.ktu.transformations.uml2sbvr.models.FilteredCandidateConceptModel;
+import org.ktu.transformations.uml2sbvr.models.FilteredConceptModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel.RuleType;
+import org.ktu.transformations.uml2sbvr.models.SourceEntry;
 
 @SuppressWarnings("serial")
 public class EditCandidateDialog extends JDialog {
@@ -49,7 +49,7 @@ public class EditCandidateDialog extends JDialog {
     }
 
     private static final ResourceBundle bundle = ResourceBundle.getBundle("org/ktu/transformations/uml2sbvr/ui/Bundle");
-    private FilteredCandidateConceptModel data;
+    private FilteredConceptModel data;
     private CandidateTableModel tablemodel;
     private int candidateIndex;
     private Set<String> gcTempList, vcTempList;
@@ -57,7 +57,7 @@ public class EditCandidateDialog extends JDialog {
     private final Operation operation;
     private Vector<Object[]> gcTemp, vcTemp;
     private final ExtractionWizardDialog parentDlg;
-    private Map<String, List<String>> map;
+    private Map<String, SourceEntry> map;
     private SBVRExpressionModel editedConcept;
     private CandidateEntry item;
 
@@ -79,8 +79,8 @@ public class EditCandidateDialog extends JDialog {
         this.operation = operation;
         map = new HashMap<>();
         initComponents();
-        for (List<String> element : data.manualExtractionCandidates())
-            map.put(AbstractCandidateConceptModel.getConceptsRepresentation(element), element);
+        for (SourceEntry element : data.manualExtractionCandidates())
+            map.put(element.toString(), element);
         comboBox.setModel(new DefaultComboBoxModel(map.keySet().toArray()));
         if (operation == Operation.NEW)
             init_new();
@@ -199,7 +199,7 @@ public class EditCandidateDialog extends JDialog {
             public void itemStateChanged(ItemEvent e) {
                 JComboBox combo = (JComboBox) e.getItemSelectable();
                 String text = combo.getSelectedItem().toString();
-                List<String> elemdata = map.get(text);
+                SourceEntry elemdata = map.get(text);
                 dlg.getTextArea().setText(dlg.extractCandidateText(elemdata));
                 updatePreviewLabel(dlg);
             }
@@ -226,7 +226,7 @@ public class EditCandidateDialog extends JDialog {
 
     }
 
-    private boolean performUpdate(EditCandidateDialog dlg, List<String> elements) {
+    private boolean performUpdate(EditCandidateDialog dlg, SourceEntry elements) {
         editedConcept = item != null ? item.getExpression() : null;
         String candidate = dlg.getTextArea().getText().trim();
         if (candidate.trim().length() == 0) {
@@ -295,8 +295,8 @@ public class EditCandidateDialog extends JDialog {
                     SBVRExpressionModel gcModel = new SBVRExpressionModel();
                     gcModel.addGeneralConcept((String) obj[1], true);
                     gcModel.setAuto(false);
-                    List<String> candidates = (List<String>) obj[0];
-                    parentDlg.gcCandidates.add(candidates, gcModel, data.getSourceData().get(candidates));
+                    SourceEntry candidates = (SourceEntry) obj[0];
+                    parentDlg.gcCandidates.add(candidates, gcModel);
                     parentDlg.getGCTableModel().addRow(new Object[]{true,
                         map.get(dlg.getComboBox().getSelectedItem().toString()), gcModel, Boolean.FALSE, Boolean.FALSE});
 
@@ -311,8 +311,8 @@ public class EditCandidateDialog extends JDialog {
                         else
                             vcModel.addVerbConcept(items[i].replaceAll("_", ""), true);
                     vcModel.setAuto(false);
-                    List<String> candidates = (List<String>) obj[0];
-                    parentDlg.gcCandidates.add(candidates, vcModel, data.getSourceData().get(candidates));
+                    SourceEntry candidates = (SourceEntry) obj[0];
+                    parentDlg.gcCandidates.add(candidates, vcModel);
                     parentDlg.getVCTableModel().addRow(new Object[]{true,
                         map.get(dlg.getComboBox().getSelectedItem().toString()), vcModel, Boolean.FALSE, Boolean.FALSE});
 
@@ -352,7 +352,7 @@ public class EditCandidateDialog extends JDialog {
             }
             model.setAuto(false);
             if (operation == Operation.NEW) {
-                data.add(elements, model, data.getSourceData().get(elements));
+                data.add(elements, model);
                 tablemodel.addRow(new Object[]{true,
                     map.get(dlg.getComboBox().getSelectedItem().toString()), model, Boolean.FALSE, Boolean.FALSE});
             } else {   
@@ -396,11 +396,12 @@ public class EditCandidateDialog extends JDialog {
         updatePreviewLabel(this);
     }
 
-    private String extractCandidateText(List<String> elemdata) {
+    private String extractCandidateText(SourceEntry elemdata) {
         StringBuilder str = new StringBuilder();
-        str.append(removeElementName(elemdata.get(0)));
-        for (int i = 1; i < elemdata.size(); i++)
-            str.append(" ").append(removeElementName(elemdata.get(i)).toLowerCase());
+        List<String> names = elemdata.getSourceNames();
+        str.append(removeElementName(names.get(0)));
+        for (int i = 1; i < names.size(); i++)
+            str.append(" ").append(removeElementName(names.get(i)).toLowerCase());
         return str.toString();
     }
 
@@ -408,7 +409,7 @@ public class EditCandidateDialog extends JDialog {
         return parentDlg.getExtractor().removeMetaconceptName(str);
     }
 
-    private boolean checkGCCandidates(String cand_concepts[], List<String> elements) {
+    private boolean checkGCCandidates(String cand_concepts[], SourceEntry elements) {
         Set<String> gcCandidates = parentDlg.gcCandidates.getCandidatesListText();
         for (int i = 0; i < cand_concepts.length; i++)
             if (!gcCandidates.contains(cand_concepts[i].replaceAll("_", " ")))
@@ -431,7 +432,7 @@ public class EditCandidateDialog extends JDialog {
         return true;
     }
 
-    private boolean checkVCCandidates(String concepts[], List<String> elements) {
+    private boolean checkVCCandidates(String concepts[], SourceEntry elements) {
         Set<String> vcCandidates = parentDlg.vcCandidates.getCandidatesListText();
         for (int i = 0; i < concepts.length; i++)
             if (!vcCandidates.contains(concepts[i].replaceAll("_", " ").trim()))

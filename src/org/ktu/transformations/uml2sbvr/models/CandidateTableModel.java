@@ -18,12 +18,12 @@ public class CandidateTableModel extends DefaultTableModel {
     
     public static class CandidateEntry {
         
-        private List<String> elements;
+        private SourceEntry elements;
         private SBVRExpressionModel expression;
         private Boolean selected, trace;
         private String original;
 
-        public CandidateEntry(List<String> elements, SBVRExpressionModel expression, 
+        public CandidateEntry(SourceEntry elements, SBVRExpressionModel expression, 
                 Boolean selected, Boolean trace, String original) {
             this.elements = elements;
             this.expression = expression;
@@ -32,7 +32,7 @@ public class CandidateTableModel extends DefaultTableModel {
             this.original = original;
         }
 
-        public List<String> getElements() {
+        public SourceEntry getElements() {
             return elements;
         }
 
@@ -54,12 +54,12 @@ public class CandidateTableModel extends DefaultTableModel {
 
     }
     
-    protected final FilteredCandidateConceptModel data;
+    protected final FilteredConceptModel data;
     protected List<CandidateEntry> entries;
     protected final Vector<String> cols;
     protected final Vector<Object> cgc;
 
-    public CandidateTableModel(FilteredCandidateConceptModel dataset, String[] messages) {
+    public CandidateTableModel(FilteredConceptModel dataset, String[] messages) {
         super();
         this.data = dataset;
         entries = new ArrayList<>();
@@ -71,10 +71,12 @@ public class CandidateTableModel extends DefaultTableModel {
 
     public void setDefaultView() {
         clearView();
-        for (List<String> concepts : data.getDataset().keySet())
-            for (SBVRExpressionModel obj : data.getDataset().get(concepts))
-                if (data.isSelected(concepts, obj))
-                    addCandidate(concepts, obj, data.isCreateTrace(concepts, obj));
+        for (SourceEntry source : data.getDataset().keySet()) {
+            List<SBVRExpressionModel> sbvrList = data.getDataset().get(source).getCandidates();
+            for (SBVRExpressionModel obj : sbvrList)
+                if (data.isSelected(source, obj))
+                    addCandidate(source, obj, data.isCreateTrace(source, obj));
+        }
         this.setDataVector(cgc, cols);
     }
 
@@ -88,26 +90,28 @@ public class CandidateTableModel extends DefaultTableModel {
 
     private void setVocabularyView(boolean modelVoc) {
         clearView();
-        for (List<String> concepts : data.getDataset().keySet())
-            for (SBVRExpressionModel obj : data.getDataset().get(concepts))
-                if (data.isSelected(concepts, obj) && obj.isModelVocabularyConcept() == modelVoc)
-                    addCandidate(concepts, obj, data.isCreateTrace(concepts, obj));
+        for (SourceEntry source : data.getDataset().keySet()) {
+            List<SBVRExpressionModel> sbvrList = data.getDataset().get(source).getCandidates();
+            for (SBVRExpressionModel obj : sbvrList)
+                if (data.isSelected(source, obj) && obj.isModelVocabularyConcept() == modelVoc)
+                    addCandidate(source, obj, data.isCreateTrace(source, obj));
+        }
         setDataVector(cgc, cols);
     }
 
-    private void addCandidate(List<String> concepts, SBVRExpressionModel obj, Boolean trace) {
+    private void addCandidate(SourceEntry source, SBVRExpressionModel obj, Boolean trace) {
         Vector<Object> element = new Vector<>();
         element.add(true);
-        element.add(AbstractCandidateConceptModel.getConceptsRepresentation(concepts));
+        element.add(source.toString());
         element.add(obj.toHTMLString(true, null));
         element.add(obj.isAuto());
         element.add(trace);
         cgc.add(element);
-        addEntries(concepts, obj, trace);
+        addEntries(source, obj, trace);
     }
     
-    private void addEntries(List<String> concepts, SBVRExpressionModel obj, Boolean trace) {
-        entries.add(new CandidateEntry(concepts, obj, true, trace, obj.toString()));
+    private void addEntries(SourceEntry source, SBVRExpressionModel obj, Boolean trace) {
+        entries.add(new CandidateEntry(source, obj, true, trace, obj.toString()));
     }
     
     public CandidateEntry getEntryAt(Integer index) {
@@ -120,8 +124,8 @@ public class CandidateTableModel extends DefaultTableModel {
             return;
         Object [] repr = new Object[5];
         repr[0] = rowData[0];
-        if (rowData[1] instanceof List)
-            repr[1] = AbstractCandidateConceptModel.getConceptsRepresentation((List<String>) rowData[1]);
+        if (rowData[1] instanceof SourceEntry)
+            repr[1] = ((SourceEntry) rowData[1]).toString();
         if (rowData[2] instanceof SBVRExpressionModel)
             repr[2] = ((SBVRExpressionModel)rowData[2]).toHTMLString(true, Boolean.TRUE);
         repr[3] = rowData[3];
@@ -130,7 +134,7 @@ public class CandidateTableModel extends DefaultTableModel {
         if (!(rowData[1] instanceof List && rowData[2] instanceof SBVRExpressionModel
                 && rowData[3] instanceof Boolean))
             return;
-        addEntries((List<String>) rowData[1], (SBVRExpressionModel) rowData[2], (Boolean) rowData[4]);
+        addEntries((SourceEntry) rowData[1], (SBVRExpressionModel) rowData[2], (Boolean) rowData[4]);
     }
 
     private void clearView() {
@@ -155,7 +159,7 @@ public class CandidateTableModel extends DefaultTableModel {
         CandidateEntry entry = getEntryAt(row);
         switch (column) {
             case 1:
-                entry.elements = (List<String>) rowData;
+                entry.elements = (SourceEntry) rowData;
                 break;
             case 2:
                 entry.expression = (SBVRExpressionModel) rowData;

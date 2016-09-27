@@ -14,7 +14,6 @@ import java.awt.event.MouseEvent;
 import java.io.PrintWriter;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -43,9 +42,10 @@ import org.ktu.transformations.uml2sbvr.extract.AbstractSBVRExtractor;
 import org.ktu.transformations.uml2sbvr.extract.FactDiagramGenerator;
 import org.ktu.transformations.uml2sbvr.models.CandidateTableModel;
 import org.ktu.transformations.uml2sbvr.models.CandidateTableModel.CandidateEntry;
-import org.ktu.transformations.uml2sbvr.models.FilteredCandidateConceptModel;
+import org.ktu.transformations.uml2sbvr.models.FilteredConceptModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel.ExpressionType;
+import org.ktu.transformations.uml2sbvr.models.SourceEntry;
 import org.ktu.transformations.uml2sbvr.ui.EditCandidateDialog.ConceptType;
 import org.ktu.transformations.uml2sbvr.ui.EditCandidateDialog.Operation;
 
@@ -56,9 +56,9 @@ import org.ktu.transformations.uml2sbvr.ui.EditCandidateDialog.Operation;
 @SuppressWarnings("serial")
 public class ExtractionWizardDialog extends javax.swing.JDialog {
 
-    public FilteredCandidateConceptModel gcCandidates, vcCandidates, brCandidates;
-    private FilteredCandidateConceptModel copy_gcCandidates, copy_vcCandidates, copy_brCandidates;
-    public FilteredCandidateConceptModel temp_vcCandidates, temp_brCandidates;
+    public FilteredConceptModel gcCandidates, vcCandidates, brCandidates;
+    private FilteredConceptModel copy_gcCandidates, copy_vcCandidates, copy_brCandidates;
+    public FilteredConceptModel temp_vcCandidates, temp_brCandidates;
     private AbstractSBVRExtractor extractor;
     private boolean extractModelVoc;
     private NamedElement diagramPackage;
@@ -92,13 +92,13 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             Logger.getLogger(ExtractionWizardDialog.class.getName()).log(Level.WARNING, null, ex);
         }
         SwingUtilities.updateComponentTreeUI(this);
-        extractor.setGCCandidateModel(new FilteredCandidateConceptModel());
-        extractor.setVCCandidateModel(new FilteredCandidateConceptModel());
-        extractor.setBRCandidateModel(new FilteredCandidateConceptModel());
+        extractor.setGCCandidateModel(new FilteredConceptModel());
+        extractor.setVCCandidateModel(new FilteredConceptModel());
+        extractor.setBRCandidateModel(new FilteredConceptModel());
         extractor.extractAll();
-        gcCandidates = (FilteredCandidateConceptModel) extractor.getGCCandidateModel();
-        vcCandidates = (FilteredCandidateConceptModel) extractor.getVCCandidateModel();
-        brCandidates = (FilteredCandidateConceptModel) extractor.getBRCandidateModel();
+        gcCandidates = (FilteredConceptModel) extractor.getGCCandidateModel();
+        vcCandidates = (FilteredConceptModel) extractor.getVCCandidateModel();
+        brCandidates = (FilteredConceptModel) extractor.getBRCandidateModel();
         copy_gcCandidates = gcCandidates.clone();
         copy_vcCandidates = vcCandidates.clone();
         copy_brCandidates = brCandidates.clone();
@@ -182,6 +182,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         jButton4 = new JButton();
         jRadioButton2 = new JRadioButton();
         jRadioButton3 = new JRadioButton();
+        btnMerge = new JButton();
         jPanel3 = new JPanel();
         jScrollPane3 = new JScrollPane();
         JTable4 = new JTable();
@@ -271,6 +272,9 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             }
         });
 
+        btnMerge.setText(bundle.getString("ExtractionWizardDialog.btnMerge.text")); // NOI18N
+        btnMerge.setName("btnMerge"); // NOI18N
+
         GroupLayout jPanel2Layout = new GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
@@ -288,6 +292,8 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
                         .addComponent(jRadioButton3))
                     .addGroup(GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(btnMerge)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton4)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton5)
@@ -309,7 +315,8 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
                 .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(JButton6)
                     .addComponent(jButton5)
-                    .addComponent(jButton4))
+                    .addComponent(jButton4)
+                    .addComponent(btnMerge))
                 .addContainerGap())
         );
 
@@ -564,8 +571,8 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
                     bundle.getString("ExtractionWizardDialog_51"), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
                 new VetisExporter(projName) {
 
-                    protected void printCandidate(PrintWriter writer, FilteredCandidateConceptModel dataset,
-                            SBVRExpressionModel obj, List<String> concepts, String conceptType) {
+                    protected void printCandidate(PrintWriter writer, FilteredConceptModel dataset,
+                            SBVRExpressionModel obj, SourceEntry concepts, String conceptType) {
                         if (dataset.isSelected(concepts, obj)) {
                             writer.println(obj.toUnderscoreString());
                             if (conceptType != null)
@@ -683,7 +690,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
                 extractor.createVerbConceptCandidates();
                 if (extractModelVoc)
                     extractor.createModelVocabularyCandidates();
-                vcCandidates = (FilteredCandidateConceptModel) extractor.getVCCandidateModel();
+                vcCandidates = (FilteredConceptModel) extractor.getVCCandidateModel();
                 updateTableModel(JTable4, messages_vcTable, vcCandidates,
                         jRadioButton6.isSelected() ? null : jRadioButton5.isSelected(), false);
             }
@@ -692,7 +699,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             if (step > 0) {
                 extractor.getVCCandidateModel().setAllIdentified(identifiedFlag);
                 extractor.createBusinessRuleCandidates();
-                brCandidates = (FilteredCandidateConceptModel) extractor.getBRCandidateModel();
+                brCandidates = (FilteredConceptModel) extractor.getBRCandidateModel();
                 updateTableModel(JTable5, messages_brTable, brCandidates, null, false);
             }
         }
@@ -703,7 +710,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             JButton2.setText(bundle.getString("ExtractionWizardDialog_29"));
     }
 
-    private void updateTableModel(final JTable table, String[] messages, FilteredCandidateConceptModel modeldata,
+    private void updateTableModel(final JTable table, String[] messages, FilteredConceptModel modeldata,
             Boolean modelVoc, boolean restore) {
         TableModel tmodel = table.getModel();
         if (tmodel == null || !(tmodel instanceof CandidateTableModel) || restore)
@@ -804,7 +811,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         return voc.toString();
     }
 
-    private void display(JTextPane bvCtl, FilteredCandidateConceptModel candidates, ExpressionType type, boolean modelVoc) {
+    private void display(JTextPane bvCtl, FilteredConceptModel candidates, ExpressionType type, boolean modelVoc) {
         StringBuilder voc = new StringBuilder();
         voc.append("<html>");
         HashMap<String, SBVRExpressionModel> model = candidates.getListMap();
@@ -832,7 +839,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         return (CandidateTableModel) JTable5.getModel();
     }
 
-    private void applyFilter(JTable table, FilteredCandidateConceptModel data) {
+    private void applyFilter(JTable table, FilteredConceptModel data) {
         if (table.getSelectedColumn() == 0) {
             CandidateTableModel model = (CandidateTableModel) table.getModel();
             int row = table.getSelectedRow();
@@ -857,6 +864,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
     private JTable JTable4;
     private JTable JTable5;
     private JButton btnCancel;
+    private JButton btnMerge;
     private ButtonGroup buttonGroup1;
     private ButtonGroup buttonGroup2;
     private JButton jButton10;

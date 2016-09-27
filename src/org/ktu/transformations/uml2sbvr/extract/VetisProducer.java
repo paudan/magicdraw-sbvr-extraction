@@ -11,15 +11,16 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.ktu.transformations.uml2sbvr.PluginUtilities;
-import org.ktu.transformations.uml2sbvr.models.AbstractCandidateConceptModel;
+import org.ktu.transformations.uml2sbvr.models.AbstractConceptModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel;
+import org.ktu.transformations.uml2sbvr.models.SourceEntry;
 import org.vetis.md.remote.RemoteService;
 import org.vetis.md.ui.workflows.UiwfBindRemoteService;
 
 public class VetisProducer {
 
     private final String projectPath, projectName;
-    private AbstractCandidateConceptModel gcCandidates, vcCandidates, brCandidates;
+    private AbstractConceptModel gcCandidates, vcCandidates, brCandidates;
     private final boolean includeModelVoc;
 
     public VetisProducer(String projectPath, String projectName) {
@@ -88,17 +89,19 @@ public class VetisProducer {
     /**
      * @param conceptType A string representing "Concept_type" in VeTIS editor
      */
-    private void exportCandidates(PrintWriter writer, AbstractCandidateConceptModel dataset, String conceptType, boolean modelVoc) {
-        if (dataset == null || dataset.size() == 0)
+    private void exportCandidates(PrintWriter writer, AbstractConceptModel dataset, String conceptType, boolean modelVoc) {
+        if (dataset == null || dataset.getDataset().isEmpty())
             return;
-        for (List<String> concepts : dataset.getDataset().keySet())
-            for (SBVRExpressionModel obj : dataset.getDataset().get(concepts))
+        for (SourceEntry concepts : dataset.getDataset().keySet()) {
+            List<SBVRExpressionModel> sbvrList = dataset.getDataset().get(concepts).getCandidates();
+            for (SBVRExpressionModel obj : sbvrList)
                 if (obj.isModelVocabularyConcept() == modelVoc)
                     printCandidate(writer, dataset, obj, concepts, conceptType);
+        }
     }
 
-    protected void printCandidate(PrintWriter writer, AbstractCandidateConceptModel dataset,
-            SBVRExpressionModel obj, List<String> concepts, String conceptType) {
+    protected void printCandidate(PrintWriter writer, AbstractConceptModel dataset,
+            SBVRExpressionModel obj, SourceEntry concepts, String conceptType) {
         writer.println(obj.toUnderscoreString());
         if (conceptType != null)
             writer.format("\t%s: %s\n", PluginUtilities.CONCEPT_TYPE_STRING, conceptType);
@@ -124,15 +127,15 @@ public class VetisProducer {
         writer.close();
     }
 
-    public void setGCCandidates(AbstractCandidateConceptModel gcCandidates) {
+    public void setGCCandidates(AbstractConceptModel gcCandidates) {
         this.gcCandidates = gcCandidates;
     }
 
-    public void setVCCandidates(AbstractCandidateConceptModel vcCandidates) {
+    public void setVCCandidates(AbstractConceptModel vcCandidates) {
         this.vcCandidates = vcCandidates;
     }
 
-    public void setBRCandidates(AbstractCandidateConceptModel brCandidates) {
+    public void setBRCandidates(AbstractConceptModel brCandidates) {
         this.brCandidates = brCandidates;
     }
 

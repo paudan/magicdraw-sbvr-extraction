@@ -10,14 +10,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.ktu.transformations.uml2sbvr.models.AbstractCandidateConceptModel;
-import org.ktu.transformations.uml2sbvr.models.DefaultCandidateConceptModel;
+import org.ktu.transformations.uml2sbvr.models.AbstractConceptModel;
+import org.ktu.transformations.uml2sbvr.models.DefaultConceptModel;
 import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel;
 
 public abstract class AbstractSBVRExtractor {
 
     protected Collection<DiagramPresentationElement> diagrams;
-    protected AbstractCandidateConceptModel gc_candidates, vc_candidates, br_candidates;
+    protected AbstractConceptModel gc_candidates, vc_candidates, br_candidates;
+    protected Map<String, SBVRExpressionModel> metamodelVocabulary;
     protected boolean strictOnly, extractMMVoc;
     protected boolean extractedStrict, extractedAuto;
     protected Collection<Element> candidateElements;
@@ -66,6 +67,11 @@ public abstract class AbstractSBVRExtractor {
         extractedAuto = false;
         gcReplacements = new HashMap<>();
         vcReplacements = new HashMap<>();
+        metamodelVocabulary = new HashMap<>();
+        String [] mmNames = getMetamodelVocabularyNames();
+        if (mmNames != null && mmNames.length > 0)
+            for (String name: mmNames)
+                metamodelVocabulary.put(name, createModelVocabularyConcept(name));
     }
 
     protected abstract void extractGeneralConceptCandidates();
@@ -81,6 +87,8 @@ public abstract class AbstractSBVRExtractor {
     protected abstract void extractBusinessRuleCandidates();
 
     protected abstract void extractModelVocabulary();
+    
+    public abstract String[] getMetamodelVocabularyNames(); 
 
     protected void readElements(DiagramPresentationElement diagram) {
         if (candidateElements == null)
@@ -97,7 +105,7 @@ public abstract class AbstractSBVRExtractor {
 
     public void createGeneralConceptCandidates() {
         if (gc_candidates == null)
-            gc_candidates = new DefaultCandidateConceptModel();
+            gc_candidates = new DefaultConceptModel();
         else
             gc_candidates.removeAll();
         extractGeneralConceptCandidates();
@@ -107,7 +115,7 @@ public abstract class AbstractSBVRExtractor {
         if (gc_candidates == null)
             createGeneralConceptCandidates();
         if (vc_candidates == null)
-            vc_candidates = new DefaultCandidateConceptModel();
+            vc_candidates = new DefaultConceptModel();
         else
             vc_candidates.removeAll();
         extractVerbConceptCandidates();
@@ -119,7 +127,7 @@ public abstract class AbstractSBVRExtractor {
         if (vc_candidates == null)
             createVerbConceptCandidates();
         if (br_candidates == null)
-            br_candidates = new DefaultCandidateConceptModel();
+            br_candidates = new DefaultConceptModel();
         else
             br_candidates.removeAll();
         extractBusinessRuleCandidates();
@@ -127,9 +135,9 @@ public abstract class AbstractSBVRExtractor {
 
     public void createModelVocabularyCandidates() {
         if (gc_candidates == null)
-            gc_candidates = new DefaultCandidateConceptModel();
+            gc_candidates = new DefaultConceptModel();
         if (vc_candidates == null)
-            vc_candidates = new DefaultCandidateConceptModel();
+            vc_candidates = new DefaultConceptModel();
         extractModelVocabularyCandidates();
     }
 
@@ -156,27 +164,27 @@ public abstract class AbstractSBVRExtractor {
             createModelVocabularyCandidates();
     }
 
-    public AbstractCandidateConceptModel getGCCandidateModel() {
+    public AbstractConceptModel getGCCandidateModel() {
         return gc_candidates;
     }
 
-    public void setGCCandidateModel(AbstractCandidateConceptModel gc_candidates) {
+    public void setGCCandidateModel(AbstractConceptModel gc_candidates) {
         this.gc_candidates = gc_candidates;
     }
 
-    public AbstractCandidateConceptModel getVCCandidateModel() {
+    public AbstractConceptModel getVCCandidateModel() {
         return vc_candidates;
     }
 
-    public void setVCCandidateModel(AbstractCandidateConceptModel vc_candidates) {
+    public void setVCCandidateModel(AbstractConceptModel vc_candidates) {
         this.vc_candidates = vc_candidates;
     }
 
-    public AbstractCandidateConceptModel getBRCandidateModel() {
+    public AbstractConceptModel getBRCandidateModel() {
         return br_candidates;
     }
 
-    public void setBRCandidateModel(AbstractCandidateConceptModel br_candidates) {
+    public void setBRCandidateModel(AbstractConceptModel br_candidates) {
         this.br_candidates = br_candidates;
     }
 
@@ -263,7 +271,7 @@ public abstract class AbstractSBVRExtractor {
         this.vcReplacements = vcReplacements;
     }
     
-    private String containsCandidate(String text, AbstractCandidateConceptModel candidates, 
+    private String containsCandidate(String text, AbstractConceptModel candidates, 
             Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> replacements) {
         Set<String> gclist = candidates.getListMap().keySet();
         for (String gc : gclist)
@@ -275,7 +283,7 @@ public abstract class AbstractSBVRExtractor {
         return null;
     }
     
-    private SBVRExpressionModel getConcept(String cand, AbstractCandidateConceptModel candidates, 
+    private SBVRExpressionModel getConcept(String cand, AbstractConceptModel candidates, 
             Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> replacements) {
         Map<String, SBVRExpressionModel> map = candidates.getListMap();
         Set<String> gclist = map.keySet();
@@ -306,4 +314,12 @@ public abstract class AbstractSBVRExtractor {
     }
     
     public abstract String removeMetaconceptName(String name);
+    
+    protected SBVRExpressionModel createModelVocabularyConcept(String name) {
+        SBVRExpressionModel candidate = new SBVRExpressionModel();
+        candidate.addGeneralConcept(name, false);
+        candidate.setAuto(true);
+        candidate.setModelVocabularyConcept(true);
+        return candidate;
+    }
 }
