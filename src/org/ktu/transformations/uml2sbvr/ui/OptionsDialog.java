@@ -11,6 +11,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JTabbedPane;
 import javax.swing.LayoutStyle;
 import javax.swing.WindowConstants;
 
@@ -33,22 +34,40 @@ public class OptionsDialog extends javax.swing.JDialog {
     private void initComponents() {
 
         buttonGroup1 = new ButtonGroup();
+        btnTransform = new JButton();
+        btnCancel = new JButton();
+        tbpOptions = new JTabbedPane();
+        jPanel4 = new JPanel();
         jPanel1 = new JPanel();
         chkVocabulary = new JCheckBox();
-        jLabel1 = new JLabel();
         chkMMVocabulary = new JCheckBox();
-        chkStrict = new JCheckBox();
         jPanel2 = new JPanel();
         radioM2M = new JRadioButton();
         radioM2T = new JRadioButton();
+        chkStrict = new JCheckBox();
+        jLabel1 = new JLabel();
         jLabel2 = new JLabel();
-        btnTransform = new JButton();
-        btnCancel = new JButton();
+        tabAdditional = new JPanel();
+        chkUseNLP = new JCheckBox();
+        jPanel6 = new JPanel();
+        chkAllCaps = new JCheckBox();
+        chkStartsCap = new JCheckBox();
+        jLabel3 = new JLabel();
+        chkWordnet = new JCheckBox();
 
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setTitle(bundle.getString("OptionsDialog.title")); // NOI18N
         setResizable(false);
         setType(Type.UTILITY);
+
+        btnTransform.setText(bundle.getString("OptionsDialog.btnTransform.text")); // NOI18N
+
+        btnCancel.setText(bundle.getString("OptionsDialog.btnCancel.text")); // NOI18N
+        btnCancel.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnCancelActionPerformed(evt);
+            }
+        });
 
         jPanel1.setBorder(BorderFactory.createEtchedBorder());
 
@@ -59,8 +78,6 @@ public class OptionsDialog extends javax.swing.JDialog {
                 chkVocabularyActionPerformed(evt);
             }
         });
-
-        jLabel1.setText(bundle.getString("OptionsDialog.jLabel1.text")); // NOI18N
 
         chkMMVocabulary.setText(bundle.getString("OptionsDialog.chkMMVocabulary.text")); // NOI18N
         chkMMVocabulary.addActionListener(new ActionListener() {
@@ -73,25 +90,17 @@ public class OptionsDialog extends javax.swing.JDialog {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addComponent(chkMMVocabulary)
                     .addComponent(chkVocabulary)
-                    .addComponent(jLabel1))
-                .addContainerGap(110, Short.MAX_VALUE))
+                    .addComponent(chkMMVocabulary))
+                .addGap(0, 120, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap(12, Short.MAX_VALUE)
-                .addComponent(jLabel1)
-                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(chkVocabulary)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(chkMMVocabulary))
         );
-
-        chkStrict.setText(bundle.getString("OptionsDialog.chkStrict.text")); // NOI18N
-        chkStrict.setToolTipText(bundle.getString("OptionsDialog.chkStrict.toolTipText")); // NOI18N
 
         jPanel2.setBorder(BorderFactory.createEtchedBorder());
 
@@ -102,66 +111,135 @@ public class OptionsDialog extends javax.swing.JDialog {
         buttonGroup1.add(radioM2T);
         radioM2T.setText(bundle.getString("OptionsDialog.radioM2T.text")); // NOI18N
 
-        jLabel2.setText(bundle.getString("OptionsDialog.jLabel2.text")); // NOI18N
-
         GroupLayout jPanel2Layout = new GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(radioM2M)
-                        .addGap(18, 18, 18)
-                        .addComponent(radioM2T, GroupLayout.PREFERRED_SIZE, 54, GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jLabel2))
-                .addGap(0, 0, Short.MAX_VALUE))
+                .addComponent(radioM2M)
+                .addGap(18, 18, 18)
+                .addComponent(radioM2T, GroupLayout.PREFERRED_SIZE, 54, GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 124, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
-                .addComponent(jLabel2)
-                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 4, Short.MAX_VALUE)
+                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(radioM2M)
                     .addComponent(radioM2T)))
         );
 
-        btnTransform.setText(bundle.getString("OptionsDialog.btnTransform.text")); // NOI18N
+        chkStrict.setText(bundle.getString("OptionsDialog.chkStrict.text")); // NOI18N
+        chkStrict.setToolTipText(bundle.getString("OptionsDialog.chkStrict.toolTipText")); // NOI18N
 
-        btnCancel.setText(bundle.getString("OptionsDialog.btnCancel.text")); // NOI18N
-        btnCancel.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                btnCancelActionPerformed(evt);
-            }
-        });
+        jLabel1.setText(bundle.getString("OptionsDialog.jLabel1.text")); // NOI18N
+
+        jLabel2.setText(bundle.getString("OptionsDialog.jLabel2.text")); // NOI18N
+
+        GroupLayout jPanel4Layout = new GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(jPanel4Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel4Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel2, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel1)
+                    .addComponent(jLabel2)
+                    .addComponent(chkStrict))
+                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel4Layout.setVerticalGroup(jPanel4Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addGap(8, 8, 8)
+                .addComponent(jLabel1)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel2)
+                .addGap(2, 2, 2)
+                .addComponent(jPanel2, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(chkStrict)
+                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        tbpOptions.addTab(bundle.getString("OptionsDialog.jPanel4.TabConstraints.tabTitle"), jPanel4); // NOI18N
+
+        chkUseNLP.setText(bundle.getString("OptionsDialog.chkUseNLP.text")); // NOI18N
+        chkUseNLP.setToolTipText(bundle.getString("OptionsDialog.chkUseNLP.toolTipText")); // NOI18N
+
+        jPanel6.setBorder(BorderFactory.createEtchedBorder());
+
+        chkAllCaps.setText(bundle.getString("OptionsDialog.chkAllCaps.text")); // NOI18N
+
+        chkStartsCap.setText(bundle.getString("OptionsDialog.chkStartsCap.text")); // NOI18N
+
+        GroupLayout jPanel6Layout = new GroupLayout(jPanel6);
+        jPanel6.setLayout(jPanel6Layout);
+        jPanel6Layout.setHorizontalGroup(jPanel6Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel6Layout.createSequentialGroup()
+                .addGroup(jPanel6Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                    .addComponent(chkStartsCap)
+                    .addComponent(chkAllCaps))
+                .addGap(0, 0, Short.MAX_VALUE))
+        );
+        jPanel6Layout.setVerticalGroup(jPanel6Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel6Layout.createSequentialGroup()
+                .addComponent(chkStartsCap)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(chkAllCaps)
+                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        jLabel3.setText(bundle.getString("OptionsDialog.jLabel3.text")); // NOI18N
+        jLabel3.setToolTipText(bundle.getString("OptionsDialog.jLabel3.toolTipText")); // NOI18N
+
+        chkWordnet.setText(bundle.getString("OptionsDialog.chkWordnet.text")); // NOI18N
+
+        GroupLayout tabAdditionalLayout = new GroupLayout(tabAdditional);
+        tabAdditional.setLayout(tabAdditionalLayout);
+        tabAdditionalLayout.setHorizontalGroup(tabAdditionalLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(tabAdditionalLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(tabAdditionalLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel6, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(tabAdditionalLayout.createSequentialGroup()
+                        .addGroup(tabAdditionalLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                            .addComponent(chkWordnet)
+                            .addComponent(chkUseNLP)
+                            .addComponent(jLabel3))
+                        .addGap(0, 36, Short.MAX_VALUE)))
+                .addContainerGap())
+        );
+        tabAdditionalLayout.setVerticalGroup(tabAdditionalLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(tabAdditionalLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(chkUseNLP)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(chkWordnet)
+                .addGap(11, 11, 11)
+                .addComponent(jLabel3)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel6, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(31, Short.MAX_VALUE))
+        );
+
+        tbpOptions.addTab(bundle.getString("OptionsDialog.tabAdditional.TabConstraints.tabTitle"), tabAdditional); // NOI18N
 
         GroupLayout layout = new GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(btnCancel)
-                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnTransform))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
-                                .addComponent(jPanel2, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jPanel1, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .addComponent(chkStrict))
-                        .addGap(0, 0, Short.MAX_VALUE)))
+            .addComponent(tbpOptions)
+            .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(btnCancel)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(btnTransform)
                 .addContainerGap())
         );
         layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanel1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel2, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(chkStrict)
+                .addComponent(tbpOptions, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(btnTransform)
@@ -242,14 +320,23 @@ public class OptionsDialog extends javax.swing.JDialog {
     private JButton btnCancel;
     private JButton btnTransform;
     private ButtonGroup buttonGroup1;
+    private JCheckBox chkAllCaps;
     private JCheckBox chkMMVocabulary;
+    private JCheckBox chkStartsCap;
     private JCheckBox chkStrict;
+    private JCheckBox chkUseNLP;
     private JCheckBox chkVocabulary;
+    private JCheckBox chkWordnet;
     private JLabel jLabel1;
     private JLabel jLabel2;
+    private JLabel jLabel3;
     private JPanel jPanel1;
     private JPanel jPanel2;
+    private JPanel jPanel4;
+    private JPanel jPanel6;
     private JRadioButton radioM2M;
     private JRadioButton radioM2T;
+    private JPanel tabAdditional;
+    public JTabbedPane tbpOptions;
     // End of variables declaration//GEN-END:variables
 }

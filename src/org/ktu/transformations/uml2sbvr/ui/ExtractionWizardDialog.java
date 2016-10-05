@@ -182,7 +182,8 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         jButton4 = new JButton();
         jRadioButton2 = new JRadioButton();
         jRadioButton3 = new JRadioButton();
-        btnMerge = new JButton();
+        btnMergeGC = new JButton();
+        btnUnmergeGC = new JButton();
         jPanel3 = new JPanel();
         jScrollPane3 = new JScrollPane();
         JTable4 = new JTable();
@@ -193,12 +194,16 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
         jRadioButton5 = new JRadioButton();
         jRadioButton6 = new JRadioButton();
         JButton9 = new JButton();
+        btnMergeVC = new JButton();
+        btnUnmergeVC = new JButton();
         jPanel4 = new JPanel();
         jButton10 = new JButton();
         jScrollPane4 = new JScrollPane();
         JTable5 = new JTable();
         JButton12 = new JButton();
         jButton11 = new JButton();
+        btnMergeBR = new JButton();
+        btnUnmergeBR = new JButton();
         JButton2 = new JButton();
         JButton3 = new JButton();
         btnCancel = new JButton();
@@ -272,8 +277,11 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             }
         });
 
-        btnMerge.setText(bundle.getString("ExtractionWizardDialog.btnMerge.text")); // NOI18N
-        btnMerge.setName("btnMerge"); // NOI18N
+        btnMergeGC.setText(bundle.getString("ExtractionWizardDialog.btnMergeGC.text")); // NOI18N
+        btnMergeGC.setName("btnMergeGC"); // NOI18N
+
+        btnUnmergeGC.setText(bundle.getString("ExtractionWizardDialog.btnUnmergeGC.text")); // NOI18N
+        btnUnmergeGC.setName("btnUnmergeGC"); // NOI18N
 
         GroupLayout jPanel2Layout = new GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -281,7 +289,7 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 645, Short.MAX_VALUE)
+                    .addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 662, Short.MAX_VALUE)
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addComponent(jLabel1)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -292,7 +300,9 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
                         .addComponent(jRadioButton3))
                     .addGroup(GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(btnMerge)
+                        .addComponent(btnMergeGC)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnUnmergeGC)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton4)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
@@ -316,7 +326,8 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
                     .addComponent(JButton6)
                     .addComponent(jButton5)
                     .addComponent(jButton4)
-                    .addComponent(btnMerge))
+                    .addComponent(btnMergeGC)
+                    .addComponent(btnUnmergeGC))
                 .addContainerGap())
         );
 
@@ -385,13 +396,24 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             }
         });
 
+        btnMergeVC.setText(bundle.getString("ExtractionWizardDialog.btnMergeVC.text")); // NOI18N
+        btnMergeVC.setName("btnMergeVC"); // NOI18N
+        btnMergeVC.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnMergeVCActionPerformed(evt);
+            }
+        });
+
+        btnUnmergeVC.setText(bundle.getString("ExtractionWizardDialog.btnUnmergeVC.text")); // NOI18N
+        btnUnmergeVC.setName("btnUnmergeVC"); // NOI18N
+
         GroupLayout jPanel3Layout = new GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 645, Short.MAX_VALUE)
+                    .addComponent(jScrollPane3)
                     .addGroup(jPanel3Layout.createSequentialGroup()
                         .addComponent(jLabel2)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -401,7 +423,11 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
                         .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jRadioButton6))
                     .addGroup(GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addGap(115, 115, 115)
+                        .addComponent(btnMergeVC)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnUnmergeVC, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton8)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton7)
@@ -423,7 +449,9 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
                 .addGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(JButton9)
                     .addComponent(jButton7)
-                    .addComponent(jButton8))
+                    .addComponent(jButton8)
+                    .addComponent(btnMergeVC)
+                    .addComponent(btnUnmergeVC))
                 .addContainerGap())
         );
 
@@ -461,15 +489,25 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
             }
         });
 
+        btnMergeBR.setText(bundle.getString("ExtractionWizardDialog.btnMergeBR.text")); // NOI18N
+        btnMergeBR.setName("btnMergeBR"); // NOI18N
+
+        btnUnmergeBR.setText(bundle.getString("ExtractionWizardDialog.btnUnmergeBR.text")); // NOI18N
+        btnUnmergeBR.setName("btnUnmergeBR"); // NOI18N
+
         GroupLayout jPanel4Layout = new GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(jPanel4Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel4Layout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                    .addComponent(jScrollPane4)
+                    .addComponent(jScrollPane4, GroupLayout.DEFAULT_SIZE, 662, Short.MAX_VALUE)
                     .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addGap(0, 338, Short.MAX_VALUE)
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(btnMergeBR)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnUnmergeBR)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton11)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton10)
@@ -485,7 +523,9 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
                 .addGroup(jPanel4Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(JButton12)
                     .addComponent(jButton10)
-                    .addComponent(jButton11))
+                    .addComponent(jButton11)
+                    .addComponent(btnMergeBR)
+                    .addComponent(btnUnmergeBR))
                 .addContainerGap())
         );
 
@@ -664,6 +704,10 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
     private void JButton12ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_JButton12ActionPerformed
         preview(3);
     }//GEN-LAST:event_JButton12ActionPerformed
+
+    private void btnMergeVCActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnMergeVCActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnMergeVCActionPerformed
 
     public void addReplacement(String original, String replacement, SBVRExpressionModel expression, ConceptType type) {
         if (type == ConceptType.GENERAL_CONCEPT)
@@ -864,7 +908,12 @@ public class ExtractionWizardDialog extends javax.swing.JDialog {
     private JTable JTable4;
     private JTable JTable5;
     private JButton btnCancel;
-    private JButton btnMerge;
+    private JButton btnMergeBR;
+    private JButton btnMergeGC;
+    private JButton btnMergeVC;
+    private JButton btnUnmergeBR;
+    private JButton btnUnmergeGC;
+    private JButton btnUnmergeVC;
     private ButtonGroup buttonGroup1;
     private ButtonGroup buttonGroup2;
     private JButton jButton10;

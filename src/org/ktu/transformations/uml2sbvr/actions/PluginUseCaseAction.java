@@ -41,6 +41,7 @@ public class PluginUseCaseAction {
         final OptionsDialog otDlg = new OptionsDialog(mainframe, true);
         if (pkg == null && (diagram == null || diagram.getDiagram() == null))
             return;
+        otDlg.tbpOptions.remove(1);
         otDlg.getTransformButton().addActionListener(new ActionListener() {
 
             @Override
