@@ -27,6 +27,7 @@ public class OptionsDialog extends javax.swing.JDialog {
     public OptionsDialog(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
+        tbpOptions.removeTabAt(1);
     }
 
     @SuppressWarnings("unchecked")
