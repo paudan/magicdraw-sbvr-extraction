@@ -1,4 +1,4 @@
-package org.ktu.transformations.uml2sbvr;
+package org.ktu.model2sbvr;
 
 import org.ktu.model2sbvr.PluginUtilities;
 import com.nomagic.magicdraw.core.Application;
