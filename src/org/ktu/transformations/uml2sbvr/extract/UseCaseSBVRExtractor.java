@@ -458,16 +458,16 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
         Collection<Element> newelem = new HashSet<>();
         Collection<Package> packages = new HashSet<>();
         for (Element element : colelem)
-            if (element instanceof Package && diagram.findPresentationElement(element, null) != null)
+            if (element instanceof Package && diagram.findPresentationElement(element, (Class)null) != null)
                 packages.add((Package) element);
         while (!packages.isEmpty()) {
             Collection<Package> newPack = new HashSet<>();
             for (Package pack : packages) {
                 for (Element el : pack.getOwnedElement())
-                    if (diagram.findPresentationElement(el, null) != null)
+                    if (diagram.findPresentationElement(el, (Class)null) != null)
                         newelem.add(el);
                 for (Package innerPack : pack.getNestedPackage())
-                    if (diagram.findPresentationElement(innerPack, null) != null)
+                    if (diagram.findPresentationElement(innerPack, (Class)null) != null)
                         newPack.add(innerPack);
             }
             packages = newPack;

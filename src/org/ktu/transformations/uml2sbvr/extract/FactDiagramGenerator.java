@@ -14,9 +14,11 @@ import com.nomagic.magicdraw.properties.PropertyManager;
 import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.magicdraw.uml.ElementFinder;
 import com.nomagic.magicdraw.uml.RepresentationTextCreator;
-import com.nomagic.magicdraw.uml.RepresentationTextCreator.RepresentationTextProvider2;
+import com.nomagic.magicdraw.uml.RepresentationTextCreator.RepresentationTextProvider;
+import com.nomagic.magicdraw.uml.RepresentationTextParams;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.magicdraw.uml.symbols.PresentationElement;
+import com.nomagic.uml2.ext.jmi.helpers.CoreHelper;
 import com.nomagic.uml2.ext.jmi.helpers.ModelHelper;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.jmi.smartlistener.SmartListenerConfig;
@@ -35,6 +37,7 @@ import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import com.nomagic.uml2.impl.ElementsFactory;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +103,7 @@ public class FactDiagramGenerator {
         return targetPackage;
     }
 
-    private class RepresentationTextProviderImpl implements RepresentationTextProvider2 {
+    private class RepresentationTextProviderImpl implements RepresentationTextProvider {
 
         @Override
         public boolean accept(BaseElement element) {
@@ -108,14 +111,21 @@ public class FactDiagramGenerator {
         }
 
         @Override
-        public SmartListenerConfig createSmartListenerConfig(Element arg0, boolean arg1) {
-            return SmartListenerConfig.STEREOTYPE_AND_TAGS_CONFIG;
+        public String getRepresentedText(BaseElement element, RepresentationTextParams textParams) {
+            return RepresentationTextCreator.createId((Element) element, textParams.isAddColor())
+                    + AbstractSBVRExtractor.extractElementText(element);
         }
 
         @Override
-        public String getRepresentedText(BaseElement element, boolean addColor, boolean fullSignature, boolean addId) {
-            return (addId ? RepresentationTextCreator.createId((Element) element, addColor) : "") //NOI18N
-                    + AbstractSBVRExtractor.extractElementText(element);
+        public Map<Class<? extends Element>, SmartListenerConfig> createSmartListenerConfig() {
+            Map<Class<? extends Element>, SmartListenerConfig> map = new HashMap<>();
+            map.put(Element.class, SmartListenerConfig.STEREOTYPE_AND_TAGS_CONFIG);
+            return map;
+        }
+
+        @Override
+        public int getPriority() {
+            return RepresentationTextProvider.super.getPriority(); 
         }
 
     }
@@ -311,8 +321,8 @@ public class FactDiagramGenerator {
                         association.setOwner(pkg);
                         ModelHelper.setClientElement(association, el1.getElement());
                         ModelHelper.setSupplierElement(association, el2.getElement());
-                        ModelHelper.setNavigable(ModelHelper.getFirstMemberEnd(association), true);
-                        ModelHelper.setNavigable(ModelHelper.getSecondMemberEnd(association), true);
+                        ModelHelper.setNavigable(CoreHelper.getFirstMemberEnd(association), true);
+                        ModelHelper.setNavigable(CoreHelper.getSecondMemberEnd(association), true);
                         if (StereotypesHelper.canApplyStereotype(association, stereotype))
                             StereotypesHelper.addStereotype(association, stereotype);
                         List<Object> source = sourceEntry.getSourceObjects();
