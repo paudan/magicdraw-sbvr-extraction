@@ -1,18 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="SBVR_extraction" default="default" basedir=".">
-    <description>Builds, tests, and runs the project SBVR extraction.</description>
+    <description>Builds SBVR extraction plugin</description>
     <import file="nbproject/build-impl.xml"/>
-    <property name="plugin.dir" value="plugin/org.ktu.transformations.uml2sbvr" />
+    <property name="plugin.dir" value="plugin/plugins/org.ktu.model2sbvr" />
     <property name="zip.name" value="extraction_plugin.zip" />
     <target name="build-plugin" description="Create plugin JAR">
         <antcall target="clean" />
         <antcall target="compile" />
         <copy file="files/plugin.xml" tofile="${plugin.dir}/plugin.xml" />
+        <copy todir="plugin/profiles">
+            <fileset dir="files/profiles" />
+        </copy>
+        <copy todir="plugin/data">
+            <fileset dir="files/data" />
+        </copy>
         <delete dir="${plugin.dir}/qvt"/>
         <copy todir="${plugin.dir}/qvt">
             <fileset dir="files/qvt"/>
         </copy>
-        <jar jarfile="${plugin.dir}/uml2sbvr.jar">
+        <jar jarfile="${plugin.dir}/model2sbvr.jar">
             <manifest>
                 <attribute name="Built-By" value="${user.name}"/>
                 <attribute name="Implementation-Vendor" value="Center of Information Systems Design Technologies, Kaunas University of Technology, Lithuania"/>
@@ -20,16 +26,16 @@
                 <attribute name="Implementation-Version" value="1.0"/>
             </manifest>
             <fileset dir="build/classes" casesensitive="yes">
-                <include name="org/ktu/transformations/uml2sbvr/*.class"/>
-                <include name="org/ktu/transformations/uml2sbvr/*.properties"/>
-                <include name="org/ktu/transformations/uml2sbvr/actions/*.class"/>
-                <include name="org/ktu/transformations/uml2sbvr/extract/*.class"/>
-                <include name="org/ktu/transformations/uml2sbvr/models/*.class"/>
-                <include name="org/ktu/transformations/uml2sbvr/transform/*.class"/>
-                <include name="org/ktu/transformations/uml2sbvr/ui/*.class"/>
-                <include name="org/ktu/transformations/uml2sbvr/ui/*.properties"/>
+                <include name="org/ktu/model2sbvr/*.class"/>
+                <include name="org/ktu/model2sbvr/*.properties"/>
+                <include name="org/ktu/model2sbvr/actions/*.class"/>
+                <include name="org/ktu/model2sbvr/extract/*.class"/>
+                <include name="org/ktu/model2sbvr/models/*.class"/>
+                <include name="org/ktu/model2sbvr/transform/*.class"/>
+                <include name="org/ktu/model2sbvr/ui/*.class"/>
+                <include name="org/ktu/model2sbvr/ui/*.properties"/>
             </fileset>
         </jar>
-        <zip destfile="plugin/${zip.name}" basedir="plugin" update="true" excludes = "${zip.name}" />
+        <zip destfile="plugin/${zip.name}" basedir="plugin" update="false" excludes = "${zip.name}" />
     </target>
 </project>

@@ -1,5 +1,6 @@
 package org.ktu.transformations.uml2sbvr;
 
+import org.ktu.model2sbvr.PluginUtilities;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.openapi.uml.SessionManager;
@@ -29,10 +30,10 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Test;
-import org.ktu.transformations.uml2sbvr.extract.AbstractSBVRExtractor;
-import org.ktu.transformations.uml2sbvr.extract.FactDiagramGenerator;
-import org.ktu.transformations.uml2sbvr.extract.UseCaseSBVRExtractor;
-import org.ktu.transformations.uml2sbvr.models.FilteredConceptModel;
+import org.ktu.model2sbvr.extract.AbstractSBVRExtractor;
+import org.ktu.model2sbvr.extract.FactDiagramGenerator;
+import org.ktu.model2sbvr.extract.UseCaseSBVRExtractor;
+import org.ktu.model2sbvr.models.FilteredConceptModel;
 import vepsem.PluginUtils;
 
 public class DiagramExtractionTest extends MagicDrawTestCase {

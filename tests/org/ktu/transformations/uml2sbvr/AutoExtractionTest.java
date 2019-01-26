@@ -1,5 +1,6 @@
 package org.ktu.transformations.uml2sbvr;
 
+import org.ktu.model2sbvr.PluginUtilities;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.openapi.uml.SessionManager;
@@ -23,9 +24,9 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Test;
-import org.ktu.transformations.uml2sbvr.extract.UseCaseSBVRExtractor;
-import org.ktu.transformations.uml2sbvr.transform.ExtractionRunnable;
-import org.ktu.transformations.uml2sbvr.transform.ExtractionWorkflows;
+import org.ktu.model2sbvr.extract.UseCaseSBVRExtractor;
+import org.ktu.model2sbvr.transform.ExtractionRunnable;
+import org.ktu.model2sbvr.transform.ExtractionWorkflows;
 
 /**
  *

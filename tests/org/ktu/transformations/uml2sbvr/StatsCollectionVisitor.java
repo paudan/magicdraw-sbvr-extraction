@@ -1,5 +1,6 @@
 package org.ktu.transformations.uml2sbvr;
 
+import org.ktu.model2sbvr.PluginUtilities;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.uml.Visitor;
@@ -29,7 +30,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.ktu.transformations.uml2sbvr.models.SBVRExpressionModel.RuleType;
+import org.ktu.model2sbvr.models.SBVRExpressionModel.RuleType;
 
 public class StatsCollectionVisitor extends Visitor {
 
