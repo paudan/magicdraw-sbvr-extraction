@@ -125,7 +125,7 @@ public class FactDiagramGenerator {
 
         @Override
         public int getPriority() {
-            return RepresentationTextProvider.super.getPriority(); 
+            return 0;
         }
 
     }

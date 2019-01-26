@@ -25,38 +25,38 @@ public abstract class AbstractSBVRExtractor {
     protected Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> gcReplacements, vcReplacements;
 
     protected AbstractSBVRExtractor(DiagramPresentationElement diagram, boolean strictOnly, boolean extractMMVoc) {
-        this(diagram);
         this.strictOnly = strictOnly;
         this.extractMMVoc = extractMMVoc;
-    }
-
-    protected AbstractSBVRExtractor(DiagramPresentationElement diagram) {
         this.diagrams = new HashSet<>();
         diagrams.add(diagram);
         init();
         readElements(diagram);
     }
 
+    protected AbstractSBVRExtractor(DiagramPresentationElement diagram) {
+        this(diagram, false, false);
+    }
+
     protected AbstractSBVRExtractor(Collection<DiagramPresentationElement> diagrams) {
+        this(diagrams, false, false);
+    }
+
+    protected AbstractSBVRExtractor(Package model) {
+        this(model, false, false);
+    }
+
+    protected AbstractSBVRExtractor(Collection<DiagramPresentationElement> diagrams, boolean strictOnly, boolean extractMMVoc) {
+        this.strictOnly = strictOnly;
+        this.extractMMVoc = extractMMVoc;
         init();
         setExtractedDiagrams(diagrams);
     }
 
-    protected AbstractSBVRExtractor(Package model) {
+    protected AbstractSBVRExtractor(Package model, boolean strictOnly, boolean extractMMVoc) {
+        this.strictOnly = strictOnly;
+        this.extractMMVoc = extractMMVoc;
         init();
         candidateElements = getPackageElements(model);
-    }
-
-    protected AbstractSBVRExtractor(Collection<DiagramPresentationElement> diagrams, boolean strictOnly, boolean extractMMVoc) {
-        this(diagrams);
-        this.strictOnly = strictOnly;
-        this.extractMMVoc = extractMMVoc;
-    }
-
-    protected AbstractSBVRExtractor(Package model, boolean strictOnly, boolean extractMMVoc) {
-        this(model);
-        this.strictOnly = strictOnly;
-        this.extractMMVoc = extractMMVoc;
     }
 
     private void init() {
@@ -68,6 +68,7 @@ public abstract class AbstractSBVRExtractor {
         gcReplacements = new HashMap<>();
         vcReplacements = new HashMap<>();
         metamodelVocabulary = new HashMap<>();
+        candidateElements = new HashSet<>();
         String [] mmNames = getMetamodelVocabularyNames();
         if (mmNames != null && mmNames.length > 0)
             for (String name: mmNames)
@@ -90,10 +91,8 @@ public abstract class AbstractSBVRExtractor {
     
     public abstract String[] getMetamodelVocabularyNames(); 
 
-    protected void readElements(DiagramPresentationElement diagram) {
-        if (candidateElements == null)
-            candidateElements = new HashSet<>();
-        candidateElements = diagram.getUsedModelElements(true);
+    protected void readElements(DiagramPresentationElement diagram) {            
+        candidateElements.addAll(diagram.getUsedModelElements());
     }
 
     public static String getProperName(BaseElement el) {
