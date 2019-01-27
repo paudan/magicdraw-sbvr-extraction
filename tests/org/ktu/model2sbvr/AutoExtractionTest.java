@@ -41,7 +41,7 @@ public class AutoExtractionTest extends MagicDrawTestCase {
 
     public AutoExtractionTest() {
         super();
-        filename = "tests\\resources\\UseCase test diagrams - noisy.mdzip";
+        filename = Paths.get("tests", "resources", "UseCase test diagrams - noisy.mdzip").toString();
         stats = new HashMap<>();
         // Try to remove any existing log and statistics files
         try {

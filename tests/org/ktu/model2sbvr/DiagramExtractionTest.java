@@ -1,6 +1,5 @@
 package org.ktu.model2sbvr;
 
-import org.ktu.model2sbvr.PluginUtilities;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.openapi.uml.SessionManager;
@@ -45,7 +44,7 @@ public class DiagramExtractionTest extends MagicDrawTestCase {
 
     public DiagramExtractionTest() {
         super();
-        filename = "tests\\resources\\UseCase test diagrams.mdzip";
+        filename = Paths.get("tests", "resources", "UseCase test diagrams.mdzip").toString();
         // Remove any existing log and statistics files
         try {
             Path path = FileSystems.getDefault().getPath("business_vocabulary_diagram.txt");
