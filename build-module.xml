@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="sbvr-extraction-idea" default="all">
+  
+  
+  <property file="build-module.properties"/>
+  <!-- Uncomment the following property if no tests compilation is needed -->
+  <!-- 
+  <property name="skip.tests" value="true"/>
+   -->
+  
+  <!-- Compiler options -->
+  
+  <property name="compiler.debug" value="on"/>
+  <property name="compiler.generate.no.warnings" value="off"/>
+  <property name="compiler.args" value=""/>
+  <property name="compiler.max.memory" value="700m"/>
+  <patternset id="ignored.files">
+    <exclude name="**/*.hprof/**"/>
+    <exclude name="**/*.pyc/**"/>
+    <exclude name="**/*.pyo/**"/>
+    <exclude name="**/*.rbc/**"/>
+    <exclude name="**/*.yarb/**"/>
+    <exclude name="**/*~/**"/>
+    <exclude name="**/.DS_Store/**"/>
+    <exclude name="**/.git/**"/>
+    <exclude name="**/.hg/**"/>
+    <exclude name="**/.svn/**"/>
+    <exclude name="**/CVS/**"/>
+    <exclude name="**/__pycache__/**"/>
+    <exclude name="**/_svn/**"/>
+    <exclude name="**/vssver.scc/**"/>
+    <exclude name="**/vssver2.scc/**"/>
+  </patternset>
+  <patternset id="library.patterns">
+    <include name="*.egg"/>
+    <include name="*.jar"/>
+    <include name="*.ear"/>
+    <include name="*.ane"/>
+    <include name="*.klib"/>
+    <include name="*.swc"/>
+    <include name="*.war"/>
+    <include name="*.zip"/>
+    <include name="*.srcjar"/>
+  </patternset>
+  <patternset id="compiler.resources">
+    <exclude name="**/?*.java"/>
+    <exclude name="**/?*.form"/>
+    <exclude name="**/?*.class"/>
+    <exclude name="**/?*.groovy"/>
+    <exclude name="**/?*.scala"/>
+    <exclude name="**/?*.flex"/>
+    <exclude name="**/?*.kt"/>
+    <exclude name="**/?*.clj"/>
+    <exclude name="**/?*.aj"/>
+  </patternset>
+  
+  <!-- JDK definitions -->
+  
+  <property name="jdk.bin.1.8" value="${jdk.home.1.8}/bin"/>
+  <path id="jdk.classpath.1.8">
+    <fileset dir="${jdk.home.1.8}">
+      <include name="jre/lib/charsets.jar"/>
+      <include name="jre/lib/deploy.jar"/>
+      <include name="jre/lib/ext/cldrdata.jar"/>
+      <include name="jre/lib/ext/dnsns.jar"/>
+      <include name="jre/lib/ext/jaccess.jar"/>
+      <include name="jre/lib/ext/jfxrt.jar"/>
+      <include name="jre/lib/ext/localedata.jar"/>
+      <include name="jre/lib/ext/nashorn.jar"/>
+      <include name="jre/lib/ext/sunec.jar"/>
+      <include name="jre/lib/ext/sunjce_provider.jar"/>
+      <include name="jre/lib/ext/sunpkcs11.jar"/>
+      <include name="jre/lib/ext/zipfs.jar"/>
+      <include name="jre/lib/javaws.jar"/>
+      <include name="jre/lib/jce.jar"/>
+      <include name="jre/lib/jfr.jar"/>
+      <include name="jre/lib/jfxswt.jar"/>
+      <include name="jre/lib/jsse.jar"/>
+      <include name="jre/lib/management-agent.jar"/>
+      <include name="jre/lib/plugin.jar"/>
+      <include name="jre/lib/resources.jar"/>
+      <include name="jre/lib/rt.jar"/>
+    </fileset>
+  </path>
+  
+  <property name="project.jdk.home" value="${jdk.home.1.8}"/>
+  <property name="project.jdk.bin" value="${jdk.bin.1.8}"/>
+  <property name="project.jdk.classpath" value="jdk.classpath.1.8"/>
+  
+  
+  <!-- Project Libraries -->
+  
+  <path id="library.diagramtable.classpath">
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.diagramtable/diagramtable.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.diagramtable/diagramtable_api.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.diagramtable/lib/commons-lang3-3.4.jar"/>
+  </path>
+  
+  <path id="library.eclipse.classpath">
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.magicdraw.osgi.fragment_1.0.0.201811041524.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.eclipse.core.runtime_3.13.0.v20170207-1030.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.eclipse.equinox.app_1.3.400.v20150715-1528.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.eclipse.equinox.common_3.9.0.v20170207-1454.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.eclipse.equinox.ds_1.5.0.v20170307-1429.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.eclipse.equinox.preferences_3.7.0.v20170126-2132.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.eclipse.equinox.registry_3.7.0.v20170222-1344.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.eclipse.osgi.services_3.6.0.v20170228-1906.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.eclipse.osgi.util_3.4.0.v20170111-1608.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.eclipse.osgi_3.12.50.v20170928-1321.jar"/>
+  </path>
+  
+  <path id="library.emf_plugin.classpath">
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/emfuml2xmi_common.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/emfuml2xmi_common_api.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/emfuml2xmi_v4.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/emfuml2xmi_v4_api.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/emf/org.eclipse.emf.common_2.8.0.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/emf/org.eclipse.emf.ecore.xmi_2.8.0.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/emf/org.eclipse.emf.ecore_2.8.1.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.common_1.7.0.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.types_1.0.0.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.uml.profile.l2_1.0.1.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.uml.profile.l3_1.0.1.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.uml.resources_4.0.1.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.uml_4.0.1.jar"/>
+  </path>
+  
+  <path id="library.junit.classpath">
+    <fileset dir="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.junit_4.12.0.v201504281640">
+      <patternset refid="library.patterns"/>
+    </fileset>
+  </path>
+  
+  <path id="library.legend_api.classpath">
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.legend/legend.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/com.nomagic.magicdraw.legend/legend_api.jar"/>
+  </path>
+  
+  <path id="library.magicdraw.classpath">
+    <fileset dir="${basedir}/../../../../../opt/MagicDraw/lib">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/EccpressoAll.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/HTMLEditorLight.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/JUnitParams-1.0.1.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/activation.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/annotation.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/batik.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bridj-0.7.0.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.ci.binary_17.0.5.v20181104-1514.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.ci.metamodel.project_17.0.5.v20181104-1514.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.ci.persistence.local_17.0.5.v20181104-1514.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.ci.persistence_17.0.5.v20181104-1514.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.ci.services_17.0.5.v20181104-1514.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.ci_17.0.5.v20181104-1514.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.magicdraw.core.diagram_18.1.0.201811041524.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.magicdraw.core.project.options_18.1.0.201811041524.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.magicdraw.core_1.0.0.201811041524.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.magicdraw.foundation_2.0.0.201811041524.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.magicdraw.uml2_2.5.1.201811041524.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/com.nomagic.magicdraw_17.0.5.201811041524.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/javax.jmi_1.0.0.201811041524/javax_jmi-1_0-fr.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.eclipse.core.runtime_3.13.0.v20170207-1030.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.eclipse.equinox.common_3.9.0.v20170207-1454.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/org.hamcrest.core_1.3.0.v201303031735.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/bundles/slf4j.api_1.7.25.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/com.nomagic.osgi.launcher-17.0.5-SNAPSHOT.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/commons-compress-1.3.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/commons-httpclient-3.1.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/commons-logging-1.0.4.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/concurrent.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/ehcache-2.10.1.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/flexlm.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/graphics/clibwrapper_jiio.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/graphics/freehep-base.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/graphics/freehep-graphics2d.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/graphics/freehep-graphicsio-emf.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/graphics/freehep-graphicsio-ps.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/graphics/freehep-graphicsio.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/graphics/jai_imageio.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/gson-2.2.4.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/hunspell-bridj-1.0.5-SNAPSHOT.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/javassist.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jhall.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jide-action.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jide-charts.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jide-common.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jide-components.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jide-diff.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jide-dock.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jide-editor.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jide-gantt.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jide-grids.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jide-shortcut.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jimi.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jna.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jnp-client.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jsr250-api-1.0.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jsr305.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/jtidy.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/launcher.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/lucene-analyzers-common-4.10.3.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/lucene-core-4.10.3.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/md.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/md_api.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/md_common.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/md_common_api.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/md_common_test.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/poi-3.14-20160307.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/poi-ooxml-3.14-20160307.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/poi-ooxml-schemas-3.14-20160307.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/tw_common.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/tw_common_api.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/webservice/axis-config.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/webservice/axis.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/webservice/commons-discovery-0.2.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/webservice/jaxrpc.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/webservice/mdserviceclient.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/webservice/rsclient.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/webservice/wsdl4j-1.5.1.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/xalan.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/xmlbeans-2.6.0.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/lib/y.jar"/>
+  </path>
+  
+  <path id="library.vepsem_plugin.classpath">
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/lpg.runtime.java_2.0.17.v201004271640.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.emf.common_2.8.0.v20130125-0546.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.emf.ecore.xmi_2.8.1.v20130125-0546.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.emf.ecore_2.8.3.v20130125-0546.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.ocl.common_1.0.2.v20130125-1817.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.ocl.ecore_3.2.0.v20130125-1817.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.ocl_3.2.1.v20130128-1158.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.common_1.7.0.v20130114-0902.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.types_1.0.0.v20130114-0902.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml.profile.l2_1.0.1.v20130114-0902.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml.profile.l3_1.0.1.v20130114-0902.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml.resources_4.0.2.v20130114-0902.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml_4.0.2.v20130114-0902.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.common_3.4.0.v20140306-0649.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.cst.parser_3.4.0.v20140429-1120.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.debug.core_1.4.0.v20140610-1621.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.ecore.imperativeocl_3.3.0.v20140317-1132.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.emf.util_3.4.0.v20140306-0718.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.ocl_3.4.0.v20140521-2209.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.project_3.4.0.v20140506-1859.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.runtime_3.4.0.v20140610-1621.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml_3.4.0.v20140610-1621.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/transform.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vepsem.md/plugin.jar"/>
+  </path>
+  
+  <path id="library.vetis.classpath">
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vetis.md/lib/commons-configuration-1.6.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vetis.md/lib/commons-lang-2.1.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vetis.md/plugin.jar"/>
+    <pathelement location="${basedir}/../../../../../opt/MagicDraw/plugins/org.vetis.md/rmi.jar"/>
+  </path>
+  
+  
+  <!-- Global Libraries -->
+  
+  <!-- Modules -->
+  
+  
+  <!-- Module sbvr-extraction -->
+  
+  <dirname property="module.sbvr-extraction.basedir" file="${ant.file}"/>
+  
+  
+  <property name="module.jdk.home.sbvr-extraction" value="${project.jdk.home}"/>
+  <property name="module.jdk.bin.sbvr-extraction" value="${project.jdk.bin}"/>
+  <property name="module.jdk.classpath.sbvr-extraction" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.sbvr-extraction" value="-encoding UTF-8 -source 7 -target 7 ${compiler.args}"/>
+  
+  <property name="sbvr-extraction.output.dir" value="${module.sbvr-extraction.basedir}/out/production/sbvr-extraction"/>
+  <property name="sbvr-extraction.testoutput.dir" value="${module.sbvr-extraction.basedir}/out/test/sbvr-extraction"/>
+  
+  <path id="sbvr-extraction.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="sbvr-extraction.module.production.classpath">
+    <path refid="${module.jdk.classpath.sbvr-extraction}"/>
+    <path refid="library.magicdraw.classpath"/>
+    <path refid="library.diagramtable.classpath"/>
+    <path refid="library.vepsem_plugin.classpath"/>
+    <path refid="library.emf_plugin.classpath"/>
+    <path refid="library.vetis.classpath"/>
+    <path refid="library.junit.classpath"/>
+  </path>
+  
+  <path id="sbvr-extraction.runtime.production.module.classpath">
+    <pathelement location="${sbvr-extraction.output.dir}"/>
+    <path refid="library.magicdraw.classpath"/>
+    <path refid="library.diagramtable.classpath"/>
+    <path refid="library.vepsem_plugin.classpath"/>
+    <path refid="library.emf_plugin.classpath"/>
+    <path refid="library.vetis.classpath"/>
+    <path refid="library.eclipse.classpath"/>
+    <path refid="library.junit.classpath"/>
+    <path refid="library.legend_api.classpath"/>
+  </path>
+  
+  <path id="sbvr-extraction.module.classpath">
+    <path refid="${module.jdk.classpath.sbvr-extraction}"/>
+    <pathelement location="${sbvr-extraction.output.dir}"/>
+    <path refid="library.magicdraw.classpath"/>
+    <path refid="library.diagramtable.classpath"/>
+    <path refid="library.vepsem_plugin.classpath"/>
+    <path refid="library.emf_plugin.classpath"/>
+    <path refid="library.vetis.classpath"/>
+    <path refid="library.junit.classpath"/>
+  </path>
+  
+  <path id="sbvr-extraction.runtime.module.classpath">
+    <pathelement location="${sbvr-extraction.testoutput.dir}"/>
+    <pathelement location="${sbvr-extraction.output.dir}"/>
+    <path refid="library.magicdraw.classpath"/>
+    <path refid="library.diagramtable.classpath"/>
+    <path refid="library.vepsem_plugin.classpath"/>
+    <path refid="library.emf_plugin.classpath"/>
+    <path refid="library.vetis.classpath"/>
+    <path refid="library.eclipse.classpath"/>
+    <path refid="library.junit.classpath"/>
+    <path refid="library.legend_api.classpath"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.sbvr-extraction">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.sbvr-extraction">
+    <patternset refid="excluded.from.module.sbvr-extraction"/>
+  </patternset>
+  
+  <path id="sbvr-extraction.module.sourcepath">
+    <dirset dir="${module.sbvr-extraction.basedir}">
+      <include name="src"/>
+    </dirset>
+  </path>
+  
+  <path id="sbvr-extraction.module.test.sourcepath">
+    <dirset dir="${module.sbvr-extraction.basedir}">
+      <include name="tests"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.sbvr-extraction" depends="compile.module.sbvr-extraction.production,compile.module.sbvr-extraction.tests" description="Compile module sbvr-extraction"/>
+  
+  <target name="compile.module.sbvr-extraction.production" description="Compile module sbvr-extraction; production classes">
+    <mkdir dir="${sbvr-extraction.output.dir}"/>
+    <javac destdir="${sbvr-extraction.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.sbvr-extraction}/javac">
+      <compilerarg line="${compiler.args.sbvr-extraction}"/>
+      <bootclasspath refid="sbvr-extraction.module.bootclasspath"/>
+      <classpath refid="sbvr-extraction.module.production.classpath"/>
+      <src refid="sbvr-extraction.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.sbvr-extraction"/>
+    </javac>
+    
+    <copy todir="${sbvr-extraction.output.dir}">
+      <fileset dir="${module.sbvr-extraction.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.sbvr-extraction.tests" depends="compile.module.sbvr-extraction.production" description="compile module sbvr-extraction; test classes" unless="skip.tests">
+    <mkdir dir="${sbvr-extraction.testoutput.dir}"/>
+    <javac destdir="${sbvr-extraction.testoutput.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.sbvr-extraction}/javac">
+      <compilerarg line="${compiler.args.sbvr-extraction}"/>
+      <bootclasspath refid="sbvr-extraction.module.bootclasspath"/>
+      <classpath refid="sbvr-extraction.module.classpath"/>
+      <src refid="sbvr-extraction.module.test.sourcepath"/>
+      <patternset refid="excluded.from.compilation.sbvr-extraction"/>
+    </javac>
+    
+    <copy todir="${sbvr-extraction.testoutput.dir}">
+      <fileset dir="${module.sbvr-extraction.basedir}/tests">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="clean.module.sbvr-extraction" description="cleanup module">
+    <delete dir="${sbvr-extraction.output.dir}"/>
+    <delete dir="${sbvr-extraction.testoutput.dir}"/>
+  </target>
+  
+  <target name="init" description="Build initialization">
+    <!-- Perform any build initialization in this target -->
+  </target>
+  
+  <target name="clean" depends="clean.module.sbvr-extraction" description="cleanup all"/>
+  
+  <target name="build.modules" depends="init, clean, compile.module.sbvr-extraction" description="build all modules"/>
+  
+  <target name="all" depends="build.modules" description="build all"/>
+</project>

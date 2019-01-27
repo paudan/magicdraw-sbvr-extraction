@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="sbvr-extraction" basedir=".">
+    <description>Builds SBVR extraction plugin</description>
+    <import file="build-module.xml"/>
+    <property name="plugin.dir" value="plugin/plugins/org.ktu.model2sbvr" />
+    <property name="zip.name" value="extraction_plugin.zip" />
+    <target name="build-plugin" description="Create plugin JAR">
+        <antcall target="clean" />
+        <antcall target="build.modules" />
+        <copy file="files/plugin.xml" tofile="${plugin.dir}/plugin.xml" />
+        <copy todir="plugin/profiles">
+            <fileset dir="files/profiles" />
+        </copy>
+        <copy todir="plugin/data">
+            <fileset dir="files/data" />
+        </copy>
+        <delete dir="${plugin.dir}/qvt"/>
+        <copy todir="${plugin.dir}/qvt">
+            <fileset dir="files/qvt"/>
+        </copy>
+        <jar jarfile="${plugin.dir}/model2sbvr.jar">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Implementation-Vendor" value="Center of Information Systems Design Technologies, Kaunas University of Technology, Lithuania"/>
+                <attribute name="Implementation-Title" value="MagicDraw UML plugin for extraction of SBVR business vocabulary and rules from UseCase diagrams"/>
+                <attribute name="Implementation-Version" value="1.0"/>
+            </manifest>
+            <fileset dir="out/production/sbvr-extraction-idea" casesensitive="yes">
+                <include name="org/ktu/model2sbvr/*.class"/>
+                <include name="org/ktu/model2sbvr/*.properties"/>
+                <include name="org/ktu/model2sbvr/actions/*.class"/>
+                <include name="org/ktu/model2sbvr/extract/*.class"/>
+                <include name="org/ktu/model2sbvr/models/*.class"/>
+                <include name="org/ktu/model2sbvr/transform/*.class"/>
+                <include name="org/ktu/model2sbvr/ui/*.class"/>
+                <include name="org/ktu/model2sbvr/ui/*.properties"/>
+            </fileset>
+        </jar>
+        <zip destfile="plugin/${zip.name}" basedir="plugin" update="false" excludes = "${zip.name}" />
+    </target>
+</project>

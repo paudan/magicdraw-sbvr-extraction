@@ -1,0 +1,21 @@
+<component name="libraryTable">
+  <library name="EMF plugin">
+    <CLASSES>
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/emf/org.eclipse.emf.common_2.8.0.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/emf/org.eclipse.emf.ecore.xmi_2.8.0.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/emf/org.eclipse.emf.ecore_2.8.1.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.common_1.7.0.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.uml.profile.l2_1.0.1.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.uml.profile.l3_1.0.1.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.uml_4.0.1.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.uml.resources_4.0.1.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/lib/uml2/org.eclipse.uml2.types_1.0.0.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/emfuml2xmi_common.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/emfuml2xmi_common_api.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/emfuml2xmi_v4.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.emfuml2xmi_v4/emfuml2xmi_v4_api.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

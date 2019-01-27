@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="vetis">
+    <CLASSES>
+      <root url="jar:///opt/MagicDraw/plugins/org.vetis.md/lib/commons-configuration-1.6.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/org.vetis.md/lib/commons-lang-2.1.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/org.vetis.md/plugin.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/org.vetis.md/rmi.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

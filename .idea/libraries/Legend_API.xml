@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Legend API">
+    <CLASSES>
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.legend/legend.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.legend/legend_api.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
