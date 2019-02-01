@@ -112,20 +112,20 @@ public class FactDiagramGenerator {
 
         @Override
         public String getRepresentedText(BaseElement element, RepresentationTextParams textParams) {
-            return RepresentationTextCreator.createId((Element) element, textParams.isAddColor())
+            return (textParams.isShowElementNumber() ? RepresentationTextCreator.createId((Element) element, textParams.isAddColor()) : "")
                     + AbstractSBVRExtractor.extractElementText(element);
         }
 
         @Override
         public Map<Class<? extends Element>, SmartListenerConfig> createSmartListenerConfig() {
             Map<Class<? extends Element>, SmartListenerConfig> map = new HashMap<>();
-            map.put(Element.class, SmartListenerConfig.STEREOTYPE_AND_TAGS_CONFIG);
+            map.put(Association.class, SmartListenerConfig.STEREOTYPE_AND_TAGS_CONFIG);
             return map;
         }
 
         @Override
         public int getPriority() {
-            return 0;
+            return RepresentationTextProvider.MEDIUM_PRIORITY;
         }
 
     }
