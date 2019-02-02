@@ -1,9 +1,9 @@
 <component name="libraryTable">
   <library name="DiagramTable">
     <CLASSES>
-      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.diagramtable/lib/commons-lang3-3.4.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.diagramtable/diagramtable.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.diagramtable/diagramtable_api.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/com.nomagic.magicdraw.diagramtable/lib/commons-lang3-3.4.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/com.nomagic.magicdraw.diagramtable/diagramtable.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/com.nomagic.magicdraw.diagramtable/diagramtable_api.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

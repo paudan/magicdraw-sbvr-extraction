@@ -5,7 +5,7 @@
     <option name="MAIN_CLASS_NAME" value="org.ktu.model2sbvr.DiagramExtractionTest" />
     <option name="METHOD_NAME" value="testCase1" />
     <option name="TEST_OBJECT" value="method" />
-    <option name="VM_PARAMETERS" value="-Xmx3072M -Xss1024K -Dinstall.root=&quot;/opt/MagicDraw&quot; -Dmd.plugins.dir=&quot;/opt/MagicDraw/plugins&quot; -DLOCALCONFIG=true -jar /opt/MagicDraw/openapi/ide/lib/com.nomagic.magicdraw.intellij.launcher.jar" />
+    <option name="VM_PARAMETERS" value="-Xmx3072M -Xss1024K -Dinstall.root=&quot;$MAGICDRAW19_DIR$&quot; -Dmd.plugins.dir=&quot;$MAGICDRAW19_DIR$/plugins&quot; -DLOCALCONFIG=true -jar $MAGICDRAW19_DIR$/openapi/ide/lib/com.nomagic.magicdraw.intellij.launcher.jar" />
     <option name="PARAMETERS" value="" />
     <method v="2">
       <option name="Make" enabled="true" />

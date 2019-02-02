@@ -1,30 +1,30 @@
 <component name="libraryTable">
   <library name="vepsem plugin">
     <CLASSES>
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/lpg.runtime.java_2.0.17.v201004271640.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.emf.common_2.8.0.v20130125-0546.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.emf.ecore.xmi_2.8.1.v20130125-0546.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.emf.ecore_2.8.3.v20130125-0546.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.ocl.common_1.0.2.v20130125-1817.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.ocl.ecore_3.2.0.v20130125-1817.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.ocl_3.2.1.v20130128-1158.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.common_1.7.0.v20130114-0902.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.ocl_3.4.0.v20140521-2209.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml_4.0.2.v20130114-0902.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml.resources_4.0.2.v20130114-0902.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.cst.parser_3.4.0.v20140429-1120.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.ecore.imperativeocl_3.3.0.v20140317-1132.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml.profile.l3_1.0.1.v20130114-0902.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.runtime_3.4.0.v20140610-1621.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.project_3.4.0.v20140506-1859.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.emf.util_3.4.0.v20140306-0718.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.types_1.0.0.v20130114-0902.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml_3.4.0.v20140610-1621.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml.profile.l2_1.0.1.v20130114-0902.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.debug.core_1.4.0.v20140610-1621.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.common_3.4.0.v20140306-0649.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/lib/runtime/transform.jar!/" />
-      <root url="jar:///opt/MagicDraw/plugins/org.vepsem.md/plugin.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFECORE/lpg.runtime.java_2.0.17.v201004271640.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.emf.common_2.8.0.v20130125-0546.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.emf.ecore.xmi_2.8.1.v20130125-0546.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.emf.ecore_2.8.3.v20130125-0546.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.ocl.common_1.0.2.v20130125-1817.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.ocl.ecore_3.2.0.v20130125-1817.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFECORE/org.eclipse.ocl_3.2.1.v20130128-1158.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.common_1.7.0.v20130114-0902.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.ocl_3.4.0.v20140521-2209.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml_4.0.2.v20130114-0902.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml.resources_4.0.2.v20130114-0902.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.cst.parser_3.4.0.v20140429-1120.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.ecore.imperativeocl_3.3.0.v20140317-1132.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml.profile.l3_1.0.1.v20130114-0902.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.runtime_3.4.0.v20140610-1621.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.project_3.4.0.v20140506-1859.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.emf.util_3.4.0.v20140306-0718.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.types_1.0.0.v20130114-0902.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml_3.4.0.v20140610-1621.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/EMFUML/org.eclipse.uml2.uml.profile.l2_1.0.1.v20130114-0902.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.debug.core_1.4.0.v20140610-1621.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/org.eclipse.m2m.qvt.oml.common_3.4.0.v20140306-0649.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/lib/runtime/transform.jar!/" />
+      <root url="jar://$MAGICDRAW19_DIR$/plugins/org.vepsem.md/plugin.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

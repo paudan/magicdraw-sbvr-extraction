@@ -25,7 +25,7 @@
                 <attribute name="Implementation-Title" value="MagicDraw UML plugin for extraction of SBVR business vocabulary and rules from UseCase diagrams"/>
                 <attribute name="Implementation-Version" value="1.0"/>
             </manifest>
-            <fileset dir="out/production/sbvr-extraction-idea" casesensitive="yes">
+            <fileset dir="out/production/sbvr-extraction" casesensitive="yes">
                 <include name="org/ktu/model2sbvr/*.class"/>
                 <include name="org/ktu/model2sbvr/*.properties"/>
                 <include name="org/ktu/model2sbvr/actions/*.class"/>
