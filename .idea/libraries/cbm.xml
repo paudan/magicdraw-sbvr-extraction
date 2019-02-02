@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="cbm">
+    <CLASSES>
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.cbm/cbm.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.cbm/cbm_api.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.cbm/lib/bpmn20_api.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.cbm/lib/commons-lang-2.6.jar!/" />
+      <root url="jar:///opt/MagicDraw/plugins/com.nomagic.magicdraw.cbm/lib/xpdl_api.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

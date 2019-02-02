@@ -1,11 +1,13 @@
 package org.ktu.model2sbvr;
 
+import com.nomagic.magicdraw.cbm.BPMNConstants;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.core.project.ProjectDescriptor;
 import com.nomagic.magicdraw.core.project.ProjectDescriptorsFactory;
 import com.nomagic.magicdraw.core.project.ProjectsManager;
 import com.nomagic.magicdraw.uml.ElementFinder;
+import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.auxiliaryconstructs.mdmodels.Model;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
@@ -15,6 +17,7 @@ import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import com.nomagic.uml2.ext.magicdraw.metadata.UMLFactory;
 import java.io.File;
 import java.net.URI;
+import java.util.Set;
 import vepsem.PluginUtils;
 import static vepsem.Workflows.getProfileByName;
 
@@ -62,6 +65,18 @@ public class PluginUtilities {
     
     public static Profile getIntegrationProfile(Project project) {
         return StereotypesHelper.getProfileByURI(project, new File("Integration profile.mdzip").toURI().toString());
+    }
+
+    public static Profile getBPMNProfile(Project project) {
+        return StereotypesHelper.getProfileByURI(project, new File(BPMNConstants.BPMN2_PROFILE_FILENAME).toURI().toString());
+    }
+
+    public static boolean isBPMNDiagram(DiagramPresentationElement diag) {
+        Set<String> bpmnDiagrams = BPMNConstants.BPMN_DIAGRAMS;
+        for (String dn: bpmnDiagrams)
+            if (diag.getDiagramType().getType().compareToIgnoreCase(dn) == 0)
+                return true;
+        return false;
     }
     
     public static Package getConceptsRootPackage(Model owner) {
