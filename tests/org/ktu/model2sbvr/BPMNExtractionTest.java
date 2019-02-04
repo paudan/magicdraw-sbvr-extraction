@@ -33,6 +33,11 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Test;
+import org.ktu.model2sbvr.extract.BpmnSBVRExtractor;
+import org.ktu.model2sbvr.models.AbstractConceptModel;
+import org.ktu.model2sbvr.models.ConceptExtractionEntry;
+import org.ktu.model2sbvr.models.SBVRExpressionModel;
+import org.ktu.model2sbvr.models.SourceEntry;
 
 /**
  * @author Paulius Danenas, 2019
@@ -40,7 +45,7 @@ import org.junit.Test;
 public class BPMNExtractionTest extends MagicDrawTestCase {
 
     protected static Project project = null;
-    protected Path filename;
+    protected Path filename = Paths.get("tests", "resources", "bpmn", "vepsem_md19.mdzip");
     protected SessionManager sessionManager = SessionManager.getInstance();
 
     @Override
@@ -48,7 +53,6 @@ public class BPMNExtractionTest extends MagicDrawTestCase {
         super.setUpTest();
         setSkipMemoryTest(true);
         setMemoryTestReady(false);
-        filename = Paths.get("tests", "resources", "bpmn", "vepsem.mdzip");
         if (filename != null && (project == null || !project.isLoaded()))
             project = openProject(filename.normalize().toUri().getPath());
         if (project == null || !project.isLoaded())
@@ -77,6 +81,41 @@ public class BPMNExtractionTest extends MagicDrawTestCase {
         assertEquals(1, diagrams.size());
         ActivityPartition branch = getOrganizationProcessModel(model);
         assertNotNull(branch);
+    }
+    
+    @Test
+    public void testSBVRExtraction() {
+        Package model = getVepsemPackage();
+        assertNotNull(model);
+        Collection<DiagramPresentationElement> diagrams = new HashSet<>();
+        diagrams = this.getBPMNDiagrams(model, diagrams);
+        assertEquals(1, diagrams.size());  // There is only one BPMN process diagram
+        DiagramPresentationElement diagram = diagrams.stream().findFirst().get();
+        BpmnSBVRExtractor extractor = new BpmnSBVRExtractor(diagram, false, false);
+        extractor.createGeneralConceptCandidates();
+        extractor.createVerbConceptCandidates();
+        AbstractConceptModel gcModel = extractor.getGCCandidateModel();
+        Map<SourceEntry, ConceptExtractionEntry> gcObjects = gcModel.getDataset();
+        //printExtractorOutput(gcObjects);
+        assertEquals(13, gcObjects.size());
+        AbstractConceptModel vcModel = extractor.getVCCandidateModel();
+        Map<SourceEntry, ConceptExtractionEntry> vcObjects = vcModel.getDataset();
+        assertEquals(11, vcObjects.size());
+        //printExtractorOutput(vcObjects);
+        extractor.createBusinessRuleCandidates();
+        AbstractConceptModel brModel = extractor.getBRCandidateModel();
+        Map<SourceEntry, ConceptExtractionEntry> brObjects = brModel.getDataset();
+        assertEquals(3, brObjects.size());
+        //printExtractorOutput(brObjects);
+    }
+
+    private void printExtractorOutput(Map<SourceEntry, ConceptExtractionEntry> objects) {
+        for(Entry<SourceEntry, ConceptExtractionEntry> item: objects.entrySet()) {
+            List<String> outputs = new ArrayList<>();
+            for (SBVRExpressionModel sbvr: item.getValue().getCandidates())
+                outputs.add(sbvr.toString());
+            System.out.println("Source: " + String.join(",", item.getKey().getSourceNames()) + " -> output: " + String.join(",", outputs));
+        }
     }
 
     @Test
