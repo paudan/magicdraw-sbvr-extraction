@@ -5,14 +5,18 @@ import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.ktu.model2sbvr.models.AbstractConceptModel;
 import org.ktu.model2sbvr.models.DefaultConceptModel;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
+import org.ktu.model2sbvr.models.SourceEntry;
 
 public abstract class AbstractSBVRExtractor {
 
@@ -69,9 +73,9 @@ public abstract class AbstractSBVRExtractor {
         vcReplacements = new HashMap<>();
         metamodelVocabulary = new HashMap<>();
         candidateElements = new HashSet<>();
-        String [] mmNames = getMetamodelVocabularyNames();
+        String[] mmNames = getMetamodelVocabularyNames();
         if (mmNames != null && mmNames.length > 0)
-            for (String name: mmNames)
+            for (String name : mmNames)
                 metamodelVocabulary.put(name, createModelVocabularyConcept(name));
     }
 
@@ -88,10 +92,10 @@ public abstract class AbstractSBVRExtractor {
     protected abstract void extractBusinessRuleCandidates();
 
     protected abstract void extractModelVocabulary();
-    
-    public abstract String[] getMetamodelVocabularyNames(); 
 
-    protected void readElements(DiagramPresentationElement diagram) {            
+    public abstract String[] getMetamodelVocabularyNames();
+
+    protected void readElements(DiagramPresentationElement diagram) {
         candidateElements.addAll(diagram.getUsedModelElements());
     }
 
@@ -269,37 +273,38 @@ public abstract class AbstractSBVRExtractor {
     public void setVCReplacements(Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> vcReplacements) {
         this.vcReplacements = vcReplacements;
     }
-    
-    private String containsCandidate(String text, AbstractConceptModel candidates, 
+
+    private String containsCandidate(String text, AbstractConceptModel candidates,
             Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> replacements) {
         Set<String> gclist = candidates.getListMap().keySet();
         for (String gc : gclist)
             if (text.contains(gc))
                 return gc;
-        for (String gc: replacements.keySet())
+        for (String gc : replacements.keySet())
             if (text.contains(gc))
                 return gc;
         return null;
     }
-    
-    private SBVRExpressionModel getConcept(String cand, AbstractConceptModel candidates, 
+
+    private SBVRExpressionModel getConcept(String cand, AbstractConceptModel candidates,
             Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> replacements) {
         Map<String, SBVRExpressionModel> map = candidates.getListMap();
         Set<String> gclist = map.keySet();
-        if (cand != null) {
-            if (!gclist.contains(cand) && replacements.containsKey(cand)) 
+        if (cand != null)
+            if (!gclist.contains(cand) && replacements.containsKey(cand))
                 return replacements.get(cand).getValue();
             else if (gclist.contains(cand))
-                return map.get(cand);   
+                return map.get(cand);
             else
                 return null;
-        } else return null;
+        else
+            return null;
     }
 
     protected SBVRExpressionModel getGeneralConcept(String cand) {
         return getConcept(cand, gc_candidates, gcReplacements);
     }
-    
+
     protected String containsGCCandidate(String text) {
         return containsCandidate(text, gc_candidates, gcReplacements);
     }
@@ -307,18 +312,169 @@ public abstract class AbstractSBVRExtractor {
     protected SBVRExpressionModel getVerbConcept(String cand) {
         return getConcept(cand, vc_candidates, vcReplacements);
     }
-    
+
     protected String containsVCCandidate(String text) {
         return containsCandidate(text, vc_candidates, vcReplacements);
     }
-    
+
     public abstract String removeMetaconceptName(String name);
-    
+
     protected SBVRExpressionModel createModelVocabularyConcept(String name) {
         SBVRExpressionModel candidate = new SBVRExpressionModel();
         candidate.addGeneralConcept(name, false);
         candidate.setAuto(true);
         candidate.setModelVocabularyConcept(true);
         return candidate;
+    }
+
+    protected SBVRExpressionModel createGeneralConcept(Element el, String name, boolean setAuto) {
+        if (name == null)
+            return null;
+        SBVRExpressionModel candidate = new SBVRExpressionModel();
+        candidate.addGeneralConcept(name, false);
+        candidate.setAuto(true);
+        SourceEntry source = new SourceEntry(Arrays.asList((Object) el), Arrays.asList(getProperName(el)));
+        gc_candidates.add(source, candidate);
+        if (setAuto)
+            gc_candidates.setAutomaticExtraction(source);
+        else
+            gc_candidates.setManualExtraction(source);
+        return candidate;
+    }
+
+    protected Collection<Element> getDiagramElements(Collection<Element> colelem, DiagramPresentationElement diagram) {
+        Collection<Element> newelem = new HashSet<>();
+        Collection<Package> packages = new HashSet<>();
+        for (Element element : colelem)
+            if (element instanceof Package && diagram.findPresentationElement(element, (Class) null) != null)
+                packages.add((Package) element);
+        while (!packages.isEmpty()) {
+            Collection<Package> newPack = new HashSet<>();
+            for (Package pack : packages) {
+                for (Element el : pack.getOwnedElement())
+                    if (diagram.findPresentationElement(el, (Class) null) != null)
+                        newelem.add(el);
+                for (Package innerPack : pack.getNestedPackage())
+                    if (diagram.findPresentationElement(innerPack, (Class) null) != null)
+                        newPack.add(innerPack);
+            }
+            packages = newPack;
+        }
+        return newelem;
+    }
+
+    /**
+     * Extract verb-concept from action-like element (UseCase, Task, etc.)
+     *
+     * @param el Element
+     * @return Extracted string
+     */
+    protected String extractActionVC(Element el) {
+        String name = el.getHumanName();
+        if (name == null || name.length() == 0)
+            return null;
+        String[] parts = name.split(" ");
+        if (parts.length < 2)
+            return null;
+        return (parts[1].trim().length() > 0 ? parts[1].trim().toLowerCase() : null);
+    }
+
+    protected String extractActionGC(Element el) {
+        String proper = getProperName(el);
+        if (proper == null || proper.length() == 0)
+            return null;
+        String[] parts = proper.split(" ");
+        if (parts.length < 3)
+            return null;
+        String name = "";
+        for (int i = 2; i < parts.length; i++)
+            name += parts[i] + " ";
+        return name.trim();
+    }
+
+    protected void createVerbConceptFromAction(Element actor, Element usecase) {
+        Map<String, SBVRExpressionModel> map = gc_candidates.getListMap();
+        Set<String> gclist = map.keySet();
+        String uc = extractActionGC(usecase);
+        String bname = extractElementText(actor);
+        String vname = extractActionVC(usecase);
+        if (bname != null && vname != null && gclist.contains(bname)) {
+            SBVRExpressionModel first = getGeneralConcept(bname);
+            if (first == null)
+                return;
+            SBVRExpressionModel candidate = new SBVRExpressionModel();
+            candidate.addIdentifiedExpression(first).addVerbConcept(vname, false);
+            if (uc != null) {
+                SBVRExpressionModel second = getGeneralConcept(uc);
+                if (second != null)
+                    candidate.addIdentifiedExpression(second);
+                else
+                    candidate.addUnidentifiedText(uc);
+            }
+            candidate.setAuto(true);
+            SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(actor, usecase)),
+                    Arrays.asList(getProperName(actor), getProperName(usecase)));
+            vc_candidates.add(source, candidate);
+            vc_candidates.setAutomaticExtraction(source);
+        }
+    }
+
+    protected void createVerbConceptFromCondition(Element condEl) {
+        String name = getProperName(condEl);
+        String eptext = extractElementText(condEl);
+        if (eptext == null)
+            return;
+        List<String> idgcs = new ArrayList<>();
+        String gcand = containsGCCandidate(eptext);
+        if (gcand != null)
+            idgcs.add(gcand);
+        if (idgcs.size() > 0 && (!extractedAuto || (extractedAuto && extractedStrict))) {
+            SBVRExpressionModel candidate = new SBVRExpressionModel();
+            if (idgcs.size() == 1) {
+                String gc = idgcs.get(0);
+                SBVRExpressionModel gcExpr = getGeneralConcept(gc);
+                if (eptext.startsWith(gc) && gcExpr != null)
+                    candidate.addIdentifiedExpression(gcExpr)
+                            .addUnidentifiedText(eptext.substring(gc.length()).trim());
+                else if (eptext.endsWith(gc) && gcExpr != null)
+                    candidate.addUnidentifiedText(eptext.substring(0, eptext.length() - gc.length()))
+                            .addIdentifiedExpression(gcExpr);
+            } else if (idgcs.size() == 2) {
+                String gc1 = idgcs.get(0);
+                String gc2 = idgcs.get(1);
+                SBVRExpressionModel gcExpr1 = getGeneralConcept(gc1);
+                SBVRExpressionModel gcExpr2 = getGeneralConcept(gc2);
+                if (eptext.startsWith(gc1) && eptext.endsWith(gc2) && gcExpr1 != null && gcExpr2 != null
+                        && eptext.length() - gc2.length() > gc1.length() + 1)
+                    candidate.addIdentifiedExpression(gcExpr1)
+                            .addUnidentifiedText(eptext.substring(gc1.length(), eptext.length() - gc2.length()))
+                            .addIdentifiedExpression(gcExpr2);
+                else if (eptext.startsWith(gc2) && eptext.endsWith(gc1) && gcExpr1 != null && gcExpr2 != null
+                        && eptext.length() - gc1.length() > gc2.length() + 1)
+                    candidate.addIdentifiedExpression(gcExpr2)
+                            .addUnidentifiedText(eptext.substring(gc2.length() + 1, eptext.length() - gc1.length()))
+                            .addIdentifiedExpression(gcExpr1);
+            }
+            vc_candidates.add(new SourceEntry(Arrays.asList((Object) condEl), Arrays.asList(name)), candidate);
+        }
+    }
+
+    protected void createCharacteristic(Element subject, Element characteristic) {
+        Map<String, SBVRExpressionModel> map = gc_candidates.getListMap();
+        Set<String> gclist = map.keySet();
+        String subj = extractElementText(subject);
+        String char_ = extractElementText(characteristic);
+        if (subj == null || char_ == null)
+            return;
+        SBVRExpressionModel first = getGeneralConcept(subj);
+        if (first == null)
+            return;
+        SBVRExpressionModel candidate = new SBVRExpressionModel();
+        candidate.addIdentifiedExpression(first).addVerbConcept("is " + char_, true);
+        candidate.setAuto(true);
+        SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(subject, characteristic)),
+                Arrays.asList(getProperName(subject), getProperName(characteristic)));
+        vc_candidates.add(source, candidate);
+        vc_candidates.setAutomaticExtraction(source);
     }
 }

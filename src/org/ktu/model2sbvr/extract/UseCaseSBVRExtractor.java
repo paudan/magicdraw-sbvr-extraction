@@ -49,7 +49,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
             if ((el.getClassType().equals(Actor.class) || isBoundaryElement(el)) && !extractedAuto)
                 createGeneralConcept(el, extractElementText(el), true);
             else if (el.getClassType().equals(UseCase.class) && (!extractedAuto || (extractedAuto && extractedStrict))) {
-                createGeneralConcept(el, extractUseCaseGC(el), false);
+                createGeneralConcept(el, extractActionGC(el), false);
             } else if (el.getClassType().equals(Extend.class)) {
                 for (ExtensionPoint ep : ((Extend) el).getExtensionLocation())
                     if (extractElementText(ep) != null)
@@ -80,7 +80,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                         uc_found = true;
                     }
                 if (actor_found && uc_found)
-                    createVerbConceptFromUseCase(actor, (UseCase) uc);
+                    createVerbConceptFromAction(actor, (UseCase) uc);
                 // Association condition may be embedded in Association name
                 if (extractElementText(el) != null)
                     vc_candidates.setManualExtraction(new SourceEntry(Arrays.asList((Object)el), Arrays.asList(getProperName(el))));
@@ -119,64 +119,28 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                                 hasEnd = true;
                                 for (Type elem : assoc.getEndType())
                                     if (elem.getClassType().equals(Actor.class)) {
-                                        createVerbConceptFromUseCase(elem, uc);
+                                        createVerbConceptFromAction(elem, uc);
                                         break;
                                     }
                             }
                         if (!hasEnd)
-                            createVerbConceptFromUseCase(uc.getOwner(), uc);
+                            createVerbConceptFromAction(uc.getOwner(), uc);
                     } else if (!uc.get_includeOfAddition().isEmpty() || !uc.get_extendOfExtendedCase().isEmpty()) {
                         Collection<Actor> actors = getActorsOfUseCase(uc, null);
                         if (!actors.isEmpty())
                             for (Actor actor : actors)
-                                createVerbConceptFromUseCase(actor, uc);
+                                createVerbConceptFromAction(actor, uc);
                         else
-                            createVerbConceptFromUseCase(uc.getOwner(), uc);
+                            createVerbConceptFromAction(uc.getOwner(), uc);
                     } else if (uc.get_includeOfAddition().isEmpty() && uc.get_extendOfExtendedCase().isEmpty())
                         // Use case without associations is executed by the system
-                        createVerbConceptFromUseCase(uc.getOwner(), uc);
+                        createVerbConceptFromAction(uc.getOwner(), uc);
                     // Also add UseCases for possible manual extraction
                     vc_candidates.setManualExtraction(new SourceEntry(Arrays.asList((Object)el), Arrays.asList(getProperName(el))));
                 }
             } else if (el.getClassType().equals(Extend.class))
                 for (ExtensionPoint ep : ((Extend) el).getExtensionLocation()) {
-                    String name = getProperName(ep);
-                    String eptext = extractElementText(ep);
-                    if (eptext == null)
-                        continue;
-                    List<String> idgcs = new ArrayList<>();
-                    String gcand = containsGCCandidate(eptext);
-                    if (gcand != null)
-                        idgcs.add(gcand);
-                    if (idgcs.size() > 0 && (!extractedAuto || (extractedAuto && extractedStrict))) {
-                        SBVRExpressionModel candidate = new SBVRExpressionModel();
-                        if (idgcs.size() == 1) {
-                            String gc = idgcs.get(0);
-                            SBVRExpressionModel gcExpr = getGeneralConcept(gc);
-                            if (eptext.startsWith(gc) && gcExpr != null)
-                                candidate.addIdentifiedExpression(gcExpr)
-                                        .addUnidentifiedText(eptext.substring(gc.length()).trim());
-                            else if (eptext.endsWith(gc) && gcExpr != null)
-                                candidate.addUnidentifiedText(eptext.substring(0, eptext.length() - gc.length()))
-                                        .addIdentifiedExpression(gcExpr);
-                        } else if (idgcs.size() == 2) {
-                            String gc1 = idgcs.get(0);
-                            String gc2 = idgcs.get(1);
-                            SBVRExpressionModel gcExpr1 = getGeneralConcept(gc1);
-                            SBVRExpressionModel gcExpr2 = getGeneralConcept(gc2);
-                            if (eptext.startsWith(gc1) && eptext.endsWith(gc2) && gcExpr1 != null && gcExpr2 != null
-                                    && eptext.length() - gc2.length() > gc1.length() + 1)
-                                candidate.addIdentifiedExpression(gcExpr1)
-                                        .addUnidentifiedText(eptext.substring(gc1.length(), eptext.length() - gc2.length()))
-                                        .addIdentifiedExpression(gcExpr2);
-                            else if (eptext.startsWith(gc2) && eptext.endsWith(gc1) && gcExpr1 != null && gcExpr2 != null
-                                    && eptext.length() - gc1.length() > gc2.length() + 1)
-                                candidate.addIdentifiedExpression(gcExpr2)
-                                        .addUnidentifiedText(eptext.substring(gc2.length() + 1, eptext.length() - gc1.length()))
-                                        .addIdentifiedExpression(gcExpr1);
-                        }
-                        vc_candidates.add(new SourceEntry(Arrays.asList((Object) ep), Arrays.asList(name)), candidate);
-                    }
+                    createVerbConceptFromCondition(ep);
                     vc_candidates.setManualExtraction(new SourceEntry(Arrays.asList((Object)el), Arrays.asList(getProperName(el))));
                 }
         }
@@ -238,8 +202,8 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                         continue;
                     for (Actor aai : aextension) {
                         String aainame = extractElementText(aai);
-                        String extnamegc = extractUseCaseGC(extension);
-                        String extnamevc = extractUseCaseVC(extension);
+                        String extnamegc = extractActionGC(extension);
+                        String extnamevc = extractActionVC(extension);
                         if (aainame != null && extnamevc != null) {
                             SBVRExpressionModel candidate = new SBVRExpressionModel();
                             candidate.addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION);
@@ -296,29 +260,6 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
         return el.getClassType().equals(Model.class)
                 || el.getClassType().equals(Component.class)
                 || el.getClassType().equals(com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package.class);
-    }
-
-    private String extractUseCaseVC(Element el) {
-        String name = el.getHumanName();
-        if (name == null || name.length() == 0)
-            return null;
-        String[] parts = name.split(" ");
-        if (parts.length < 2)
-            return null;
-        return (parts[1].trim().length() > 0 ? parts[1].trim().toLowerCase() : null);
-    }
-
-    private String extractUseCaseGC(Element el) {
-        String proper = getProperName(el);
-        if (proper == null || proper.length() == 0)
-            return null;
-        String[] parts = proper.split(" ");
-        if (parts.length < 3)
-            return null;
-        String name = "";
-        for (int i = 2; i < parts.length; i++)
-            name += parts[i] + " ";
-        return name.trim();
     }
 
     @Override
@@ -454,61 +395,13 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
         candidateElements.addAll(getDiagramElements(candidateElements, diagram));
     }
 
-    private Collection<Element> getDiagramElements(Collection<Element> colelem, DiagramPresentationElement diagram) {
-        Collection<Element> newelem = new HashSet<>();
-        Collection<Package> packages = new HashSet<>();
-        for (Element element : colelem)
-            if (element instanceof Package && diagram.findPresentationElement(element, (Class)null) != null)
-                packages.add((Package) element);
-        while (!packages.isEmpty()) {
-            Collection<Package> newPack = new HashSet<>();
-            for (Package pack : packages) {
-                for (Element el : pack.getOwnedElement())
-                    if (diagram.findPresentationElement(el, (Class)null) != null)
-                        newelem.add(el);
-                for (Package innerPack : pack.getNestedPackage())
-                    if (diagram.findPresentationElement(innerPack, (Class)null) != null)
-                        newPack.add(innerPack);
-            }
-            packages = newPack;
-        }
-        return newelem;
-    }
-
-    private void createVerbConceptFromUseCase(Element actor, UseCase usecase) {
-        Map<String, SBVRExpressionModel> map = gc_candidates.getListMap();
-        Set<String> gclist = map.keySet();
-        String uc = extractUseCaseGC(usecase);
-        String bname = extractElementText(actor);
-        String vname = extractUseCaseVC(usecase);
-        if (bname != null && vname != null && gclist.contains(bname)) {
-            SBVRExpressionModel first = getGeneralConcept(bname);
-            if (first == null)
-                return;
-            SBVRExpressionModel candidate = new SBVRExpressionModel();
-            candidate.addIdentifiedExpression(first).addVerbConcept(vname, false);
-            if (uc != null) {
-                SBVRExpressionModel second = getGeneralConcept(uc);
-                if (second != null)
-                    candidate.addIdentifiedExpression(second);
-                else
-                    candidate.addUnidentifiedText(uc);
-            }
-            candidate.setAuto(true);
-            SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(actor, usecase)), 
-                    Arrays.asList(getProperName(actor), getProperName(usecase)));
-            vc_candidates.add(source, candidate);
-            vc_candidates.setAutomaticExtraction(source);
-        }
-    }
-
     private void createRuleFromInclude(Element ai, Element aai, UseCase including, UseCase included) {
         String ainame = extractElementText(ai);
-        String inclname = extractUseCaseVC(including);
-        String inclnamegc = extractUseCaseGC(including);
+        String inclname = extractActionVC(including);
+        String inclnamegc = extractActionGC(including);
         String aainame = extractElementText(aai);
-        String inclname2 = extractUseCaseVC(included);
-        String inclnamegc2 = extractUseCaseGC(included);
+        String inclname2 = extractActionVC(included);
+        String inclnamegc2 = extractActionGC(included);
         SBVRExpressionModel binary1 = inclnamegc2 != null ? getVerbConcept(aainame + " " + inclname2 + " " + inclnamegc2) : null; 
         SBVRExpressionModel unary1 = inclnamegc2 != null ? getVerbConcept(aainame + " " + inclname2) : null;
         SBVRExpressionModel binary2 = inclnamegc != null ? getVerbConcept(ainame + " " + inclname + " " + inclnamegc) : null; 
@@ -536,11 +429,11 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
 
     private void createRuleFromExtend(Element ai, Element aai, UseCase extended, UseCase extension) {
         String ainame = extractElementText(ai);
-        String extname = extractUseCaseVC(extended);
-        String extnamegc = extractUseCaseGC(extended);
+        String extname = extractActionVC(extended);
+        String extnamegc = extractActionGC(extended);
         String aainame = extractElementText(aai);
-        String extname2 = extractUseCaseVC(extension);
-        String extnamegc2 = extractUseCaseGC(extension);
+        String extname2 = extractActionVC(extension);
+        String extnamegc2 = extractActionGC(extension);
         SBVRExpressionModel binary1 = extnamegc2 != null ? getVerbConcept(aainame + " " + extname2 + " " + extnamegc2) : null; 
         SBVRExpressionModel unary1 = extnamegc2 != null ? getVerbConcept(aainame + " " + extname2) : null;
         SBVRExpressionModel binary2 = extnamegc != null ? getVerbConcept(ainame + " " + extname + " " + extnamegc) : null; 
@@ -615,21 +508,6 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                 if (elem.getClassType().equals(Actor.class) && candidateElements.contains(elem))
                     actors.add((Actor) elem);
         return actors;
-    }
-
-    private SBVRExpressionModel createGeneralConcept(Element el, String name, boolean setAuto) {
-        if (name == null)
-            return null;
-        SBVRExpressionModel candidate = new SBVRExpressionModel();
-        candidate.addGeneralConcept(name, false);
-        candidate.setAuto(true);
-        SourceEntry source = new SourceEntry(Arrays.asList((Object) el), Arrays.asList(getProperName(el)));
-        gc_candidates.add(source, candidate);
-        if (setAuto)
-            gc_candidates.setAutomaticExtraction(source);
-        else
-            gc_candidates.setManualExtraction(source);
-        return candidate;
     }
 
     @Override

@@ -14,7 +14,7 @@ public class SBVRExpressionModel implements Cloneable {
     private static final ResourceBundle bundle = ResourceBundle.getBundle("org/ktu/model2sbvr/messages");
 
     public enum ExpressionType {
-        GENERAL_CONCEPT, INDIVIDUAL_CONCEPT, VERB_CONCEPT, RULE_TYPE, RULE_IF, RULE_AND, RULE_OR, GENERIC
+        GENERAL_CONCEPT, INDIVIDUAL_CONCEPT, VERB_CONCEPT, RULE_TYPE, RULE_IF, RULE_AND, RULE_OR, RULE_AFTER, GENERIC
     }
 
     public enum RuleType {
@@ -82,6 +82,13 @@ public class SBVRExpressionModel implements Cloneable {
     public SBVRExpressionModel addIfExpression() {
         types.add(ExpressionType.RULE_IF);
         expressions.add("if"); 
+        identified.add(true);
+        return this;
+    }
+    
+    public SBVRExpressionModel addAfterExpression() {
+        types.add(ExpressionType.RULE_AFTER);
+        expressions.add("after"); 
         identified.add(true);
         return this;
     }
