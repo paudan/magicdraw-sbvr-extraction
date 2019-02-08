@@ -8,6 +8,7 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -145,6 +146,8 @@ public abstract class AbstractSBVRExtractor {
     }
 
     public static String extractElementText(BaseElement el) {
+        if (el == null)
+            return null;
         String name = getProperName(el);
         if (name == null || name.trim().length() == 0)
             return null;
@@ -333,7 +336,7 @@ public abstract class AbstractSBVRExtractor {
         SBVRExpressionModel candidate = new SBVRExpressionModel();
         candidate.addGeneralConcept(name, false);
         candidate.setAuto(true);
-        SourceEntry source = new SourceEntry(Arrays.asList((Object) el), Arrays.asList(getProperName(el)));
+        SourceEntry source = new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el)));
         gc_candidates.add(source, candidate);
         if (setAuto)
             gc_candidates.setAutomaticExtraction(source);
@@ -365,7 +368,6 @@ public abstract class AbstractSBVRExtractor {
 
     /**
      * Extract verb-concept from action-like element (UseCase, Task, etc.)
-     *
      * @param el Element
      * @return Extracted string
      */
@@ -455,13 +457,12 @@ public abstract class AbstractSBVRExtractor {
                             .addUnidentifiedText(eptext.substring(gc2.length() + 1, eptext.length() - gc1.length()))
                             .addIdentifiedExpression(gcExpr1);
             }
-            vc_candidates.add(new SourceEntry(Arrays.asList((Object) condEl), Arrays.asList(name)), candidate);
+            vc_candidates.add(new SourceEntry(Collections.singletonList(condEl), Collections.singletonList(name)), candidate);
         }
     }
 
     protected void createCharacteristic(Element subject, Element characteristic) {
         Map<String, SBVRExpressionModel> map = gc_candidates.getListMap();
-        Set<String> gclist = map.keySet();
         String subj = extractElementText(subject);
         String char_ = extractElementText(characteristic);
         if (subj == null || char_ == null)
