@@ -2,8 +2,6 @@ package org.ktu.model2sbvr;
 
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
-import com.nomagic.magicdraw.openapi.uml.SessionManager;
-import com.nomagic.magicdraw.tests.MagicDrawTestCase;
 import com.nomagic.magicdraw.uml.DiagramTypeConstants;
 import com.nomagic.magicdraw.uml.ElementFinder;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
@@ -33,18 +31,15 @@ import org.ktu.model2sbvr.extract.AbstractSBVRExtractor;
 import org.ktu.model2sbvr.extract.FactDiagramGenerator;
 import org.ktu.model2sbvr.extract.UseCaseSBVRExtractor;
 import org.ktu.model2sbvr.models.FilteredConceptModel;
+import org.ktu.model2sbvr.tests.ExtractionTestCase;
 import vepsem.PluginUtils;
 
-public class DiagramExtractionTest extends MagicDrawTestCase {
+public class DiagramExtractionTest extends ExtractionTestCase {
 
-    protected static Project project = null;
-    protected String filename;
-    protected SessionManager sessionManager = SessionManager.getInstance();
     protected Map<String, Map<String, Map<String, Integer[]>>> stats = new HashMap<>();
 
     public DiagramExtractionTest() {
         super();
-        filename = Paths.get("tests", "resources", "UseCase test diagrams.mdzip").toString();
         // Remove any existing log and statistics files
         try {
             Path path = FileSystems.getDefault().getPath("business_vocabulary_diagram.txt");
@@ -74,29 +69,9 @@ public class DiagramExtractionTest extends MagicDrawTestCase {
         }
     }
 
-    protected void setUpTest() throws Exception {
-        super.setUpTest();
-        setSkipMemoryTest(true);
-        setMemoryTestReady(false);
-        if (filename == null)
-            throw new IOException("Filename of testing project is not specified!");
-        if (filename != null && (project == null || !project.isLoaded()))
-            project = openProject(Paths.get(filename).normalize().toUri().getPath());
-        if (project == null || !project.isLoaded())
-            throw new IOException("File " + filename + " was not opened or could not be found!");
-        if (sessionManager.isSessionCreated())
-            sessionManager.closeSession();
-        sessionManager.createSession("Perform tests");
-    }
-
-    protected void endTest() {
-        if (sessionManager.isSessionCreated())
-            sessionManager.cancelSession();
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            Logger.getLogger(DiagramExtractionTest.class.getName()).log(Level.SEVERE, null, e);
-        }
+    @Override
+    protected Path getFilename() {
+        return Paths.get("tests", "resources", "UseCase test diagrams.mdzip");
     }
 
     protected void runExtraction(final String packageName, Boolean strict) throws IOException {
