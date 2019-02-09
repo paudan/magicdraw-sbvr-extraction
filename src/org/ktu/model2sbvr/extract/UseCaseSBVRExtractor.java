@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
+import org.ktu.model2sbvr.models.SBVRExpressionModel.Conditional;
 import org.ktu.model2sbvr.models.SBVRModelException;
 import org.ktu.model2sbvr.models.SourceEntry;
 
@@ -219,7 +220,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                                 if (unary != null)
                                     candidate.addIdentifiedExpression(unary);
                             }
-                            candidate.addIfExpression();
+                            candidate.addRuleConditional(Conditional.IF);
                             // Try to map ExtensionPoint to already identified verb concepts
                             SBVRExpressionModel sbvr = getVerbConcept(epname);
                             if (sbvr != null)
@@ -420,7 +421,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                 candidate.addIdentifiedExpression(binary1);
             else if (unary1 != null)
                 candidate.addIdentifiedExpression(unary1);
-            candidate.addIfExpression();
+            candidate.addRuleConditional(Conditional.IF);
             if (binary2 != null)
                 candidate.addIdentifiedExpression(binary2);
             else if (unary2 != null)
@@ -452,7 +453,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                 candidate.addIdentifiedExpression(binary1);
             else if (unary1 != null)
                 candidate.addIdentifiedExpression(unary1);
-            candidate.addIfExpression();
+            candidate.addRuleConditional(Conditional.IF);
             if (binary2 != null)
                 candidate.addIdentifiedExpression(binary2);
             else if (unary2 != null)

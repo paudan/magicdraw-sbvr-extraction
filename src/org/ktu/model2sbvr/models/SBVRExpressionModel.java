@@ -14,7 +14,7 @@ public class SBVRExpressionModel implements Cloneable {
     private static final ResourceBundle bundle = ResourceBundle.getBundle("org/ktu/model2sbvr/messages");
 
     public enum ExpressionType {
-        GENERAL_CONCEPT, INDIVIDUAL_CONCEPT, VERB_CONCEPT, RULE_TYPE, RULE_IF, RULE_AND, RULE_OR, RULE_AFTER, GENERIC
+        GENERAL_CONCEPT, INDIVIDUAL_CONCEPT, VERB_CONCEPT, RULE_TYPE, RULE_AND, RULE_OR, RULE_CONDITIONAL, GENERIC
     }
 
     public enum RuleType {
@@ -24,6 +24,23 @@ public class SBVRExpressionModel implements Cloneable {
         private final String expr;
 
         RuleType(String expr) {
+            this.expr = expr;
+        }
+
+        public String toString() {
+            return expr;
+        }
+    }
+
+    public enum Conditional {
+        IF("if"),
+        AFTER("after"),
+        WHEN("when"),
+        OTHERWISE("otherwise");
+
+        private final String expr;
+
+        Conditional(String expr) {
             this.expr = expr;
         }
 
@@ -79,20 +96,13 @@ public class SBVRExpressionModel implements Cloneable {
         return this;
     }
 
-    public SBVRExpressionModel addIfExpression() {
-        types.add(ExpressionType.RULE_IF);
-        expressions.add("if"); 
+    public SBVRExpressionModel addRuleConditional(Conditional type) {
+        types.add(ExpressionType.RULE_CONDITIONAL);
+        expressions.add(type.toString());
         identified.add(true);
         return this;
     }
-    
-    public SBVRExpressionModel addAfterExpression() {
-        types.add(ExpressionType.RULE_AFTER);
-        expressions.add("after"); 
-        identified.add(true);
-        return this;
-    }
-    
+
     public SBVRExpressionModel addAndExpression() {
         types.add(ExpressionType.RULE_AND);
         expressions.add("and"); 
@@ -213,7 +223,8 @@ public class SBVRExpressionModel implements Cloneable {
             return CGC_FORMAT;
         if (type == ExpressionType.VERB_CONCEPT && identified)
             return CVC_FORMAT;
-        if (type == ExpressionType.RULE_TYPE || type == ExpressionType.RULE_IF)
+        if (type == ExpressionType.RULE_TYPE || type == ExpressionType.RULE_CONDITIONAL
+                || type == ExpressionType.RULE_AND || type == ExpressionType.RULE_OR)
             return CRC_FORMAT;
         return CBLANK_FORMAT;
     }
@@ -221,14 +232,11 @@ public class SBVRExpressionModel implements Cloneable {
     public SBVRExpressionModel clone() {
         SBVRExpressionModel copy = new SBVRExpressionModel();
         copy.types = new ArrayList<>();
-        for (ExpressionType type : types)
-            copy.types.add(type);
+        copy.types.addAll(types);
         copy.expressions = new ArrayList<>();
-        for (String str : expressions)
-            copy.expressions.add(str);
+        copy.expressions.addAll(expressions);
         copy.identified = new ArrayList<>();
-        for (Boolean ident : identified)
-            copy.identified.add(ident);
+        copy.identified.addAll(identified);
         copy.auto = auto;
         return copy;
     }
