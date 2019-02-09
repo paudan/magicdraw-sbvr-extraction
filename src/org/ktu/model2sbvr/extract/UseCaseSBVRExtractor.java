@@ -144,7 +144,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                 }
             } else if (el.getClassType().equals(Extend.class))
                 for (ExtensionPoint ep : ((Extend) el).getExtensionLocation()) {
-                    createVerbConceptFromCondition(ep);
+                    createVerbConceptFromCondition(ep, extractElementText(ep));
                     vc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
                 }
         }

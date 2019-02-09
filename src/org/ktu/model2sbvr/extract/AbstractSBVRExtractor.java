@@ -3,6 +3,9 @@ package org.ktu.model2sbvr.extract;
 import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Expression;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.OpaqueExpression;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -14,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
 import org.ktu.model2sbvr.models.AbstractConceptModel;
 import org.ktu.model2sbvr.models.DefaultConceptModel;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
@@ -394,12 +398,12 @@ public abstract class AbstractSBVRExtractor {
         return name.trim();
     }
 
-    protected void createVerbConceptFromAction(Element actor, Element usecase) {
+    protected void createVerbConceptFromAction(Element actor, Element action) {
         Map<String, SBVRExpressionModel> map = gc_candidates.getListMap();
         Set<String> gclist = map.keySet();
-        String uc = extractActionGC(usecase);
+        String uc = extractActionGC(action);
         String bname = extractElementText(actor);
-        String vname = extractActionVC(usecase);
+        String vname = extractActionVC(action);
         if (bname != null && vname != null && gclist.contains(bname)) {
             SBVRExpressionModel first = getGeneralConcept(bname);
             if (first == null)
@@ -414,20 +418,19 @@ public abstract class AbstractSBVRExtractor {
                     candidate.addUnidentifiedText(uc);
             }
             candidate.setAuto(true);
-            SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(actor, usecase)),
-                    Arrays.asList(getProperName(actor), getProperName(usecase)));
+            SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(actor, action)),
+                    Arrays.asList(getProperName(actor), getProperName(action)));
             vc_candidates.add(source, candidate);
             vc_candidates.setAutomaticExtraction(source);
         }
     }
 
-    protected void createVerbConceptFromCondition(Element condEl) {
-        String name = getProperName(condEl);
-        String eptext = extractElementText(condEl);
-        if (eptext == null)
+    protected void createVerbConceptFromCondition(Element condEl, String condition) {
+        if (condition == null)
             return;
+        String name = getProperName(condEl);
         List<String> idgcs = new ArrayList<>();
-        String gcand = containsGCCandidate(eptext);
+        String gcand = containsGCCandidate(condition);
         if (gcand != null)
             idgcs.add(gcand);
         if (idgcs.size() > 0 && (!extractedAuto || (extractedAuto && extractedStrict))) {
@@ -435,26 +438,26 @@ public abstract class AbstractSBVRExtractor {
             if (idgcs.size() == 1) {
                 String gc = idgcs.get(0);
                 SBVRExpressionModel gcExpr = getGeneralConcept(gc);
-                if (eptext.startsWith(gc) && gcExpr != null)
+                if (condition.startsWith(gc) && gcExpr != null)
                     candidate.addIdentifiedExpression(gcExpr)
-                            .addUnidentifiedText(eptext.substring(gc.length()).trim());
-                else if (eptext.endsWith(gc) && gcExpr != null)
-                    candidate.addUnidentifiedText(eptext.substring(0, eptext.length() - gc.length()))
+                            .addUnidentifiedText(condition.substring(gc.length()).trim());
+                else if (condition.endsWith(gc) && gcExpr != null)
+                    candidate.addUnidentifiedText(condition.substring(0, condition.length() - gc.length()))
                             .addIdentifiedExpression(gcExpr);
             } else if (idgcs.size() == 2) {
                 String gc1 = idgcs.get(0);
                 String gc2 = idgcs.get(1);
                 SBVRExpressionModel gcExpr1 = getGeneralConcept(gc1);
                 SBVRExpressionModel gcExpr2 = getGeneralConcept(gc2);
-                if (eptext.startsWith(gc1) && eptext.endsWith(gc2) && gcExpr1 != null && gcExpr2 != null
-                        && eptext.length() - gc2.length() > gc1.length() + 1)
+                if (condition.startsWith(gc1) && condition.endsWith(gc2) && gcExpr1 != null && gcExpr2 != null
+                        && condition.length() - gc2.length() > gc1.length() + 1)
                     candidate.addIdentifiedExpression(gcExpr1)
-                            .addUnidentifiedText(eptext.substring(gc1.length(), eptext.length() - gc2.length()))
+                            .addUnidentifiedText(condition.substring(gc1.length(), condition.length() - gc2.length()))
                             .addIdentifiedExpression(gcExpr2);
-                else if (eptext.startsWith(gc2) && eptext.endsWith(gc1) && gcExpr1 != null && gcExpr2 != null
-                        && eptext.length() - gc1.length() > gc2.length() + 1)
+                else if (condition.startsWith(gc2) && condition.endsWith(gc1) && gcExpr1 != null && gcExpr2 != null
+                        && condition.length() - gc1.length() > gc2.length() + 1)
                     candidate.addIdentifiedExpression(gcExpr2)
-                            .addUnidentifiedText(eptext.substring(gc2.length() + 1, eptext.length() - gc1.length()))
+                            .addUnidentifiedText(condition.substring(gc2.length() + 1, condition.length() - gc1.length()))
                             .addIdentifiedExpression(gcExpr1);
             }
             vc_candidates.add(new SourceEntry(Collections.singletonList(condEl), Collections.singletonList(name)), candidate);
@@ -477,5 +480,22 @@ public abstract class AbstractSBVRExtractor {
                 Arrays.asList(getProperName(subject), getProperName(characteristic)));
         vc_candidates.add(source, candidate);
         vc_candidates.setAutomaticExtraction(source);
+    }
+
+    protected String getCondition(ValueSpecification spec) {
+        if (spec == null)
+            return null;
+        if (spec instanceof OpaqueExpression) {
+            return String.join(" and ", ((OpaqueExpression)spec).getBody());
+        } else if (spec instanceof Expression) {
+            Expression express = spec.getExpression();
+            if (express == null)
+                return getProperName(spec);
+            String symbol = express.getSymbol();
+            return symbol != null ? symbol : getProperName(express);
+        } else if (spec instanceof LiteralString) {
+            return ((LiteralString)spec).getValue();
+        }
+        return getProperName(spec);
     }
 }

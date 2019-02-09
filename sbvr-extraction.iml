@@ -18,5 +18,14 @@
     <orderEntry type="library" scope="RUNTIME" name="Legend API" level="project" />
     <orderEntry type="library" name="cbm" level="project" />
     <orderEntry type="library" name="log4j" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/annotations/16.0.2/annotations-16.0.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
