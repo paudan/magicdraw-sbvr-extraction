@@ -4,7 +4,6 @@
 /dist/
 *.csv
 *.log
-.idea/codeStyles/**
 .idea/workspace.xml
 .idea/dbnavigator.xml
 .fuse_*
