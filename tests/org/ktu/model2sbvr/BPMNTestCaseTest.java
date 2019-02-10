@@ -57,10 +57,11 @@ public class BPMNTestCaseTest extends ExtractionTestCase {
     public void testRuleT2Extraction_PaperExample() {
         BpmnSBVRExtractor extractor = getExtractor("PaperExampleT2");
         Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        printExtractorOutput(gcObjects);
+        assertEquals(5, gcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        printExtractorOutput(vcObjects);
+        assertEquals(4, vcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
+        assertEquals(2, brObjects.size());
         printExtractorOutput(brObjects);
     }
 
@@ -68,10 +69,11 @@ public class BPMNTestCaseTest extends ExtractionTestCase {
     public void testRuleT2Extraction_Model2() {
         BpmnSBVRExtractor extractor = getExtractor("Model2");
         Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        printExtractorOutput(gcObjects);
+        assertEquals(6, gcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        printExtractorOutput(vcObjects);
+        assertEquals(5, vcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
+        assertEquals(2, brObjects.size());
         printExtractorOutput(brObjects);
     }
 }

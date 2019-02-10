@@ -56,6 +56,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         Map<ActivityNode, Map<ActivityEdge, String>> incomingConditions, outgoingConditions;
         Map<ActivityNode, Map<ActivityEdge, String>> correctionsIncoming, correctionsOutgoing;
         Map<ActivityNode, Integer> nullCountIncoming, nullCountOutgoing;
+        int nullsTotalIncoming, nullsTotalOutgoing;
 
         private TaskTuple(ActivityNode task) {
             this.taskNode = task;
@@ -87,16 +88,21 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
         private void addCondition(Map<ActivityNode, Map<ActivityEdge, String>> conditions,
                                   Map<ActivityNode, Integer> nullCounts, ActivityEdge edge, ActivityNode node) {
-            String condition = getCondition(edge.getGuard());
+            String condition = getCondition(edge);
+            nullCounts.putIfAbsent(node, 0);
+            if (condition == null) {
+                nullCounts.put(node, nullCounts.get(node) + 1);
+                if (conditions == this.incomingConditions)
+                    nullsTotalIncoming += 1;
+                else
+                    nullsTotalOutgoing += 1;
+            }
             Map<ActivityEdge, String> condList = conditions.get(node);
             if (condList == null) {
                 condList = new HashMap<>();
                 conditions.put(node, condList);
             }
             condList.put(edge, condition);
-            nullCounts.putIfAbsent(node, 0);
-            if (condition == null)
-                nullCounts.put(node, nullCounts.get(node) + 1);
         }
 
         private Map<ActivityNode, Map<ActivityEdge, String>> createCorrections(Map<ActivityNode, Map<ActivityEdge, String>> conditions,
@@ -104,7 +110,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             for (Entry<ActivityNode, Integer> nodeEntry : nullCounts.entrySet()) {
                 Integer nullStats = nodeEntry.getValue();
                 Map<ActivityEdge, String> condList = conditions.get(nodeEntry.getKey());
-                if (nullStats >= 1 && condList.size() > 1)
+                if (nullStats >= 1 && condList != null && condList.size() > 1)
                     // We have contradictions, transition condition is undefined
                     condList.clear();
             }
@@ -183,6 +189,14 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return el.getClassType().equals(ControlFlow.class) && hasAnyStereotype(el, "SequenceFlow");
     }
 
+    private String getCondition(ActivityEdge el) {
+        String cond = getCondition(el.getGuard());
+        if (cond != null)
+            return cond;
+        cond = el.getName().trim();
+        return cond.length() > 0 ? cond : null;
+    }
+
     @Override
     protected void extractGeneralConceptCandidates() {
         Iterator<Element> iterator = candidateElements.iterator();
@@ -198,7 +212,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             } else if (isTaskElement(el) && !extractedAuto)
                 createGeneralConcept(el, extractActionGC(el), false);
             else if (isSequenceFlow(el)) {
-                String condition = getCondition(((ActivityEdge) el).getGuard());
+                String condition = getCondition((ActivityEdge) el);
                 if (condition != null)
                     gc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(condition)));
             } else if ((isStartEventElement(el) || isEndEventElement(el)) && extractElementText(el) != null)
@@ -221,7 +235,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             } else if (isStartEventElement(el) || isEndEventElement(el) && !strictOnly)
                 createVerbConceptFromCondition(el, getProperName(el));
             else if (isSequenceFlow(el))
-                createVerbConceptFromCondition(el, getCondition(((ActivityEdge) el).getGuard()));
+                createVerbConceptFromCondition(el, getCondition((ActivityEdge) el));
             else if (isDataObject(el))
                 for (State state : ((CentralBufferNode) el).getInState())
                     createCharacteristic(el, state);
@@ -371,12 +385,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 if (!outgoingTasks.isEmpty())
                     //TODO: check incoming conditions from tasks which are "incoming"
                     candidate = candidate.addUnidentifiedText(",").addRuleConditional(Conditional.AFTER);
-                candidate = addTasksWithConditions(candidate, incomingTasks, el, objects, representations, false);
+                candidate = addTasksWithConditions(candidate, incomingTasks, el, objects, representations);
                 if (!outgoingTasks.isEmpty())
                     candidate = candidate.addUnidentifiedText(",");
             }
             if (!outgoingTasks.isEmpty())
-                candidate = addTasksWithConditions(candidate, outgoingTasks, el, objects, representations, true);
+                candidate = addTasksWithConditions(candidate, outgoingTasks, el, objects, representations);
             SourceEntry source = new SourceEntry(objects, representations);
             br_candidates.add(source, candidate);
             br_candidates.setAutomaticExtraction(source);
@@ -384,45 +398,52 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private SBVRExpressionModel addTasksWithConditions(SBVRExpressionModel candidate, Map<String, TaskTuple> tasksData, Element el,
-                                                       List<Object> objects, List<String> representations, boolean incomingConditions) {
+                                                       List<Object> objects, List<String> representations) {
         List<Object> tasksDefault = new ArrayList<>();
         boolean added_first = true;
         boolean rules_added = false;
         for (Entry<String, TaskTuple> entryOut : tasksData.entrySet()) {
             Map<Element, String> subjectsOut = entryOut.getValue().taskSubjects;
-            Map<ActivityNode, Map<ActivityEdge, String>> conditionsOut = incomingConditions ? entryOut.getValue().correctionsIncoming : entryOut.getValue().correctionsOutgoing;
-            Map<ActivityNode, Integer> nullStats = incomingConditions ? entryOut.getValue().nullCountIncoming : entryOut.getValue().nullCountOutgoing;
+            Map<ActivityNode, Map<ActivityEdge, String>> conditionsOut = entryOut.getValue().correctionsIncoming;
+            int nullTotal = entryOut.getValue().nullsTotalIncoming;
             for (Entry<Element, String> subjectOut : subjectsOut.entrySet()) {
                 // Add verb concept from rule and subject (lane, resource, etc.)
                 objects.add(subjectOut.getKey());
                 objects.add(entryOut.getValue().taskNode);
                 representations.add(subjectOut.getValue());
                 representations.add(entryOut.getValue().taskText);
-                Map<ActivityEdge, String> conditionsTask = conditionsOut.get(el);
-                if (conditionsTask != null && !conditionsTask.isEmpty() && nullStats.get(el) == 0) {
-                    if (!added_first)
-                        candidate = candidate.addUnidentifiedText(",").addOrExpression();
-                    else
-                        added_first = false;
-                    candidate = addTask(candidate, entryOut.getValue().taskNode, subjectOut.getValue());
-                    // Add verb concepts from conditions
-                    boolean added_or_first = true;
-                    candidate = candidate.addRuleConditional(Conditional.IF);
-                    rules_added = true;
-                    for (Entry<ActivityEdge, String> cond : conditionsTask.entrySet()) {
-                        if (!added_or_first)
-                            candidate = candidate.addOrExpression();
-                        else
-                            added_or_first = false;
-                        String condition = cond.getValue();
-                        if (condition != null) {
-                            candidate = addCondition(candidate, cond.getValue());
-                            objects.add(cond.getKey());
-                            representations.add(cond.getValue());
+                if (!conditionsOut.values().isEmpty()) {
+                    for (Map<ActivityEdge, String> conditionsTask: conditionsOut.values())
+                        if (conditionsTask != null && !conditionsTask.isEmpty() && nullTotal == 0) {
+                            if (!added_first)
+                                candidate = candidate.addUnidentifiedText(",").addOrExpression();
+                            else
+                                added_first = false;
+                            candidate = addTask(candidate, entryOut.getValue().taskNode, subjectOut.getValue());
+                            // Add verb concepts from conditions
+                            boolean added_or_first = true;
+                            candidate = candidate.addRuleConditional(Conditional.IF);
+                            rules_added = true;
+                            for (Entry<ActivityEdge, String> cond : conditionsTask.entrySet()) {
+                                if (!added_or_first)
+                                    candidate = candidate.addOrExpression();
+                                else
+                                    added_or_first = false;
+                                String condition = cond.getValue();
+                                if (condition != null) {
+                                    candidate = addCondition(candidate, cond.getValue());
+                                    objects.add(cond.getKey());
+                                    representations.add(cond.getValue());
+                                }
+                            }
+                        } else {
+                            // No conditions are present, process as default
+                            String outTaskText = extractElementText(entryOut.getValue().taskNode);
+                            SBVRExpressionModel taskModel = getVerbConcept(subjectOut.getValue() + " " + outTaskText);
+                            tasksDefault.add(taskModel != null ? taskModel : subjectOut.getValue() + " " + outTaskText);
                         }
-                    }
                 } else {
-                    // Process default conditions
+                    // No conditions are present, process as default
                     String outTaskText = extractElementText(entryOut.getValue().taskNode);
                     SBVRExpressionModel taskModel = getVerbConcept(subjectOut.getValue() + " " + outTaskText);
                     tasksDefault.add(taskModel != null ? taskModel : subjectOut.getValue() + " " + outTaskText);
