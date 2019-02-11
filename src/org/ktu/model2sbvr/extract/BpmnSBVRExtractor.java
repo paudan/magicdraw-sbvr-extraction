@@ -5,6 +5,8 @@ import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
+import com.nomagic.uml2.ext.magicdraw.actions.mdbasicactions.CallBehaviorAction;
+import com.nomagic.uml2.ext.magicdraw.actions.mdcompleteactions.AcceptEventAction;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ActivityEdge;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ActivityFinalNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ControlFlow;
@@ -17,13 +19,16 @@ import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.Centra
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.DecisionNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.ForkNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.JoinNode;
+import com.nomagic.uml2.ext.magicdraw.activities.mdstructuredactivities.StructuredActivityNode;
 import com.nomagic.uml2.ext.magicdraw.auxiliaryconstructs.mdinformationflows.InformationFlow;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Classifier;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Comment;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Diagram;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.EnumerationLiteral;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
+import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +44,7 @@ import java.util.Set;
 import org.ktu.model2sbvr.PluginUtilities;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
 import org.ktu.model2sbvr.models.SBVRExpressionModel.Conditional;
+import org.ktu.model2sbvr.models.SBVRExpressionModel.RuleType;
 import org.ktu.model2sbvr.models.SourceEntry;
 
 /**
@@ -48,6 +54,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
     private Project project;
     private Profile bpmnProfile;
+
+    private static String[] taskStereotypes = {"Task", "ServiceTask", "SendTask", "ReceiveTask", "UserTask", "ManualTask", "BusinessRuleTask", "ScriptTask"};
+    private static String[] activityStereotypes = {"SubProcess", "Transaction", "AdHocSubProcess"};
+    private static String[] boundaryStereotypes = {"MessageBoundaryEvent", "ErrorBoundaryEvent",  "TimerBoundaryEvent",
+            "EscalationBoundaryEvent", "CancelBoundaryEvent", "CompensationBoundaryEvent", "ConditionalBoundaryEvent",
+            "SignalBoundaryEvent", "MultipleBoundaryEvent", "ParallelMultipleBoundaryEvent"};
 
     private class TaskTuple {
         ActivityNode taskNode;
@@ -142,10 +154,32 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return false;
     }
 
+    private Stereotype getActivityStereotype(Element el) {
+        if (el == null)
+            return null;
+        List<String> stereotypes = new ArrayList<>(Arrays.asList(taskStereotypes));
+        stereotypes.add("CallActivity");
+        stereotypes.addAll(Arrays.asList(activityStereotypes));
+        for (String st : stereotypes) {
+            Stereotype stereotype = StereotypesHelper.getStereotype(project, st, bpmnProfile);
+            if (StereotypesHelper.hasStereotype(el, stereotype))
+                return stereotype;
+        }
+        return null;
+    }
+
     private boolean isTaskElement(Element el) {
         if (el == null)
             return false;
-        return hasAnyStereotype(el, "Task", "ServiceTask", "SendTask", "ReceiveTask", "UserTask", "ManualTask", "BusinessRuleTask", "ScriptTask");
+        return hasAnyStereotype(el, taskStereotypes);
+    }
+
+    private boolean isActivityElement(Element el) {
+        if (el == null)
+            return false;
+        return isTaskElement(el)
+                || (el.getClassType().equals(CallBehaviorAction.class) && hasAnyStereotype(el, "CallActivity"))
+                || (el.getClassType().equals(StructuredActivityNode.class) && hasAnyStereotype(el, activityStereotypes));
     }
 
     private boolean isStartEventElement(Element el) {
@@ -188,6 +222,17 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             return false;
         return el.getClassType().equals(ControlFlow.class) && hasAnyStereotype(el, "SequenceFlow");
     }
+
+    private boolean isBoundaryEvent(Element el) {
+        if (el == null)
+            return false;
+        return el.getClassType().equals(AcceptEventAction.class) && hasAnyStereotype(el, boundaryStereotypes);
+    }
+
+    protected Stereotype getStereotypeInList(Element el, String[] stereotypesList) {
+        return getStereotypeInList(el, stereotypesList, project, bpmnProfile);
+    }
+
 
     private String getCondition(ActivityEdge el) {
         String cond = getCondition(el.getGuard());
@@ -251,7 +296,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             Element el = iterator.next();
             extractRuleT1(el);
             extractRuleT2(el);
+            extractRuleT3(el);
             extractRuleT4(el);
+            extractRuleT5(el);
         }
     }
 
@@ -363,7 +410,15 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private void extractRuleT2(Element el) {
-        if (isGatewayOfType(el, "ExclusiveGateway")) {
+        extractRuleWithGateways(el, "ExclusiveGateway", "or");
+    }
+
+    private void extractRuleT3(Element el) {
+        extractRuleWithGateways(el, "InclusiveGateway", "and");
+    }
+
+    private void extractRuleWithGateways(Element el, String gatewayStereotype, String conjunction) {
+        if (isGatewayOfType(el, gatewayStereotype)) {
             Map<String, TaskTuple> incomingTasks = new HashMap<>();
             for (ActivityEdge edge : ((ControlNode) el).getIncoming()) {
                 TaskTuple taskTuple = new TaskTuple(edge.getSource());
@@ -385,12 +440,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 if (!outgoingTasks.isEmpty())
                     //TODO: check incoming conditions from tasks which are "incoming"
                     candidate = candidate.addUnidentifiedText(",").addRuleConditional(Conditional.AFTER);
-                candidate = addTasksWithConditions(candidate, incomingTasks, el, objects, representations);
+                candidate = addTasksWithConditions(candidate, incomingTasks, el, objects, representations, conjunction);
                 if (!outgoingTasks.isEmpty())
                     candidate = candidate.addUnidentifiedText(",");
             }
             if (!outgoingTasks.isEmpty())
-                candidate = addTasksWithConditions(candidate, outgoingTasks, el, objects, representations);
+                candidate = addTasksWithConditions(candidate, outgoingTasks, el, objects, representations, conjunction);
             SourceEntry source = new SourceEntry(objects, representations);
             br_candidates.add(source, candidate);
             br_candidates.setAutomaticExtraction(source);
@@ -398,7 +453,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private SBVRExpressionModel addTasksWithConditions(SBVRExpressionModel candidate, Map<String, TaskTuple> tasksData, Element el,
-                                                       List<Object> objects, List<String> representations) {
+                                                       List<Object> objects, List<String> representations, String conjunction) {
         List<Object> tasksDefault = new ArrayList<>();
         boolean added_first = true;
         boolean rules_added = false;
@@ -415,8 +470,13 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 if (!conditionsOut.values().isEmpty()) {
                     for (Map<ActivityEdge, String> conditionsTask: conditionsOut.values())
                         if (conditionsTask != null && !conditionsTask.isEmpty() && nullTotal == 0) {
-                            if (!added_first)
-                                candidate = candidate.addUnidentifiedText(",").addOrExpression();
+                            if (!added_first) {
+                                candidate = candidate.addUnidentifiedText(",");
+                                if (conjunction.equalsIgnoreCase("or"))
+                                    candidate = candidate.addOrExpression();
+                                else if (conjunction.equalsIgnoreCase("and"))
+                                    candidate = candidate.addAndExpression();
+                            }
                             else
                                 added_first = false;
                             candidate = addTask(candidate, entryOut.getValue().taskNode, subjectOut.getValue());
@@ -466,6 +526,71 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             }
         }
         return candidate;
+    }
+
+    private void extractRuleT5(Element el) {
+        if (isActivityElement(el)) {
+            List<Element> boundaryElements = BPMNHelper.getBoundaryEventRefs(el, getActivityStereotype(el));
+            if (boundaryElements.isEmpty())
+                return;
+            for (Element boundary: boundaryElements) {
+                if (!isBoundaryEvent(boundary))
+                    continue;
+                boolean isInterrupting = false;
+                Stereotype st = getStereotypeInList(boundary, boundaryStereotypes);
+                if (st == null)
+                    continue;
+                List cancelActivity = StereotypesHelper.getStereotypePropertyValue(boundary, st, "cancelActivity");
+                if (!cancelActivity.isEmpty()) {
+                    Object valueObj = cancelActivity.get(0);
+                    if (valueObj instanceof EnumerationLiteral) {
+                        String value = ((EnumerationLiteral) valueObj).getName();
+                        if (value != null)
+                            isInterrupting = Boolean.parseBoolean(value);
+                    }
+                }
+                Map<Element, String> activitySubjects = getSubjectNames(el);
+                for (Entry<Element, String> subject: activitySubjects.entrySet()) {
+                    SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.PERMISSION);
+                    candidate = addCondition(candidate, getProperName(boundary))
+                            .addRuleConditional(Conditional.WHEN);
+                    candidate = addTask(candidate, (ActivityNode) el, subject.getValue());
+                    SourceEntry source = new SourceEntry(Arrays.asList(subject.getKey(), el, boundary),
+                            Arrays.asList(getProperName(subject.getKey()), getProperName(el), getProperName(boundary)));
+                    br_candidates.add(source, candidate);
+                    br_candidates.setAutomaticExtraction(source);
+
+                    for (ActivityEdge outNode: ((AcceptEventAction)boundary).getOutgoing()) {
+                        ActivityNode outTask = outNode.getTarget();
+                        if (isTaskElement(outTask)) {
+                            candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
+                            candidate = addTask(candidate, outTask, subject.getValue())
+                                    .addRuleConditional(Conditional.AFTER)
+                                    .addUnidentifiedText("(");
+                            candidate = addCondition(candidate, getProperName(boundary))
+                                    .addRuleConditional(Conditional.AFTER);
+                            candidate = addTask(candidate, (ActivityNode) el, subject.getValue())
+                                    .addUnidentifiedText(")");
+                            source = new SourceEntry(Arrays.asList(subject.getKey(), el, boundary, outTask),
+                                    Arrays.asList(getProperName(subject.getKey()), getProperName(el), getProperName(boundary), getProperName(outTask)));
+                            br_candidates.add(source, candidate);
+                            br_candidates.setAutomaticExtraction(source);
+                        }
+                    }
+
+                    if (!isInterrupting) {
+                        candidate = new SBVRExpressionModel().addRuleExpression(RuleType.PROHIBITION);
+                        candidate = addTask(candidate, (ActivityNode) el, subject.getValue())
+                                .addRuleConditional(Conditional.AFTER);
+                        candidate = addCondition(candidate, getProperName(boundary));
+                        source = new SourceEntry(Arrays.asList(subject.getKey(), el, boundary),
+                                Arrays.asList(getProperName(subject.getKey()), getProperName(el), getProperName(boundary)));
+                        br_candidates.add(source, candidate);
+                        br_candidates.setAutomaticExtraction(source);
+                    }
+                }
+            }
+        }
     }
 
     @Override

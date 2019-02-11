@@ -7,7 +7,9 @@
       <root url="jar://$MAGICDRAW19_DIR$/plugins/com.nomagic.magicdraw.cbm/lib/commons-lang-2.6.jar!/" />
       <root url="jar://$MAGICDRAW19_DIR$/plugins/com.nomagic.magicdraw.cbm/lib/xpdl_api.jar!/" />
     </CLASSES>
-    <JAVADOC />
+    <JAVADOC>
+      <root url="file://$MAGICDRAW19_DIR$/openapi/docs/CBM_javadoc.zip" />
+    </JAVADOC>
     <SOURCES />
   </library>
 </component>

@@ -1,10 +1,13 @@
 package org.ktu.model2sbvr.extract;
 
+import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.uml.BaseElement;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
+import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Expression;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.LiteralString;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.OpaqueExpression;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -18,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.ValueSpecification;
+import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
+import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import org.ktu.model2sbvr.models.AbstractConceptModel;
 import org.ktu.model2sbvr.models.DefaultConceptModel;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
@@ -105,7 +110,7 @@ public abstract class AbstractSBVRExtractor {
     }
 
     public static String getProperName(BaseElement el) {
-        String name = el.getHumanName();
+        String name = el instanceof NamedElement ? ((NamedElement)el).getName() : el.getHumanName();
         if (name.trim().length() == 0)
             return null;
         return name.replaceAll("\n", " ").replaceAll("  ", " ").trim();
@@ -497,5 +502,16 @@ public abstract class AbstractSBVRExtractor {
             return ((LiteralString)spec).getValue();
         }
         return getProperName(spec);
+    }
+
+    protected Stereotype getStereotypeInList(Element el, String[] stereotypesList, Project project, Profile profile) {
+        if (el == null)
+            return null;
+        for (String st : stereotypesList) {
+            Stereotype stereotype = StereotypesHelper.getStereotype(project, st, profile);
+            if (StereotypesHelper.hasStereotype(el, stereotype))
+                return stereotype;
+        }
+        return null;
     }
 }

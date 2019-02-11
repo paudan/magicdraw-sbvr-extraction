@@ -19,7 +19,8 @@ public class SBVRExpressionModel implements Cloneable {
 
     public enum RuleType {
         OBLIGATION("It is obligatory that"), 
-        PERMISSION("It is permitted that"); 
+        PERMISSION("It is permitted that"),
+        PROHIBITION("It is prohibited that");
 
         private final String expr;
 
