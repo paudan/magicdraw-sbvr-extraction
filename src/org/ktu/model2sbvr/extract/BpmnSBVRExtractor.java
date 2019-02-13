@@ -12,6 +12,7 @@ import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ActivityFinal
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ControlFlow;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ControlNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.InitialNode;
+import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ObjectFlow;
 import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.Activity;
 import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.ActivityNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.ActivityPartition;
@@ -223,6 +224,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return el.getClassType().equals(ControlFlow.class) && hasAnyStereotype(el, "SequenceFlow");
     }
 
+    private boolean isDataAssociation(Element el) {
+        if (el == null)
+            return false;
+        return el.getClassType().equals(ObjectFlow.class) && hasAnyStereotype(el, "DataAssociation");
+    }
+
     private boolean isBoundaryEvent(Element el) {
         if (el == null)
             return false;
@@ -262,6 +269,13 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     gc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(condition)));
             } else if ((isStartEventElement(el) || isEndEventElement(el)) && extractElementText(el) != null)
                 gc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
+            else if (isDataObject(el))
+                for (State state : ((CentralBufferNode) el).getInState()) {
+                    String stateText = extractElementText(state);
+                    String elText = extractElementText(el);
+                    if (stateText != null && elText != null)
+                        createGeneralConcept(el, stateText + " " + elText, true);
+                }
             else if (el.getClassType().equals(Comment.class))
                 if (extractElementText(el) != null)
                     gc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
@@ -589,6 +603,110 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                         br_candidates.setAutomaticExtraction(source);
                     }
                 }
+            }
+        }
+    }
+
+    private void extractRuleT6(Element el) {
+        if (isTaskElement(el)) {
+            // Outgoing tasks with data objects
+            List<Element> dataObjects = new ArrayList<>();
+            Map<Element, String> taskSubjects = getSubjectNames(el);
+            for (ActivityEdge outAssoc: ((ActivityNode)el).getOutgoing())
+                if (isDataAssociation(outAssoc))
+                    dataObjects.add(outAssoc.getTarget());
+            for (Entry<Element, String> taskSubject : taskSubjects.entrySet()) {
+                SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
+                boolean added_first_obj = true;
+                for (Element dataObj: dataObjects) {
+                    Collection<State> states = ((CentralBufferNode) dataObj).getInState();
+                    String objText = getProperName(dataObj);
+                    if (states.isEmpty()) {
+                        if (!added_first_obj)
+                            candidate = candidate.addAndExpression();
+                        else
+                            added_first_obj = false;
+                        SBVRExpressionModel objConcept = getGeneralConcept(objText);
+                        candidate = objConcept != null ? candidate.addIdentifiedExpression(objConcept) : candidate.addUnidentifiedText(objText);
+                        candidate = candidate.addVerbConcept("is produced", true);
+                    } else {
+                        boolean added_first_state = true;
+                        for (State state: states) {
+                            if (!added_first_state)
+                                candidate = candidate.addAndExpression();
+                            else
+                                added_first_state = false;
+                            String stateText = getProperName(state);
+                            SBVRExpressionModel objConcept = getGeneralConcept(stateText + " " + objText);
+                            candidate = objConcept != null ? candidate.addIdentifiedExpression(objConcept) : candidate.addUnidentifiedText(objText);
+                            candidate = candidate.addVerbConcept("is produced", true);
+                        }
+                    }
+                }
+                candidate = candidate.addRuleConditional(Conditional.WHEN);
+                candidate = addTask(candidate, (ActivityNode) el, taskSubject.getValue());
+                List<Object> srcElements = new ArrayList<>(dataObjects);
+                srcElements.add(taskSubject.getKey());
+                srcElements.add(el);
+                List<String> names = new ArrayList<>();
+                for (Element dataObject: dataObjects)
+                    names.add(getProperName(dataObject));
+                names.add(getProperName(taskSubject.getKey()));
+                names.add(getProperName(el));
+                SourceEntry source = new SourceEntry(srcElements, names);
+                br_candidates.add(source, candidate);
+                br_candidates.setAutomaticExtraction(source);
+            }
+            // Incoming tasks with data objects
+            dataObjects.clear();
+            for (ActivityEdge outAssoc: ((ActivityNode)el).getIncoming())
+                if (isDataAssociation(outAssoc))
+                    dataObjects.add(outAssoc.getSource());
+            for (Entry<Element, String> taskSubject : taskSubjects.entrySet()) {
+                SBVRExpressionModel subjectConcept = getGeneralConcept(taskSubject.getValue());
+                SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.PERMISSION);
+                candidate = addTask(candidate, (ActivityNode) el, taskSubject.getValue())
+                        .addRuleConditional(Conditional.ONLY_IF);
+                boolean added_first_obj = true;
+                for (Element dataObj: dataObjects) {
+                    Collection<State> states = ((CentralBufferNode) dataObj).getInState();
+                    String objText = getProperName(dataObj);
+                    if (states.isEmpty()) {
+                        if (!added_first_obj)
+                            candidate = candidate.addAndExpression();
+                        else
+                            added_first_obj = false;
+                        SBVRExpressionModel objConcept = getGeneralConcept(objText);
+                        candidate = objConcept != null ? candidate.addIdentifiedExpression(objConcept) : candidate.addUnidentifiedText(objText);
+                        candidate = candidate.addVerbConcept("is provided to", true);
+                        candidate = subjectConcept != null ? candidate.addIdentifiedExpression(subjectConcept) : candidate.addUnidentifiedText(taskSubject.getValue());
+                    } else {
+                        boolean added_first_state = true;
+                        for (State state: states) {
+                            if (!added_first_state)
+                                candidate = candidate.addAndExpression();
+                            else
+                                added_first_state = false;
+                            String stateText = getProperName(state);
+                            SBVRExpressionModel objConcept = getGeneralConcept(stateText + " " + objText);
+                            candidate = objConcept != null ? candidate.addIdentifiedExpression(objConcept) : candidate.addUnidentifiedText(objText);
+                            candidate = candidate.addVerbConcept("is provided to", true);
+                            candidate = subjectConcept != null ? candidate.addIdentifiedExpression(subjectConcept) : candidate.addUnidentifiedText(taskSubject.getValue());
+                        }
+                    }
+                }
+                List<Object> srcElements = new ArrayList<>();
+                srcElements.add(el);
+                srcElements.add(taskSubject.getKey());
+                srcElements.addAll(dataObjects);
+                List<String> names = new ArrayList<>();
+                names.add(getProperName(taskSubject.getKey()));
+                names.add(getProperName(el));
+                for (Element dataObject: dataObjects)
+                    names.add(getProperName(dataObject));
+                SourceEntry source = new SourceEntry(srcElements, names);
+                br_candidates.add(source, candidate);
+                br_candidates.setAutomaticExtraction(source);
             }
         }
     }
