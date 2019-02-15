@@ -117,6 +117,18 @@ public class BPMNTestCaseTest extends ExtractionTestCase {
     }
 
     @Test
+    public void testRuleT8Extraction_Model8() {
+        BpmnSBVRExtractor extractor = getExtractor("Model8");
+        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
+        assertEquals(6, gcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
+        assertEquals(4, vcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
+        assertEquals(8, brObjects.size());
+        printExtractorOutput(brObjects);
+    }
+
+    @Test
     public void testGetBoundaryEvents_Model5() {
         Project project = Application.getInstance().getProject();
         assertNotNull(project);

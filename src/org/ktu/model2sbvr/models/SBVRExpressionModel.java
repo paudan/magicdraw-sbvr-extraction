@@ -38,7 +38,8 @@ public class SBVRExpressionModel implements Cloneable {
         AFTER("after"),
         WHEN("when"),
         OTHERWISE("otherwise"),
-        ONLY_IF("only if");
+        ONLY_IF("only if"),
+        ONLY_WHEN("only when");
 
         private final String expr;
 

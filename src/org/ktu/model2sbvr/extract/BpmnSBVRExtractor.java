@@ -192,12 +192,22 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 "CompensationStartEvent", "ConditionalStartEvent", "SignalStartEvent", "MultipleStartEvent", "ParallelMultipleStartEvent");
     }
 
+    private boolean isBoundaryEvent(Element el) {
+        if (el == null)
+            return false;
+        return el.getClassType().equals(AcceptEventAction.class) && hasAnyStereotype(el, boundaryStereotypes);
+    }
+
     private boolean isEndEventElement(Element el) {
         if (el == null)
             return false;
         return el.getClassType().equals(ActivityFinalNode.class)
                 && hasAnyStereotype(el, "EndEvent", "MessageEndEvent", "ErrorEndEvent", "EscalationEndEvent",
                 "CompensationEndEvent", "SignalEndEvent", "MultipleEndEvent", "TerminateEndEvent");
+    }
+
+    private boolean isEventElement(Element el) {
+        return isStartEventElement(el) || isBoundaryEvent(el) || isEndEventElement(el);
     }
 
     private boolean isDataObject(Element el) {
@@ -243,12 +253,6 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return el.getClassType().equals(ObjectFlow.class) && hasAnyStereotype(el, "DataAssociation");
     }
 
-    private boolean isBoundaryEvent(Element el) {
-        if (el == null)
-            return false;
-        return el.getClassType().equals(AcceptEventAction.class) && hasAnyStereotype(el, boundaryStereotypes);
-    }
-
     private boolean isLaneElement(Element el) {
         if (el == null)
             return false;
@@ -258,7 +262,6 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     protected Stereotype getStereotypeInList(Element el, String[] stereotypesList) {
         return getStereotypeInList(el, stereotypesList, project, bpmnProfile);
     }
-
 
     private String getCondition(ActivityEdge el) {
         String cond = getCondition(el.getGuard());
@@ -331,13 +334,14 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         Iterator<Element> iterator = candidateElements.iterator();
         while (iterator.hasNext()) {
             Element el = iterator.next();
-            extractRuleT1(el);
+            /*extractRuleT1(el);
             extractRuleT2(el);
             extractRuleT3(el);
             extractRuleT4(el);
             extractRuleT5(el);
             extractRuleT6(el);
-            extractRuleT7(el);
+            extractRuleT7(el);*/
+            extractRuleT8(el);
         }
     }
 
@@ -362,10 +366,13 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return names;
     }
 
-    private SBVRExpressionModel addTask(SBVRExpressionModel model, ActivityNode task, String subject) {
+    private SBVRExpressionModel addActivity(SBVRExpressionModel model, ActivityNode task, String subject) {
         String outTaskText = extractElementText(task);
-        SBVRExpressionModel binary2 = getVerbConcept(subject + " " + outTaskText);
-        return binary2 != null ? model.addIdentifiedExpression(binary2) : model.addUnidentifiedText(subject + " " + outTaskText);
+        String verbText = subject + " " + outTaskText;
+        if (isEventElement(task))
+            verbText = outTaskText;
+        SBVRExpressionModel binary2 = getVerbConcept(verbText);
+        return binary2 != null ? model.addIdentifiedExpression(binary2) : model.addUnidentifiedText(verbText);
     }
 
     private SBVRExpressionModel addCondition(SBVRExpressionModel model, String condition) {
@@ -402,14 +409,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                             candidate = candidate.addAndExpression();
                         else
                             added_first = false;
-                        candidate = addTask(candidate, outTask, subject);
+                        candidate = addActivity(candidate, outTask, subject);
                     }
                     candidate = candidate.addUnidentifiedText(",");
-                    String vc_expression = subject + " " + taskText;
-                    if (isStartEventElement(el))
-                        vc_expression = taskText;
-                    SBVRExpressionModel binary1 = getVerbConcept(vc_expression);
-                    candidate = binary1 != null ? candidate.addIdentifiedExpression(binary1) : candidate.addUnidentifiedText(vc_expression);
+                    candidate = addActivity(candidate, outTaskNode.getValue().taskNode, subject);
                     candidate.setAuto(true);
                     List<Element> srcObj = new ArrayList<>(Arrays.asList(part, outTaskNode.getKey(), el));
                     for (ActivityNode outTask : incomingTasks) {
@@ -436,9 +439,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 for (Entry<Element, String> subject : subjects.entrySet()) {
                     Element part = subject.getKey();
                     SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION);
-                    candidate = addTask(candidate, after, subject.getValue());
+                    candidate = addActivity(candidate, after, subject.getValue());
                     candidate = candidate.addRuleConditional(Conditional.AFTER);
-                    candidate = addTask(candidate, before, subject.getValue());
+                    candidate = addActivity(candidate, before, subject.getValue());
                     SourceEntry source = new SourceEntry(Arrays.asList(part, after, part, before),
                             Arrays.asList(getProperName(part), getProperName(after), getProperName(part), getProperName(before)));
                     br_candidates.add(source, candidate);
@@ -518,7 +521,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                             }
                             else
                                 added_first = false;
-                            candidate = addTask(candidate, entryOut.getValue().taskNode, subjectOut.getValue());
+                            candidate = addActivity(candidate, entryOut.getValue().taskNode, subjectOut.getValue());
                             // Add verb concepts from conditions
                             boolean added_or_first = true;
                             candidate = candidate.addRuleConditional(Conditional.IF);
@@ -593,7 +596,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.PERMISSION);
                     candidate = addCondition(candidate, getProperName(boundary))
                             .addRuleConditional(Conditional.WHEN);
-                    candidate = addTask(candidate, (ActivityNode) el, subject.getValue());
+                    candidate = addActivity(candidate, (ActivityNode) el, subject.getValue());
                     SourceEntry source = new SourceEntry(Arrays.asList(subject.getKey(), el, boundary),
                             Arrays.asList(getProperName(subject.getKey()), getProperName(el), getProperName(boundary)));
                     br_candidates.add(source, candidate);
@@ -603,12 +606,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                         ActivityNode outTask = outNode.getTarget();
                         if (isTaskElement(outTask)) {
                             candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
-                            candidate = addTask(candidate, outTask, subject.getValue())
+                            candidate = addActivity(candidate, outTask, subject.getValue())
                                     .addRuleConditional(Conditional.AFTER)
                                     .addUnidentifiedText("(");
                             candidate = addCondition(candidate, getProperName(boundary))
                                     .addRuleConditional(Conditional.AFTER);
-                            candidate = addTask(candidate, (ActivityNode) el, subject.getValue())
+                            candidate = addActivity(candidate, (ActivityNode) el, subject.getValue())
                                     .addUnidentifiedText(")");
                             source = new SourceEntry(Arrays.asList(subject.getKey(), el, boundary, outTask),
                                     Arrays.asList(getProperName(subject.getKey()), getProperName(el), getProperName(boundary), getProperName(outTask)));
@@ -619,7 +622,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
                     if (!isInterrupting) {
                         candidate = new SBVRExpressionModel().addRuleExpression(RuleType.PROHIBITION);
-                        candidate = addTask(candidate, (ActivityNode) el, subject.getValue())
+                        candidate = addActivity(candidate, (ActivityNode) el, subject.getValue())
                                 .addRuleConditional(Conditional.AFTER);
                         candidate = addCondition(candidate, getProperName(boundary));
                         source = new SourceEntry(Arrays.asList(subject.getKey(), el, boundary),
@@ -642,7 +645,6 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             extractTasksWithData(el, true, "is available to", "is provided with data");
     }
 
-
     private void extractTasksWithData(Element el, boolean checkDataStore, String reservedVerb1, String reservedVerb2) {
         // Outgoing tasks with data objects
         List<Element> dataObjects = new ArrayList<>();
@@ -658,14 +660,13 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             boolean added_first_obj = true;
             for (Element dataObj: dataObjects) {
                 Collection<State> states = ((CentralBufferNode) dataObj).getInState();
-                String objText = getProperName(dataObj);
+                String objText = extractElementText(dataObj);
                 if (states.isEmpty()) {
                     if (!added_first_obj)
                         candidate = candidate.addAndExpression();
                     else
                         added_first_obj = false;
-                    SBVRExpressionModel objConcept = getGeneralConcept(objText);
-                    candidate = objConcept != null ? candidate.addIdentifiedExpression(objConcept) : candidate.addUnidentifiedText(objText);
+                    candidate = addGeneralConcept(candidate, dataObj);
                     candidate = candidate.addVerbConcept(reservedVerb1, true);
                 } else {
                     boolean added_first_state = true;
@@ -674,7 +675,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                             candidate = candidate.addAndExpression();
                         else
                             added_first_state = false;
-                        String stateText = getProperName(state);
+                        String stateText = extractElementText(state);
                         SBVRExpressionModel objConcept = getGeneralConcept(stateText + " " + objText);
                         candidate = objConcept != null ? candidate.addIdentifiedExpression(objConcept) : candidate.addUnidentifiedText(objText);
                         candidate = candidate.addVerbConcept(reservedVerb1, true);
@@ -682,7 +683,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 }
             }
             candidate = candidate.addRuleConditional(Conditional.WHEN);
-            candidate = addTask(candidate, (ActivityNode) el, taskSubject.getValue());
+            candidate = addActivity(candidate, (ActivityNode) el, taskSubject.getValue());
             List<Object> srcElements = new ArrayList<>(dataObjects);
             srcElements.add(taskSubject.getKey());
             srcElements.add(el);
@@ -706,7 +707,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         for (Entry<Element, String> taskSubject : taskSubjects.entrySet()) {
             SBVRExpressionModel subjectConcept = getGeneralConcept(taskSubject.getValue());
             SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.PERMISSION);
-            candidate = addTask(candidate, (ActivityNode) el, taskSubject.getValue())
+            candidate = addActivity(candidate, (ActivityNode) el, taskSubject.getValue())
                     .addRuleConditional(Conditional.ONLY_IF);
             boolean added_first_obj = true;
             for (Element dataObj: dataObjects) {
@@ -749,6 +750,127 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             br_candidates.add(source, candidate);
             br_candidates.setAutomaticExtraction(source);
         }
+    }
+
+
+    private void extractRuleT8(Element el) {
+        if (isMessageFlow(el)) {
+            Collection<Classifier> conveyed = ((InformationFlow) el).getConveyed();
+            if (conveyed.isEmpty())
+                extractMessageFlow(el, null);
+            else {
+                for (Classifier convObj : conveyed)
+                    if (hasAnyStereotype(convObj, "BPMNMessage"))
+                        extractMessageFlow(el, convObj);
+            }
+        }
+    }
+
+    private void extractMessageFlow(Element el, Element convObj) {
+        Collection<NamedElement> sources = ((InformationFlow) el).getInformationSource();
+        Collection<NamedElement> targets = ((InformationFlow) el).getInformationTarget();
+        NamedElement source = null, target = null;
+        if (!sources.isEmpty() && !targets.isEmpty()) {
+            source = sources.stream().findFirst().get();
+            target = targets.stream().findFirst().get();
+        }
+        if (source == null)
+            return;
+        if (isLaneElement(source) && isLaneElement(target)) {
+            addMessageFlowBetweenLanes(el, convObj, source, null, target, null, "sends", "to", RuleType.PERMISSION);
+            addMessageFlowBetweenLanes(el, convObj, target, null, source, null, "receives", "from", RuleType.PERMISSION);
+        } else if (isActivityElement(source) && isLaneElement(target)) {
+            Map<Element, String> subjects = getSubjectNames(source);
+            RuleType ruleType = RuleType.PERMISSION;
+            if (hasAnyStereotype(source, "SendTask", "ReceiveTask"))
+                ruleType = RuleType.OBLIGATION;
+            for (Element subject: subjects.keySet()) {
+                addMessageFlowBetweenLanes(el, convObj, subject, (ActivityNode) source, target, null, "sends", "to", ruleType);
+                addMessageFlowBetweenLanes(el, convObj, target, null, subject, null, "receives", "from", RuleType.PERMISSION);
+            }
+        } else if (isLaneElement(source) && isActivityElement(target)) {
+            Map<Element, String> subjects = getSubjectNames(target);
+            for (Element subject: subjects.keySet())
+                addMessageFlowBetweenLanes(el, convObj, source, null, subject, (ActivityNode)target, "sends", "to", RuleType.PERMISSION);
+            addReceivingNodeEventRules(el, convObj, source, (ActivityNode) target);
+        } else if (isActivityElement(source) && isActivityElement(target)) {
+            RuleType ruleType = RuleType.PERMISSION;
+            if (hasAnyStereotype(source, "SendTask", "ReceiveTask"))
+                ruleType = RuleType.OBLIGATION;
+            Map<Element, String> subjects = getSubjectNames(source);
+            Map<Element, String> subjectsT = getSubjectNames(target);
+            for (Element subject: subjects.keySet())
+                for (Element subjectT: subjectsT.keySet())
+                addMessageFlowBetweenLanes(el, convObj, subject, (ActivityNode)source, subjectT, (ActivityNode)target, "sends", "to", ruleType);
+            addReceivingNodeEventRules(el, convObj, source, (ActivityNode) target);
+        }
+    }
+
+    private void addMessageFlowBetweenLanes(Element el, Element convObj, Element subject1, ActivityNode task1,
+                                            Element subject2, ActivityNode task2, String verb1, String verb2, RuleType ruleType) {
+        SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(ruleType);
+        String objText = extractElementText(subject1);
+        if (task1 != null)
+            candidate = addActivity(candidate, task1, objText).addRuleConditional(Conditional.WHEN);
+        else
+            candidate = addGeneralConcept(candidate, subject1);
+        candidate = addConveyedObject(candidate, convObj, verb1, verb2);
+        candidate = addGeneralConcept(candidate, subject2);
+        objText = extractElementText(subject2);
+        if (task2 != null) {
+            candidate = candidate.addRuleConditional(Conditional.WHEN);
+            candidate = addActivity(candidate, task2, objText);
+        }
+        List<Object> source = new ArrayList<>(Arrays.asList(subject1, el, subject2));
+        if (task1 != null)
+            source.add(task1);
+        if (task2 != null)
+            source.add(task2);
+        List<String> names = new ArrayList<>(Arrays.asList(getProperName(subject1), getProperName(convObj), getProperName(subject2)));
+        if (task1 != null)
+            source.add(getProperName(task1));
+        if (task2 != null)
+            source.add(getProperName(task2));
+        SourceEntry src = new SourceEntry(source, names);
+        br_candidates.add(src, candidate);
+        br_candidates.setAutomaticExtraction(src);
+    }
+
+    private SBVRExpressionModel addConveyedObject(SBVRExpressionModel candidate, Element convObj, String verb1, String verb2) {
+        if (convObj != null) {
+            candidate = candidate.addVerbConcept(verb1, true);
+            candidate = addGeneralConcept(candidate, convObj);
+            candidate = candidate.addVerbConcept(verb2, true);
+        } else
+            candidate = candidate.addVerbConcept(verb1 + " message " + verb2, true);
+        return candidate;
+    }
+
+    private void addReceivingNodeEventRules(Element el, Element convObj, Element source, ActivityNode target) {
+        Map<Element, String> subjects = getSubjectNames(target);
+        RuleType ruleType = RuleType.PERMISSION;
+        if (isTaskElement(target)) {
+            if (hasAnyStereotype(target, "SendTask", "ReceiveTask"))
+                ruleType = RuleType.OBLIGATION;
+            for (Element subject : subjects.keySet())
+                if (source instanceof ActivityNode) {
+                    Map<Element, String> subjectsS = getSubjectNames(source);
+                    for (Element subjectS: subjectsS.keySet())
+                        addMessageFlowBetweenLanes(el, convObj, subject, null, subjectS, target, "receives", "from", ruleType);
+                } else
+                    addMessageFlowBetweenLanes(el, convObj, subject, null, source, target, "receives", "from", ruleType);
+        } else if (isEventElement(target))
+            for (Element subject : subjects.keySet()) {
+                SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(ruleType);
+                candidate = addActivity(candidate, target, null).addRuleConditional(Conditional.ONLY_WHEN);
+                candidate = addGeneralConcept(candidate, subject);
+                candidate = addConveyedObject(candidate, convObj, "receives", "from");
+                candidate = addGeneralConcept(candidate, source);
+                SourceEntry src = new SourceEntry(Arrays.asList(el, subject, source, target),
+                        Arrays.asList(getProperName(el), getProperName(subject), getProperName(source), getProperName(target)));
+                br_candidates.add(src, candidate);
+                br_candidates.setAutomaticExtraction(src);
+            }
     }
 
     @Override
