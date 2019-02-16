@@ -381,24 +381,24 @@ public abstract class AbstractSBVRExtractor {
      * @return Extracted string
      */
     protected String extractActionVC(Element el) {
-        String name = el.getHumanName();
+        String name = extractElementText(el);
         if (name == null || name.length() == 0)
             return null;
         String[] parts = name.split(" ");
-        if (parts.length < 2)
+        if (parts.length < 1)
             return null;
-        return (parts[1].trim().length() > 0 ? parts[1].trim().toLowerCase() : null);
+        return (parts[0].trim().length() > 0 ? parts[0].trim().toLowerCase() : null);
     }
 
     protected String extractActionGC(Element el) {
-        String proper = getProperName(el);
+        String proper = extractElementText(el);
         if (proper == null || proper.length() == 0)
             return null;
         String[] parts = proper.split(" ");
-        if (parts.length < 3)
+        if (parts.length < 2)
             return null;
         String name = "";
-        for (int i = 2; i < parts.length; i++)
+        for (int i = 1; i < parts.length; i++)
             name += parts[i] + " ";
         return name.trim();
     }
