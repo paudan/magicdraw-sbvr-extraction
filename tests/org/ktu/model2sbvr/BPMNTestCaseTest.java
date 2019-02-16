@@ -108,7 +108,7 @@ public class BPMNTestCaseTest extends ExtractionTestCase {
     public void testRuleT5Extraction_Model5() {
         BpmnSBVRExtractor extractor = getExtractor("Model5");
         Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(2, gcObjects.size());
+        assertEquals(3, gcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
         assertEquals(2, vcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
@@ -117,10 +117,34 @@ public class BPMNTestCaseTest extends ExtractionTestCase {
     }
 
     @Test
+    public void testRuleT6Extraction_Model6a() {
+        BpmnSBVRExtractor extractor = getExtractor("Model6a");
+        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
+        assertEquals(6, gcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
+        assertEquals(2, vcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
+        assertEquals(2, brObjects.size());
+        printExtractorOutput(brObjects);
+    }
+
+    @Test
+    public void testRuleT7Extraction_Model7a() {
+        BpmnSBVRExtractor extractor = getExtractor("Model7a");
+        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
+        assertEquals(6, gcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
+        assertEquals(2, vcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
+        assertEquals(2, brObjects.size());
+        printExtractorOutput(brObjects);
+    }
+
+    @Test
     public void testRuleT8Extraction_Model8() {
         BpmnSBVRExtractor extractor = getExtractor("Model8");
         Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(6, gcObjects.size());
+        assertEquals(10, gcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
         assertEquals(4, vcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();

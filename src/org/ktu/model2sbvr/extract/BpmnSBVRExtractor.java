@@ -213,7 +213,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     private boolean isDataObject(Element el) {
         if (el == null)
             return false;
-        return el.getClassType().equals(CentralBufferNode.class) && hasAnyStereotype(el, "DataObject", "DataStore", "DataInput", "DataOutput");
+        return el.getClassType().equals(CentralBufferNode.class) && hasAnyStereotype(el, "DataObject", "DataInput", "DataOutput");
     }
 
     private boolean isDataStore(Element el) {
@@ -276,7 +276,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         Iterator<Element> iterator = candidateElements.iterator();
         while (iterator.hasNext()) {
             Element el = iterator.next();
-            if ((el.getClassType().equals(ActivityPartition.class) && hasAnyStereotype(el, "Lane", "LaneSet")) || isDataObject(el) || isResourceElement(el))
+            if ((el.getClassType().equals(ActivityPartition.class) && hasAnyStereotype(el, "Lane", "LaneSet")) || isResourceElement(el))
                 createGeneralConcept(el, extractElementText(el), true);
             else if ((el.getClassType().equals(InformationFlow.class) && hasAnyStereotype(el, "MessageFlow"))) {
                 Collection<Classifier> conveyed = ((InformationFlow) el).getConveyed();
@@ -291,13 +291,18 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     gc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(condition)));
             } else if ((isStartEventElement(el) || isEndEventElement(el)) && extractElementText(el) != null)
                 gc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
-            else if (isDataObject(el) || isDataStore(el))
-                for (State state : ((CentralBufferNode) el).getInState()) {
-                    String stateText = extractElementText(state);
-                    String elText = extractElementText(el);
-                    if (stateText != null && elText != null)
-                        createGeneralConcept(el, stateText + " " + elText, true);
-                }
+            else if (isDataObject(el) || isDataStore(el)) {
+                Collection<State> states = ((CentralBufferNode) el).getInState();
+                if (!states.isEmpty())
+                    for (State state : states) {
+                        String stateText = extractElementText(state);
+                        String elText = extractElementText(el);
+                        if (stateText != null && elText != null)
+                            createGeneralConcept(el, stateText + " " + elText, true);
+                    }
+                else
+                    createGeneralConcept(el, extractElementText(el), true);
+            }
             if (isMessageFlow(el)) {
                 for (Classifier convObj : ((InformationFlow) el).getConveyed())
                     if (hasAnyStereotype(convObj, "BPMNMessage"))
@@ -334,13 +339,13 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         Iterator<Element> iterator = candidateElements.iterator();
         while (iterator.hasNext()) {
             Element el = iterator.next();
-            /*extractRuleT1(el);
+            extractRuleT1(el);
             extractRuleT2(el);
             extractRuleT3(el);
             extractRuleT4(el);
             extractRuleT5(el);
             extractRuleT6(el);
-            extractRuleT7(el);*/
+            extractRuleT7(el);
             extractRuleT8(el);
         }
     }
@@ -652,22 +657,93 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         for (ActivityEdge outAssoc: ((ActivityNode)el).getOutgoing())
             if (isDataAssociation(outAssoc)) {
                 ActivityNode dataObj = outAssoc.getTarget();
-                if (checkDataStore ? isDataStore(dataObj) : isDataObject(el))
+                if (checkDataStore ? isDataStore(dataObj) : isDataObject(dataObj))
                     dataObjects.add(dataObj);
             }
-        for (Entry<Element, String> taskSubject : taskSubjects.entrySet()) {
-            SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
-            boolean added_first_obj = true;
-            for (Element dataObj: dataObjects) {
-                Collection<State> states = ((CentralBufferNode) dataObj).getInState();
-                String objText = extractElementText(dataObj);
-                if (states.isEmpty()) {
+        if (!dataObjects.isEmpty()) {
+            for (Entry<Element, String> taskSubject : taskSubjects.entrySet()) {
+                SBVRExpressionModel subjectConcept = getGeneralConcept(taskSubject.getValue());
+                SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
+                boolean added_first_obj = true;
+                for (Element dataObj : dataObjects) {
+                    Collection<State> states = ((CentralBufferNode) dataObj).getInState();
                     if (!added_first_obj)
                         candidate = candidate.addAndExpression();
                     else
                         added_first_obj = false;
+                    String objText = extractElementText(dataObj);
+                    if (states.isEmpty()) {
+                        candidate = addGeneralConcept(candidate, dataObj);
+                        candidate = candidate.addVerbConcept(reservedVerb1, true);
+                        if (checkDataStore)
+                            candidate = subjectConcept != null ?
+                                    candidate.addIdentifiedExpression(subjectConcept) :
+                                    candidate.addUnidentifiedText(taskSubject.getValue());
+                    } else {
+                        boolean added_first_state = true;
+                        for (State state : states) {
+                            if (!added_first_state)
+                                candidate = candidate.addAndExpression();
+                            else
+                                added_first_state = false;
+                            String stateText = extractElementText(state);
+                            SBVRExpressionModel objConcept = getGeneralConcept(stateText + " " + objText);
+                            candidate = objConcept != null ?
+                                    candidate.addIdentifiedExpression(objConcept) :
+                                    candidate.addUnidentifiedText(stateText + " " + objText);
+                            candidate = candidate.addVerbConcept(reservedVerb1, true);
+                            if (checkDataStore)
+                                candidate = subjectConcept != null ?
+                                        candidate.addIdentifiedExpression(subjectConcept) :
+                                        candidate.addUnidentifiedText(taskSubject.getValue());
+                        }
+                    }
+                }
+                candidate = candidate.addRuleConditional(Conditional.WHEN);
+                candidate = addActivity(candidate, (ActivityNode) el, taskSubject.getValue());
+                List<Object> srcElements = new ArrayList<>(dataObjects);
+                srcElements.add(taskSubject.getKey());
+                srcElements.add(el);
+                List<String> names = new ArrayList<>();
+                for (Element dataObject : dataObjects)
+                    names.add(getProperName(dataObject));
+                names.add(getProperName(taskSubject.getKey()));
+                names.add(getProperName(el));
+                SourceEntry source = new SourceEntry(srcElements, names);
+                br_candidates.add(source, candidate);
+                br_candidates.setAutomaticExtraction(source);
+            }
+        }
+        // Incoming tasks with data objects
+        dataObjects.clear();
+        for (ActivityEdge outAssoc: ((ActivityNode)el).getIncoming())
+            if (isDataAssociation(outAssoc)) {
+                ActivityNode dataObj = outAssoc.getSource();
+                if (checkDataStore ? isDataStore(dataObj) : isDataObject(dataObj))
+                    dataObjects.add(dataObj);
+            }
+        if (dataObjects.isEmpty())
+            return;
+        for (Entry<Element, String> taskSubject : taskSubjects.entrySet()) {
+            SBVRExpressionModel subjectConcept = getGeneralConcept(taskSubject.getValue());
+            SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.PERMISSION);
+            candidate = addActivity(candidate, (ActivityNode) el, taskSubject.getValue())
+                    .addRuleConditional(Conditional.ONLY_IF);
+            boolean added_first_obj = true;
+            for (Element dataObj: dataObjects) {
+                Collection<State> states = ((CentralBufferNode) dataObj).getInState();
+                if (!added_first_obj)
+                    candidate = candidate.addAndExpression();
+                else
+                    added_first_obj = false;
+                String objText = extractElementText(dataObj);
+                if (states.isEmpty()) {
                     candidate = addGeneralConcept(candidate, dataObj);
-                    candidate = candidate.addVerbConcept(reservedVerb1, true);
+                    candidate = candidate.addVerbConcept(reservedVerb2, true);
+                    if (!checkDataStore)
+                        candidate = subjectConcept != null ?
+                                candidate.addIdentifiedExpression(subjectConcept) :
+                                candidate.addUnidentifiedText(taskSubject.getValue());
                 } else {
                     boolean added_first_state = true;
                     for (State state: states) {
@@ -677,63 +753,14 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                             added_first_state = false;
                         String stateText = extractElementText(state);
                         SBVRExpressionModel objConcept = getGeneralConcept(stateText + " " + objText);
-                        candidate = objConcept != null ? candidate.addIdentifiedExpression(objConcept) : candidate.addUnidentifiedText(objText);
-                        candidate = candidate.addVerbConcept(reservedVerb1, true);
-                    }
-                }
-            }
-            candidate = candidate.addRuleConditional(Conditional.WHEN);
-            candidate = addActivity(candidate, (ActivityNode) el, taskSubject.getValue());
-            List<Object> srcElements = new ArrayList<>(dataObjects);
-            srcElements.add(taskSubject.getKey());
-            srcElements.add(el);
-            List<String> names = new ArrayList<>();
-            for (Element dataObject: dataObjects)
-                names.add(getProperName(dataObject));
-            names.add(getProperName(taskSubject.getKey()));
-            names.add(getProperName(el));
-            SourceEntry source = new SourceEntry(srcElements, names);
-            br_candidates.add(source, candidate);
-            br_candidates.setAutomaticExtraction(source);
-        }
-        // Incoming tasks with data objects
-        dataObjects.clear();
-        for (ActivityEdge outAssoc: ((ActivityNode)el).getIncoming())
-            if (isDataAssociation(outAssoc)) {
-                ActivityNode dataObj = outAssoc.getSource();
-                if (checkDataStore ? isDataStore(dataObj) : isDataObject(el))
-                    dataObjects.add(dataObj);
-            }
-        for (Entry<Element, String> taskSubject : taskSubjects.entrySet()) {
-            SBVRExpressionModel subjectConcept = getGeneralConcept(taskSubject.getValue());
-            SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.PERMISSION);
-            candidate = addActivity(candidate, (ActivityNode) el, taskSubject.getValue())
-                    .addRuleConditional(Conditional.ONLY_IF);
-            boolean added_first_obj = true;
-            for (Element dataObj: dataObjects) {
-                Collection<State> states = ((CentralBufferNode) dataObj).getInState();
-                String objText = getProperName(dataObj);
-                if (states.isEmpty()) {
-                    if (!added_first_obj)
-                        candidate = candidate.addAndExpression();
-                    else
-                        added_first_obj = false;
-                    SBVRExpressionModel objConcept = getGeneralConcept(objText);
-                    candidate = objConcept != null ? candidate.addIdentifiedExpression(objConcept) : candidate.addUnidentifiedText(objText);
-                    candidate = candidate.addVerbConcept(reservedVerb2, true);
-                    candidate = subjectConcept != null ? candidate.addIdentifiedExpression(subjectConcept) : candidate.addUnidentifiedText(taskSubject.getValue());
-                } else {
-                    boolean added_first_state = true;
-                    for (State state: states) {
-                        if (!added_first_state)
-                            candidate = candidate.addAndExpression();
-                        else
-                            added_first_state = false;
-                        String stateText = getProperName(state);
-                        SBVRExpressionModel objConcept = getGeneralConcept(stateText + " " + objText);
-                        candidate = objConcept != null ? candidate.addIdentifiedExpression(objConcept) : candidate.addUnidentifiedText(objText);
+                        candidate = objConcept != null ?
+                                candidate.addIdentifiedExpression(objConcept) :
+                                candidate.addUnidentifiedText(stateText + " " + objText);
                         candidate = candidate.addVerbConcept(reservedVerb2, true);
-                        candidate = subjectConcept != null ? candidate.addIdentifiedExpression(subjectConcept) : candidate.addUnidentifiedText(taskSubject.getValue());
+                        if (!checkDataStore)
+                            candidate = subjectConcept != null ?
+                                    candidate.addIdentifiedExpression(subjectConcept) :
+                                    candidate.addUnidentifiedText(taskSubject.getValue());
                     }
                 }
             }
