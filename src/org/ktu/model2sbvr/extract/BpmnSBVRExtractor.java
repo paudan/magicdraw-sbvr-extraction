@@ -487,19 +487,19 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 if (!outgoingTasks.isEmpty())
                     //TODO: check incoming conditions from tasks which are "incoming"
                     candidate = candidate.addUnidentifiedText(",").addRuleConditional(Conditional.AFTER);
-                candidate = addTasksWithConditions(candidate, incomingTasks, el, objects, representations, conjunction);
+                candidate = addTasksWithConditions(candidate, incomingTasks, objects, representations, conjunction);
                 if (!outgoingTasks.isEmpty())
                     candidate = candidate.addUnidentifiedText(",");
             }
             if (!outgoingTasks.isEmpty())
-                candidate = addTasksWithConditions(candidate, outgoingTasks, el, objects, representations, conjunction);
+                candidate = addTasksWithConditions(candidate, outgoingTasks, objects, representations, conjunction);
             SourceEntry source = new SourceEntry(objects, representations);
             br_candidates.add(source, candidate);
             br_candidates.setAutomaticExtraction(source);
         }
     }
 
-    private SBVRExpressionModel addTasksWithConditions(SBVRExpressionModel candidate, Map<String, TaskTuple> tasksData, Element el,
+    private SBVRExpressionModel addTasksWithConditions(SBVRExpressionModel candidate, Map<String, TaskTuple> tasksData,
                                                        List<Object> objects, List<String> representations, String conjunction) {
         List<Object> tasksDefault = new ArrayList<>();
         boolean added_first = true;
@@ -642,15 +642,15 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
     private void extractRuleT6(Element el) {
         if (isTaskElement(el))
-            extractTasksWithData(el, false, "is produced", "is provided to");
+            extractTasksWithDataObjects(el, false, "is produced", "is provided to");
     }
 
     private void extractRuleT7(Element el) {
         if (isActivityElement(el))
-            extractTasksWithData(el, true, "is available to", "is provided with data");
+            extractTasksWithDataObjects(el, true, "is available to", "is provided with data");
     }
 
-    private void extractTasksWithData(Element el, boolean checkDataStore, String reservedVerb1, String reservedVerb2) {
+    private void extractTasksWithDataObjects(Element el, boolean checkDataStore, String reservedVerb1, String reservedVerb2) {
         // Outgoing tasks with data objects
         List<Element> dataObjects = new ArrayList<>();
         Map<Element, String> taskSubjects = getSubjectNames(el);
