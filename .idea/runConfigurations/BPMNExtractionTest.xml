@@ -3,7 +3,7 @@
     <module name="sbvr-extraction" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="org.ktu.model2sbvr.*" />
+        <option name="PATTERN" value="org.ktu.model2sbvr.extract.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

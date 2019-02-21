@@ -1,10 +1,9 @@
-package org.ktu.model2sbvr;
+package org.ktu.model2sbvr.extract;
 
 import com.nomagic.magicdraw.cbm.BPMNHelper;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.uml.Finder;
-import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.actions.mdbasicactions.OpaqueAction;
 import com.nomagic.uml2.ext.magicdraw.actions.mdcompleteactions.AcceptEventAction;
@@ -16,45 +15,21 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import org.junit.Test;
-import org.ktu.model2sbvr.extract.BpmnSBVRExtractor;
+import org.ktu.model2sbvr.PluginUtilities;
 import org.ktu.model2sbvr.models.ConceptExtractionEntry;
 import org.ktu.model2sbvr.models.SourceEntry;
-import org.ktu.model2sbvr.tests.ExtractionTestCase;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
-public class BPMNTestCaseTest extends ExtractionTestCase {
+public class BpmnTestCaseTest extends BpmnExtractionTestCase {
 
     @Override
     protected Path getFilename() {
         return Paths.get("tests", "resources", "bpmn", "test_cases.mdzip");
-    }
-
-    private Package getRootPackage() {
-        if (project == null)
-            project = Application.getInstance().getProject();
-        assertNotNull(project);
-        return project.getPrimaryModel();
-    }
-
-    private BpmnSBVRExtractor getExtractor(String modelName) {
-        Package model = getRootPackage();
-        assertNotNull(model);
-        Collection<DiagramPresentationElement> diagrams = BpmnSBVRExtractor.getBPMNDiagrams(model);
-        Optional<DiagramPresentationElement> diagramOpt = diagrams.stream()
-                .filter(n -> n.getName() != null && n.getName().compareToIgnoreCase(modelName) == 0).findFirst();
-        assertTrue(diagramOpt.isPresent());
-        DiagramPresentationElement diagram = diagramOpt.get();
-        BpmnSBVRExtractor extractor = new BpmnSBVRExtractor(diagram, false, false);
-        extractor.extractAll();
-        return extractor;
     }
 
     @Test
