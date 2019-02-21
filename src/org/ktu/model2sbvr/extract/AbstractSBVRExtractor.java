@@ -286,8 +286,12 @@ public abstract class AbstractSBVRExtractor {
         this.vcReplacements = vcReplacements;
     }
 
+    public Collection<Element> getExtractedDiagramElements() {
+        return candidateElements;
+    }
+
     private String containsCandidate(String text, AbstractConceptModel candidates,
-            Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> replacements) {
+                                     Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> replacements) {
         Set<String> gclist = candidates.getListMap().keySet();
         for (String gc : gclist)
             if (text.contains(gc))

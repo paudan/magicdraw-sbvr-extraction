@@ -32,6 +32,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.ktu.model2sbvr.PluginUtilities;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
 import org.ktu.model2sbvr.models.SBVRExpressionModel.Conditional;
@@ -63,16 +66,16 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             "EscalationBoundaryEvent", "CancelBoundaryEvent", "CompensationBoundaryEvent", "ConditionalBoundaryEvent",
             "SignalBoundaryEvent", "MultipleBoundaryEvent", "ParallelMultipleBoundaryEvent"};
 
-    private class TaskTuple {
+    class ActivityNeighborhood {
         ActivityNode taskNode;
         String taskText;
         Map<Element, String> taskSubjects;
         Map<ActivityNode, Map<ActivityEdge, String>> incomingConditions, outgoingConditions;
         Map<ActivityNode, Map<ActivityEdge, String>> correctionsIncoming, correctionsOutgoing;
-        Map<ActivityNode, Integer> nullCountIncoming, nullCountOutgoing;
+        private Map<ActivityNode, Integer> nullCountIncoming, nullCountOutgoing;
         int nullsTotalIncoming, nullsTotalOutgoing;
 
-        private TaskTuple(ActivityNode task) {
+        private ActivityNeighborhood(ActivityNode task) {
             this.taskNode = task;
             taskText = extractElementText(task);
             taskSubjects = getSubjectNames(task);
@@ -129,6 +132,130 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     condList.clear();
             }
             return conditions;
+        }
+
+        private String formatPadding(String str) {
+            return StringUtils.removeEnd(str, "\n").replaceAll("\n", "\n\t");
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Task element:").append(taskNode.getHumanName()).append("\n")
+                    .append("Extracted text: ").append(taskText).append("\n")
+                    .append("Subjects (executing elements): ")
+                    .append(String.join(",", taskSubjects.keySet().stream().map(Element::getHumanName).collect(Collectors.toList())));
+            if (!incomingConditions.isEmpty()) {
+                sb.append("\nConditions from incoming edges:\n");
+                sb.append(formatPadding(getConditionsRepresentation(incomingConditions)));
+            }
+            if (!outgoingConditions.isEmpty()) {
+                sb.append("\nConditions from outgoing edges:\n");
+                sb.append(formatPadding(getConditionsRepresentation(outgoingConditions)));
+            }
+            if (!correctionsIncoming.isEmpty()) {
+                sb.append("\nConditions from incoming edges after resolving default conditions:\n");
+                sb.append(formatPadding(getConditionsRepresentation(correctionsIncoming)));
+            }
+            if (!correctionsOutgoing.isEmpty()) {
+                sb.append("\nConditions from outgoing edges after resolving default conditions:\n");
+                sb.append(formatPadding(getConditionsRepresentation(correctionsOutgoing)));
+            }
+            if (!nullCountIncoming.isEmpty()) {
+                sb.append("\nNumber of incoming edges with null conditions:\n");
+                for (Entry<ActivityNode, Integer> nullEntry: nullCountIncoming.entrySet())
+                    sb.append("\t").append(nullEntry.getKey().getHumanName()).append(": ").append(nullEntry.getValue()).append("\n");
+            }
+            if (!nullCountOutgoing.isEmpty()) {
+                sb.append("Number of outgoing edges with null conditions: ").append("\n");
+                for (Entry<ActivityNode, Integer> nullEntry: nullCountOutgoing.entrySet())
+                    sb.append(nullEntry.getKey().getHumanName()).append(": ").append(nullEntry.getValue()).append("\n");
+            }
+            return sb.toString();
+        }
+    }
+
+    class GatewayNeighborhood {
+        ControlNode gatewayNode;
+        Map<String, ActivityNeighborhood> incomingActivities, outgoingActivities;
+        Map<ActivityNode, Map<ActivityEdge, String>> incomingConditions;
+        private Map<ActivityNode, Integer> nullCountIncoming;
+        Map<ControlNode, GatewayNeighborhood> incomingGateways;
+        int nullsTotalIncoming;
+
+        public GatewayNeighborhood(ControlNode gatewayNode) {
+            this.gatewayNode = gatewayNode;
+            incomingActivities = new HashMap<>();
+            incomingGateways = new HashMap<>();
+            incomingConditions = new HashMap<>();
+            nullCountIncoming = new HashMap<>();
+            for (ActivityEdge edge : gatewayNode.getIncoming()) {
+                addCondition(edge, edge.getSource());
+                if (isActivityElement(edge.getSource())) {
+                    ActivityNeighborhood taskTuple = new ActivityNeighborhood(edge.getSource());
+                    incomingActivities.put(taskTuple.taskText, taskTuple);
+                } else if (isGatewayElement(edge.getSource())) {
+                    ControlNode node = (ControlNode) edge.getSource();
+                    incomingGateways.put(node, new GatewayNeighborhood(node));
+                }
+            }
+            outgoingActivities = new HashMap<>();
+            for (ActivityEdge edge : gatewayNode.getOutgoing())
+                if (isActivityElement(edge.getTarget())) {
+                    ActivityNeighborhood taskTuple = new ActivityNeighborhood(edge.getTarget());
+                    outgoingActivities.put(taskTuple.taskText, taskTuple);
+                }
+        }
+
+        private void addCondition(ActivityEdge edge, ActivityNode node) {
+            String condition = getCondition(edge);
+            nullCountIncoming.putIfAbsent(node, 0);
+            if (condition == null) {
+                nullCountIncoming.put(node, nullCountIncoming.get(node) + 1);
+                nullsTotalIncoming += 1;
+            }
+            Map<ActivityEdge, String> condList = incomingConditions.get(node);
+            if (condList == null) {
+                condList = new HashMap<>();
+                incomingConditions.put(node, condList);
+            }
+            condList.put(edge, condition);
+        }
+
+
+        private String formatPadding(String str) {
+            return StringUtils.removeEnd(str, "\n").replaceAll("\n", "\n\t");
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Gateway element:").append(gatewayNode.getHumanName());
+            if (!incomingActivities.isEmpty()) {
+                sb.append("\nIncoming activity nodes:\n");
+                for (ActivityNeighborhood taskNode: incomingActivities.values())
+                    sb.append("\t").append(formatPadding(taskNode.toString())).append("\n\n");
+            }
+            if (!outgoingActivities.isEmpty()) {
+                sb.append("\nOutgoing activity nodes:\n");
+                for (ActivityNeighborhood taskNode: outgoingActivities.values())
+                    sb.append("\t").append(formatPadding(taskNode.toString())).append("\n\n");
+            }
+            if (!incomingGateways.isEmpty()) {
+                sb.append("\nIncoming gateway nodes:\n");
+                for (GatewayNeighborhood gatewayNode: incomingGateways.values())
+                    sb.append("\t").append(formatPadding(gatewayNode.toString())).append("\n\n");
+            }
+            if (!incomingConditions.isEmpty()) {
+                sb.append("\nConditions from incoming edges:\n");
+                sb.append(formatPadding(getConditionsRepresentation(incomingConditions)));
+            }
+            if (!nullCountIncoming.isEmpty()) {
+                sb.append("\nNumber of incoming edges with null conditions:\n");
+                for (Entry<ActivityNode, Integer> nullEntry: nullCountIncoming.entrySet())
+                    sb.append("\t").append(nullEntry.getKey().getHumanName()).append(": ").append(nullEntry.getValue()).append("\n");
+            }
+            return sb.toString();
         }
     }
 
@@ -233,6 +360,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             return false;
         Set<Class> gatewayClasses = new HashSet<>(Arrays.asList(ForkNode.class, JoinNode.class, DecisionNode.class));
         return gatewayClasses.contains(el.getClassType()) && BPMNHelper.getGatewayStereotype(el).getName().compareToIgnoreCase(stereotype) == 0;
+    }
+
+    public boolean isGatewayElement(Element el) {
+        return isGatewayOfType(el, "ExclusiveGateway") || isGatewayOfType(el, "InclusiveGateway") || isGatewayOfType(el, "ParallelGateway");
     }
 
     private boolean isSequenceFlow(Element el) {
@@ -388,12 +519,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
     private void extractRuleT4(Element el) {
         if (isGatewayOfType(el, "ParallelGateway")) {
-            Map<ActivityEdge, TaskTuple> outgoingElements = new HashMap<>();
+            Map<ActivityEdge, ActivityNeighborhood> outgoingElements = new HashMap<>();
             for (ActivityEdge edge : ((ControlNode) el).getOutgoing()) {
-                TaskTuple taskTuple = new TaskTuple(edge.getTarget());
+                ActivityNeighborhood taskTuple = new ActivityNeighborhood(edge.getTarget());
                 outgoingElements.put(edge, taskTuple);
             }
-            for (Entry<ActivityEdge, TaskTuple> outTaskNode: outgoingElements.entrySet()) {
+            for (Entry<ActivityEdge, ActivityNeighborhood> outTaskNode: outgoingElements.entrySet()) {
                 ActivityNode outgoingTask = outTaskNode.getValue().taskNode;
                 if (!(isTaskElement(outgoingTask) || isEndEventElement(outgoingTask)))
                     continue;
@@ -464,47 +595,45 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         extractRuleWithGateways(el, "InclusiveGateway", "and");
     }
 
+    private Entry<SBVRExpressionModel, SourceEntry> getRuleWithGateways(ControlNode el, String conjunction) {
+        GatewayNeighborhood tuple = new GatewayNeighborhood(el);
+        if (tuple.incomingActivities.isEmpty() && tuple.outgoingActivities.isEmpty())
+            return null;
+        List<Object> objects = new ArrayList<>();
+        List<String> representations = new ArrayList<>();
+        SBVRExpressionModel candidate = new SBVRExpressionModel()
+                .addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION);
+        // No incoming or outgoing sequences flows - bad practice, but must be processed as well
+        if (!tuple.incomingActivities.isEmpty()) {
+            if (!tuple.outgoingActivities.isEmpty())
+                //TODO: check incoming conditions from activities which are "incoming"
+                candidate = candidate.addUnidentifiedText(",").addRuleConditional(Conditional.AFTER);
+            candidate = addTasksWithConditions(candidate, tuple.incomingActivities, objects, representations, conjunction);
+            if (!tuple.outgoingActivities.isEmpty())
+                candidate = candidate.addUnidentifiedText(",");
+        }
+        if (!tuple.outgoingActivities.isEmpty())
+            candidate = addTasksWithConditions(candidate, tuple.outgoingActivities, objects, representations, conjunction);
+        return new SimpleImmutableEntry<>(candidate, new SourceEntry(objects, representations));
+    }
+
     private void extractRuleWithGateways(Element el, String gatewayStereotype, String conjunction) {
         if (isGatewayOfType(el, gatewayStereotype)) {
-            Map<String, TaskTuple> incomingTasks = new HashMap<>();
-            for (ActivityEdge edge : ((ControlNode) el).getIncoming()) {
-                TaskTuple taskTuple = new TaskTuple(edge.getSource());
-                incomingTasks.put(taskTuple.taskText, taskTuple);
-            }
-            Map<String, TaskTuple> outgoingTasks = new HashMap<>();
-            for (ActivityEdge edge : ((ControlNode) el).getOutgoing()) {
-                TaskTuple taskTuple = new TaskTuple(edge.getTarget());
-                outgoingTasks.put(taskTuple.taskText, taskTuple);
-            }
-            if (incomingTasks.isEmpty() && outgoingTasks.isEmpty())
+            Entry<SBVRExpressionModel, SourceEntry> entry = getRuleWithGateways((ControlNode) el, conjunction);
+            if (entry == null)
                 return;
-            List<Object> objects = new ArrayList<>();
-            List<String> representations = new ArrayList<>();
-            SBVRExpressionModel candidate = new SBVRExpressionModel()
-                    .addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION);
-            // No incoming or outgoing sequences flows - bad practice, but must be processed as well
-            if (!incomingTasks.isEmpty()) {
-                if (!outgoingTasks.isEmpty())
-                    //TODO: check incoming conditions from tasks which are "incoming"
-                    candidate = candidate.addUnidentifiedText(",").addRuleConditional(Conditional.AFTER);
-                candidate = addTasksWithConditions(candidate, incomingTasks, objects, representations, conjunction);
-                if (!outgoingTasks.isEmpty())
-                    candidate = candidate.addUnidentifiedText(",");
-            }
-            if (!outgoingTasks.isEmpty())
-                candidate = addTasksWithConditions(candidate, outgoingTasks, objects, representations, conjunction);
-            SourceEntry source = new SourceEntry(objects, representations);
-            br_candidates.add(source, candidate);
+            SourceEntry source = entry.getValue();
+            br_candidates.add(source, entry.getKey());
             br_candidates.setAutomaticExtraction(source);
         }
     }
 
-    private SBVRExpressionModel addTasksWithConditions(SBVRExpressionModel candidate, Map<String, TaskTuple> tasksData,
+    private SBVRExpressionModel addTasksWithConditions(SBVRExpressionModel candidate, Map<String, ActivityNeighborhood> tasksData,
                                                        List<Object> objects, List<String> representations, String conjunction) {
         List<Object> tasksDefault = new ArrayList<>();
         boolean added_first = true;
         boolean rules_added = false;
-        for (Entry<String, TaskTuple> entryOut : tasksData.entrySet()) {
+        for (Entry<String, ActivityNeighborhood> entryOut : tasksData.entrySet()) {
             Map<Element, String> subjectsOut = entryOut.getValue().taskSubjects;
             Map<ActivityNode, Map<ActivityEdge, String>> conditionsOut = entryOut.getValue().correctionsIncoming;
             int nullTotal = entryOut.getValue().nullsTotalIncoming;
@@ -900,6 +1029,21 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             }
     }
 
+    private void extractMultipleGateways(Element el) {
+        if (isActivityElement(el)) {
+            Map<Element, String> subjects = getSubjectNames(el);
+            Collection<ActivityEdge> incomingEdges = ((ActivityNode)el).getIncoming();
+            for (Entry<Element, String> subject: subjects.entrySet()) {
+                SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
+                candidate = addActivity(candidate, (ActivityNode) el, subject.getValue());
+                for (ActivityEdge incoming: incomingEdges) {
+                    String incomingCondition = getCondition(incoming);
+                }
+            }
+
+        }
+    }
+
     @Override
     protected void extractModelVocabulary() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -938,6 +1082,20 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     public static Collection<DiagramPresentationElement> getBPMNDiagrams(Package root) {
         Collection<DiagramPresentationElement> diagrams = new HashSet<>();
         return BpmnSBVRExtractor.getBPMNDiagrams(root, diagrams);
+    }
+
+    private String getConditionsRepresentation(Map<ActivityNode, Map<ActivityEdge, String>> structConditions){
+        final StringBuilder sb = new StringBuilder();
+        for (Entry<ActivityNode, Map<ActivityEdge, String>> entry: structConditions.entrySet()) {
+            sb.append(entry.getKey().getHumanName()).append(": [");
+            if (!entry.getValue().isEmpty()) {
+                for (Entry<ActivityEdge, String> condition: entry.getValue().entrySet())
+                    sb.append(condition.getKey().getHumanName()).append(" -> ").append(condition.getValue()).append(", ");
+                sb.delete(sb.length() - 2, sb.length());
+            }
+            sb.append("]").append("\n");
+        }
+        return sb.toString();
     }
 
 }
