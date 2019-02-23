@@ -18,5 +18,6 @@
     <orderEntry type="library" scope="RUNTIME" name="Legend API" level="project" />
     <orderEntry type="library" exported="" name="cbm" level="project" />
     <orderEntry type="library" name="log4j" level="project" />
+    <orderEntry type="library" name="org.hamcrest:hamcrest-core:2.1" level="project" />
   </component>
 </module>

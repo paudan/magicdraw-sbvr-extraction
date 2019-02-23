@@ -39,9 +39,8 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
         return extractor;
     }
 
-    @Test
-    public void testInternalStructures() {
-        BpmnSBVRExtractor extractor = getBpmnExtractor("TestModel1");
+    private void outputInternalStructures(String modelName) {
+        BpmnSBVRExtractor extractor = getBpmnExtractor(modelName);
         Collection<Element> elements = extractor.getExtractedDiagramElements();
         for (Element el: elements)
             if (extractor.isGatewayElement(el)){
@@ -49,6 +48,15 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
                 GatewayNeighborhood tuple = extractor.new GatewayNeighborhood((ControlNode) el);
                 System.out.println(tuple);
             }
+    }
 
+    @Test
+    public void testInternalStructures() {
+        outputInternalStructures("TestModel1");
+    }
+
+    @Test
+    public void testInternalStructures2() {
+        outputInternalStructures("TestModel2");
     }
 }

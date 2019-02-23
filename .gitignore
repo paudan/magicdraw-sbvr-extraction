@@ -6,6 +6,7 @@
 *.log
 .idea/workspace.xml
 .idea/dbnavigator.xml
+.idea/uiDesigner.xml
 .fuse_*
 *.bak
 /nbproject/private/

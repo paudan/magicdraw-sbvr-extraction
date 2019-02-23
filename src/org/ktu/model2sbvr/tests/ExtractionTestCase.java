@@ -56,4 +56,12 @@ public abstract class ExtractionTestCase extends MagicDrawTestCase {
             System.out.println("Source: " + String.join(",", item.getKey().getSourceNames()) + " -> output: " + String.join(",", outputs));
         }
     }
+
+    protected List<String> getOutputsAsStrings(Map<SourceEntry, ConceptExtractionEntry> objects) {
+        List<String> outputs = new ArrayList<>();
+        for (Entry<SourceEntry, ConceptExtractionEntry> item: objects.entrySet())
+            for (SBVRExpressionModel sbvr: item.getValue().getCandidates())
+                outputs.add(sbvr.toString());
+        return outputs;
+    }
 }
