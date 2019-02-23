@@ -17,10 +17,13 @@ public class BpmnGatewayRulesTest extends BpmnExtractionTestCase {
     @Test
     public void testTestModel1Extraction() {
         BpmnSBVRExtractor extractor = getExtractor("TestModel1");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        printExtractorOutput(gcObjects);
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        printExtractorOutput(vcObjects);
+        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
+        printExtractorOutput(brObjects);
+    }
+
+    @Test
+    public void testTestModel2Extraction() {
+        BpmnSBVRExtractor extractor = getExtractor("TestModel2");
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
         printExtractorOutput(brObjects);
     }

@@ -48,6 +48,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.ktu.model2sbvr.PluginUtilities;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
 import org.ktu.model2sbvr.models.SBVRExpressionModel.Conditional;
+import org.ktu.model2sbvr.models.SBVRExpressionModel.Conjunction;
 import org.ktu.model2sbvr.models.SBVRExpressionModel.RuleType;
 import org.ktu.model2sbvr.models.SourceEntry;
 
@@ -178,7 +179,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
     class GatewayNeighborhood {
         ControlNode gatewayNode;
-        Map<String, ActivityNeighborhood> incomingActivities, outgoingActivities;
+        Map<ActivityNode, ActivityNeighborhood> incomingActivities, outgoingActivities;
         Map<ActivityNode, Map<ActivityEdge, String>> incomingConditions;
         private Map<ActivityNode, Integer> nullCountIncoming;
         Map<ControlNode, GatewayNeighborhood> incomingGateways;
@@ -194,7 +195,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 addCondition(edge, edge.getSource());
                 if (isActivityElement(edge.getSource())) {
                     ActivityNeighborhood taskTuple = new ActivityNeighborhood(edge.getSource());
-                    incomingActivities.put(taskTuple.taskText, taskTuple);
+                    incomingActivities.put(taskTuple.taskNode, taskTuple);
                 } else if (isGatewayElement(edge.getSource())) {
                     ControlNode node = (ControlNode) edge.getSource();
                     incomingGateways.put(node, new GatewayNeighborhood(node));
@@ -204,7 +205,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             for (ActivityEdge edge : gatewayNode.getOutgoing())
                 if (isActivityElement(edge.getTarget())) {
                     ActivityNeighborhood taskTuple = new ActivityNeighborhood(edge.getTarget());
-                    outgoingActivities.put(taskTuple.taskText, taskTuple);
+                    outgoingActivities.put(taskTuple.taskNode, taskTuple);
                 }
         }
 
@@ -411,9 +412,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         Iterator<Element> iterator = candidateElements.iterator();
         while (iterator.hasNext()) {
             Element el = iterator.next();
-            if ((el.getClassType().equals(ActivityPartition.class) && hasAnyStereotype(el, "Lane", "LaneSet")) || isResourceElement(el))
+            if (isLaneElement(el) || isResourceElement(el))
                 createGeneralConcept(el, extractElementText(el), true);
-            else if ((el.getClassType().equals(InformationFlow.class) && hasAnyStereotype(el, "MessageFlow"))) {
+            else if (isMessageFlow(el)) {
                 Collection<Classifier> conveyed = ((InformationFlow) el).getConveyed();
                 for (Classifier classifier : conveyed)
                     if (classifier.getClassType().equals(com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class.class) && hasAnyStereotype(classifier, "BPMNMessage"))
@@ -583,6 +584,11 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     candidate = addActivity(candidate, after, subject.getValue());
                     candidate = candidate.addRuleConditional(Conditional.AFTER);
                     candidate = addActivity(candidate, before, subject.getValue());
+                    String incomingCondition = getCondition((ActivityEdge) el);
+                    if (incomingCondition != null) {
+                        candidate = candidate.addRuleConditional(Conditional.IF);
+                        candidate = addCondition(candidate, incomingCondition);
+                    }
                     SourceEntry source = new SourceEntry(Arrays.asList(part, after, part, before),
                             Arrays.asList(getProperName(part), getProperName(after), getProperName(part), getProperName(before)));
                     br_candidates.add(source, candidate);
@@ -593,31 +599,31 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private void extractRuleT2(Element el) {
-        extractRuleWithGateways(el, "ExclusiveGateway", "or");
+        extractRuleWithGateways(el, "ExclusiveGateway", Conjunction.OR);
     }
 
     private void extractRuleT3(Element el) {
-        extractRuleWithGateways(el, "InclusiveGateway", "and");
+        extractRuleWithGateways(el, "InclusiveGateway", Conjunction.AND);
     }
 
-    private Object[] getRuleWithGateways(ControlNode el, String conjunction) {
+    private Object[] getRuleWithGateways(ControlNode el, Conjunction conjunction, ActivityNode excluded) {
         GatewayNeighborhood tuple = gatewayNeighborhoods.get(el);
         if (tuple.incomingActivities.isEmpty() && tuple.outgoingActivities.isEmpty())
             return null;
         List<Object> objects = new ArrayList<>();
         List<String> representations = new ArrayList<>();
         SBVRExpressionModel candidate = new SBVRExpressionModel();
-        // No incoming or outgoing sequences flows - bad practice, but must be processed as well
-        if (!tuple.incomingActivities.isEmpty()) {
-            if (!tuple.outgoingActivities.isEmpty())
-                //TODO: check incoming conditions from activities which are "incoming"
-                candidate = candidate.addUnidentifiedText(",").addRuleConditional(Conditional.AFTER);
-            candidate = addTasksWithConditions(candidate, tuple.incomingActivities, objects, representations, conjunction);
-            if (!tuple.outgoingActivities.isEmpty())
-                candidate = candidate.addUnidentifiedText(",");
-        }
         if (!tuple.outgoingActivities.isEmpty())
-            candidate = addTasksWithConditions(candidate, tuple.outgoingActivities, objects, representations, conjunction);
+            candidate = addTasksWithConditions(candidate, tuple.outgoingActivities, objects, representations, conjunction, excluded);
+        // No incoming or outgoing sequences flows - bad practice, but must be checked
+        //TODO: check incoming conditions from activities which are "incoming"
+        if (!tuple.incomingActivities.isEmpty()) {
+            // Skip conditional if only excluded task is in outgoing activities
+            Set<ActivityNode> actOut = tuple.outgoingActivities.keySet();
+            if (actOut.size() > 1 || (actOut.size() == 1 && actOut.stream().findFirst().get() != excluded))
+                candidate = candidate.addUnidentifiedText(",").addRuleConditional(Conditional.AFTER);
+            candidate = addTasksWithConditions(candidate, tuple.incomingActivities, objects, representations, conjunction, excluded);
+        }
         Object[] results = new Object[3];
         results[0] = candidate;
         results[1] = objects;
@@ -625,11 +631,11 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return results;
     }
 
-    private void extractRuleWithGateways(Element el, String gatewayStereotype, String conjunction) {
+    private void extractRuleWithGateways(Element el, String gatewayStereotype, Conjunction conjunction) {
         if (isGatewayOfType(el, gatewayStereotype)) {
             SBVRExpressionModel candidate = new SBVRExpressionModel()
                     .addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION);
-            Object[] entry = getRuleWithGateways((ControlNode) el, conjunction);
+            Object[] entry = getRuleWithGateways((ControlNode) el, conjunction, null);
             if (entry == null)
                 return;
             candidate.addIdentifiedExpression((SBVRExpressionModel) entry[0]);
@@ -639,16 +645,19 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         }
     }
 
-    private SBVRExpressionModel addTasksWithConditions(SBVRExpressionModel candidate, Map<String, ActivityNeighborhood> tasksData,
-                                                       List<Object> objects, List<String> representations, String conjunction) {
+    private SBVRExpressionModel addTasksWithConditions(SBVRExpressionModel candidate, Map<ActivityNode, ActivityNeighborhood> tasksData,
+                                                       List<Object> objects, List<String> representations, Conjunction conjunction, ActivityNode excluded) {
         List<Object> tasksDefault = new ArrayList<>();
         boolean added_first = true;
         boolean rules_added = false;
-        for (Entry<String, ActivityNeighborhood> entryOut : tasksData.entrySet()) {
+        for (Entry<ActivityNode, ActivityNeighborhood> entryOut : tasksData.entrySet()) {
             Map<Element, String> subjectsOut = entryOut.getValue().taskSubjects;
             Map<ActivityNode, Map<ActivityEdge, String>> conditionsOut = entryOut.getValue().correctionsIncoming;
             int nullTotal = entryOut.getValue().nullsTotalIncoming;
             for (Entry<Element, String> subjectOut : subjectsOut.entrySet()) {
+                // Skip activity node it is excluded
+                if (excluded != null && entryOut.getValue().taskNode == excluded)
+                    continue;
                 // Add verb concept from rule and subject (lane, resource, etc.)
                 objects.add(subjectOut.getKey());
                 objects.add(entryOut.getValue().taskNode);
@@ -657,13 +666,8 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 if (!conditionsOut.values().isEmpty()) {
                     for (Map<ActivityEdge, String> conditionsTask: conditionsOut.values())
                         if (conditionsTask != null && !conditionsTask.isEmpty() && nullTotal == 0) {
-                            if (!added_first) {
-                                candidate = candidate.addUnidentifiedText(",");
-                                if (conjunction.equalsIgnoreCase("or"))
-                                    candidate = candidate.addOrExpression();
-                                else if (conjunction.equalsIgnoreCase("and"))
-                                    candidate = candidate.addAndExpression();
-                            }
+                            if (!added_first)
+                                candidate = candidate.addUnidentifiedText(",").addConjunction(conjunction);
                             else
                                 added_first = false;
                             candidate = addActivity(candidate, entryOut.getValue().taskNode, subjectOut.getValue());
@@ -1047,28 +1051,33 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 gatewayNeighborhoods.put((ControlNode) el, new GatewayNeighborhood((ControlNode) el));
     }
 
-    private SBVRExpressionModel getGatewayRulePart(ControlNode gate, SBVRExpressionModel model, List<Object> sources, List<String> names) {
+    private SBVRExpressionModel getGatewayRulePart(ControlNode gate, SBVRExpressionModel model, List<Object> sources, List<String> names,
+                                                   ActivityNode excluded) {
         GatewayNeighborhood tuple = gatewayNeighborhoods.get(gate);
         Set<Entry<ControlNode, GatewayNeighborhood>> incomingGates = tuple.incomingGateways.entrySet();
         if (incomingGates.isEmpty()) {
-            String conjunction = null;
+            Conjunction conjunction = null;
             if (hasAnyStereotype(gate, "InclusiveGateway"))
-                conjunction = "or";
+                conjunction = Conjunction.OR;
             else if (hasAnyStereotype(gate, "ExclusiveGateway"))
-                conjunction = "and";
+                conjunction = Conjunction.AND;
             if (conjunction == null)
                 return model;
-            Object [] rules = getRuleWithGateways(gate, conjunction);
+            Object [] rules = getRuleWithGateways(gate, conjunction, excluded);
             if (rules != null) {
-                model = model.addIdentifiedExpression((SBVRExpressionModel) rules[0]);
-                sources.addAll((List<Object>)rules[1]);
-                names.addAll((List<String>)rules[2]);
+                SBVRExpressionModel ruleModel = (SBVRExpressionModel) rules[0];
+                if (!ruleModel.isEmpty()) {
+                    model = model.addUnidentifiedText(",").addRuleConditional(Conditional.AFTER)
+                            .addIdentifiedExpression(ruleModel);
+                    sources.addAll((List<Object>)rules[1]);
+                    names.addAll((List<String>)rules[2]);
+                }
             }
             return model;
         }
         for (Entry<ControlNode, GatewayNeighborhood> node: incomingGates) {
             if (hasAnyStereotype(node.getKey(), "InclusiveGateway", "ExclusiveGateway"))
-                return getGatewayRulePart(node.getKey(), model, sources, names);
+                return getGatewayRulePart(node.getKey(), model, sources, names, excluded);
         }
         return model;
     }
@@ -1077,20 +1086,34 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         if (isActivityElement(el)) {
             Map<Element, String> subjects = getSubjectNames(el);
             Collection<ActivityEdge> incomingEdges = ((ActivityNode)el).getIncoming();
+            if (incomingEdges.isEmpty())
+                return;
+            Set<ActivityEdge> incomingGateways = incomingEdges.stream().filter(n -> isGatewayElement(n.getSource())).collect(Collectors.toSet());
+            // If task is connected only with other tasks, T2 rule will extract such rules
+            if (incomingGateways.isEmpty())
+                return;
             for (Entry<Element, String> subject: subjects.entrySet()) {
                 SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
                 candidate = addActivity(candidate, (ActivityNode) el, subject.getValue());
-                List<Object> sources = new ArrayList<>();
-                List<String> names = new ArrayList<>();
+                List<Object> sources = new ArrayList<>(Arrays.asList(subject.getKey(), el));
+                List<String> names = new ArrayList<>(Arrays.asList(getProperName(subject.getKey()), getProperName(el)));
                 for (ActivityEdge incoming: incomingEdges) {
-                    // TODO: add this condition if it exists
-                    // String incomingCondition = getCondition(incoming);
+                    String incomingCondition = getCondition(incoming);
+                    if (incomingCondition != null) {
+                        candidate = candidate.addRuleConditional(Conditional.IF);
+                        candidate = addCondition(candidate, incomingCondition);
+                    }
                     ActivityNode node = incoming.getSource();
                     if (isGatewayElement(node)) {
                         SBVRExpressionModel model = new SBVRExpressionModel();
-                        model = getGatewayRulePart((ControlNode) node, model, sources, names);
-                        if (model != null)
+                        model = getGatewayRulePart((ControlNode) node, model, sources, names, (ActivityNode) el);
+                        if (model != null && !model.isEmpty())
                             candidate = candidate.addIdentifiedExpression(model);
+                    } else if (isActivityElement(node)) {
+                        candidate = candidate.addRuleConditional(Conditional.AFTER);
+                        candidate = addActivity(candidate, node, subject.getValue());
+                        sources.addAll(Arrays.asList(subject.getKey(), node));
+                        names.addAll(Arrays.asList(getProperName(subject.getKey()), getProperName(node)));
                     }
                 }
                 SourceEntry src = new SourceEntry(sources, names);

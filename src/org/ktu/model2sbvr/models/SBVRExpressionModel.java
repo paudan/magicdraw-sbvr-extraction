@@ -14,7 +14,7 @@ public class SBVRExpressionModel implements Cloneable {
     private static final ResourceBundle bundle = ResourceBundle.getBundle("org/ktu/model2sbvr/messages");
 
     public enum ExpressionType {
-        GENERAL_CONCEPT, INDIVIDUAL_CONCEPT, VERB_CONCEPT, RULE_TYPE, RULE_AND, RULE_OR, RULE_CONDITIONAL, GENERIC
+        GENERAL_CONCEPT, INDIVIDUAL_CONCEPT, VERB_CONCEPT, RULE_TYPE, RULE_CONDITIONAL, RULE_CONJUNCTION, GENERIC
     }
 
     public enum RuleType {
@@ -44,6 +44,21 @@ public class SBVRExpressionModel implements Cloneable {
         private final String expr;
 
         Conditional(String expr) {
+            this.expr = expr;
+        }
+
+        public String toString() {
+            return expr;
+        }
+    }
+
+    public enum Conjunction {
+        AND("and"),
+        OR("after");
+
+        private final String expr;
+
+        Conjunction(String expr) {
             this.expr = expr;
         }
 
@@ -107,18 +122,25 @@ public class SBVRExpressionModel implements Cloneable {
     }
 
     public SBVRExpressionModel addAndExpression() {
-        types.add(ExpressionType.RULE_AND);
-        expressions.add("and"); 
+        types.add(ExpressionType.RULE_CONJUNCTION);
+        expressions.add(Conjunction.AND.toString());
         identified.add(true);
         return this;
     }
     
     public SBVRExpressionModel addOrExpression() {
-        types.add(ExpressionType.RULE_OR);
-        expressions.add("or"); 
+        types.add(ExpressionType.RULE_CONJUNCTION);
+        expressions.add(Conjunction.OR.toString());
         identified.add(true);
         return this;
-    }    
+    }
+
+    public SBVRExpressionModel addConjunction(Conjunction conj) {
+        types.add(ExpressionType.RULE_CONJUNCTION);
+        expressions.add(conj.toString());
+        identified.add(true);
+        return this;
+    }
 
     public SBVRExpressionModel addUnidentifiedText(String expression) {
         types.add(ExpressionType.GENERIC);
@@ -181,17 +203,14 @@ public class SBVRExpressionModel implements Cloneable {
         return expressions.size();
     }
 
-    private String getString(List<String> expressions) {
-        if (expressions.isEmpty())
-            return null;
-        StringBuilder res = new StringBuilder();
-        for (String expression : expressions)
-            res.append(expression).append(" "); 
-        return res.toString().trim();
+    public boolean isEmpty() {
+        return expressions.isEmpty();
     }
 
     public String toString() {
-        return getString(expressions);
+        if (expressions.isEmpty())
+            return "[Empty]";
+        return String.join(" ", expressions).trim().replaceAll(" ,", ",");
     }
 
     public String toUnderscoreString() {
@@ -226,8 +245,7 @@ public class SBVRExpressionModel implements Cloneable {
             return CGC_FORMAT;
         if (type == ExpressionType.VERB_CONCEPT && identified)
             return CVC_FORMAT;
-        if (type == ExpressionType.RULE_TYPE || type == ExpressionType.RULE_CONDITIONAL
-                || type == ExpressionType.RULE_AND || type == ExpressionType.RULE_OR)
+        if (type == ExpressionType.RULE_TYPE || type == ExpressionType.RULE_CONDITIONAL || type == ExpressionType.RULE_CONJUNCTION)
             return CRC_FORMAT;
         return CBLANK_FORMAT;
     }
