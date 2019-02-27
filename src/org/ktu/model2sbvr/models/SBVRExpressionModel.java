@@ -54,7 +54,7 @@ public class SBVRExpressionModel implements Cloneable {
 
     public enum Conjunction {
         AND("and"),
-        OR("after");
+        OR("or");
 
         private final String expr;
 
