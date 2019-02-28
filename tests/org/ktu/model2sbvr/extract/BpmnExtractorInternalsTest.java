@@ -101,16 +101,14 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
                     if (extractor.isGatewayElement(edge.getSource())) {
                         GatewayNeighborhood nhood = extractor.gatewayNeighborhoods2.get(edge.getSource());
                         ControlNode gateway = getBoundaryGateway(nhood);
+                        assertNotNull(gateway);
                         assertEquals(gatewayName, gateway.getHumanName());
 
-                        Conjunction conjunction = null;
-                        if (extractor.hasAnyStereotype(gateway, "ExclusiveGateway"))
-                            conjunction = Conjunction.OR;
-                        else if (extractor.hasAnyStereotype(gateway, "InclusiveGateway"))
-                            conjunction = Conjunction.AND;
+                        Conjunction conjunction = getGatewayConjunction(extractor, gateway);
                         Object[] results = extractor.getRuleWithGateways(gateway, conjunction, null);
                         System.out.println(results[0]);
                     }
+                break;
             }
     }
 
@@ -119,6 +117,14 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
             nodes.add(nhood.gatewayNode);
         for (GatewayNeighborhood neighborNode: nhood.outgoingGateways.values())
             getAllBoundaryGateways(neighborNode, nodes);
+    }
+
+    private Conjunction getGatewayConjunction(BpmnSBVRExtractor extractor, ControlNode gateway) {
+        if (extractor.hasAnyStereotype(gateway, "ExclusiveGateway"))
+            return Conjunction.OR;
+        else if (extractor.hasAnyStereotype(gateway, "InclusiveGateway"))
+            return Conjunction.AND;
+        return null;
     }
 
     private void testFindAllBoundaryGateways(String modelName, String taskName, int numAssert) {
@@ -134,7 +140,20 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
                         getAllBoundaryGateways(nhood, boundaryGateways);
                         assertEquals(numAssert, boundaryGateways.size());
                     }
+                break;
             }
+    }
+
+    private void testProcessPartialRules(String modelName, String... gatewayNames) {
+        BpmnSBVRExtractor extractor = getBpmnExtractor(modelName);
+        extractor.extractBusinessRuleCandidates();
+        Collection<Element> elements = extractor.getExtractedDiagramElements();
+        for (String gatewayName: gatewayNames)
+            for (Element el: elements)
+                if (extractor.isGatewayElement(el) && el.getHumanName().equalsIgnoreCase(gatewayName)){
+                    GatewayNeighborhood nhood = extractor.gatewayNeighborhoods2.get(el);
+                    System.out.println(nhood);
+                }
     }
 
     @Test
@@ -162,4 +181,9 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
         testFindAllBoundaryGateways("TestModel4", "Task t2", 2);
     }
 
+    @Test
+    public void testPartialRuleProcessing() {
+        //testProcessPartialRules("TestModel4", "Exclusive Gateway Excl1", "Inclusive Gateway Inc1");
+        testProcessPartialRules("TestModel1", "Exclusive Gateway Exclusive Gateway2", "Inclusive Gateway Inclusive Gateway2");
+    }
 }
