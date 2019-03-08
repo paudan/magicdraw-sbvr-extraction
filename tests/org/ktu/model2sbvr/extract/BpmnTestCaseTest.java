@@ -80,6 +80,20 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
     }
 
     @Test
+    public void testRuleT4Extraction_Model4() {
+        BpmnSBVRExtractor extractor = getExtractor("Model4");
+        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
+        printExtractorOutput(gcObjects);
+        //assertEquals(6, gcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
+        printExtractorOutput(vcObjects);
+        //assertEquals(5, vcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
+        //assertEquals(2, brObjects.size());
+        printExtractorOutput(brObjects);
+    }
+
+    @Test
     public void testRuleT5Extraction_Model5() {
         BpmnSBVRExtractor extractor = getExtractor("Model5");
         Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
