@@ -92,7 +92,7 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
     }
 
     @Test
-    public void testRuleT6Extraction_Model6a() {
+    public void testRuleT7Extraction_Model6a() {
         BpmnSBVRExtractor extractor = getExtractor("Model6a");
         Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
         assertEquals(6, gcObjects.size());
@@ -104,7 +104,19 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
     }
 
     @Test
-    public void testRuleT7Extraction_Model7a() {
+    public void testRuleT7Extraction_Model6b() {
+        BpmnSBVRExtractor extractor = getExtractor("Model6b");
+        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
+        assertEquals(6, gcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
+        assertEquals(2, vcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
+        assertEquals(3, brObjects.size());
+        printExtractorOutput(brObjects);
+    }
+
+    @Test
+    public void testRuleT8Extraction_Model7a() {
         BpmnSBVRExtractor extractor = getExtractor("Model7a");
         Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
         assertEquals(6, gcObjects.size());
@@ -116,7 +128,7 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
     }
 
     @Test
-    public void testRuleT8Extraction_Model8() {
+    public void testRuleT9Extraction_Model8() {
         BpmnSBVRExtractor extractor = getExtractor("Model8");
         Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
         assertEquals(10, gcObjects.size());

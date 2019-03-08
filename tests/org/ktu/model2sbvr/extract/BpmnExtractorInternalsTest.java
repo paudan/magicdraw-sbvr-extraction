@@ -258,7 +258,7 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
                     assertNotNull(boundaryNhood);
                     if (boundaryGate.equals(gateway))
                         continue;   // Apply Rule T3
-                    extractor.createPartialRules(boundaryNhood, gateway);
+                    extractor.createPartialRules(boundaryNhood, gateway, taskElement);
                     rule.addIdentifiedExpression(boundaryNhood.partialRule);
                     for (ActivityNode incTask: boundaryNhood.incomingActivities.keySet()) {
                         SBVRExpressionModel ruleCopy = rule.clone();

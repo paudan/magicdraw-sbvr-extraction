@@ -44,4 +44,10 @@ public class BpmnGatewayRulesTest extends BpmnExtractionTestCase {
         printExtractorOutput(brObjects);
     }
 
+    @Test
+    public void testTestModel4Extraction() {
+        BpmnSBVRExtractor extractor = getExtractor("TestModel4");
+        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
+        printExtractorOutput(brObjects);
+    }
 }

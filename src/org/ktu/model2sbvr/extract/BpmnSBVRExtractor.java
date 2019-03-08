@@ -22,6 +22,7 @@ import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.ForkNo
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.JoinNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdstructuredactivities.StructuredActivityNode;
 import com.nomagic.uml2.ext.magicdraw.auxiliaryconstructs.mdinformationflows.InformationFlow;
+import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Dependency;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Classifier;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Comment;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Diagram;
@@ -29,6 +30,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.EnumerationLiteral;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Relationship;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
@@ -533,11 +535,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             extractRuleT1(el);
             extractRuleT2(el);
             extractRuleT3(el);
-            extractRuleT4(el);
+            extractRuleT5(el);
             extractRuleT5(el);
             extractRuleT6(el);
             extractRuleT7(el);
             extractRuleT8(el);
+            extractRuleT9(el);
             extractComplexRule(el);
         }
     }
@@ -612,7 +615,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return null;
     }
 
-    private void extractRuleT4(Element el) {
+    private void extractRuleT5(Element el) {
         if (isGatewayOfType(el, "ParallelGateway")) {
             Map<ActivityEdge, ActivityNeighborhood> outgoingElements = new HashMap<>();
             for (ActivityEdge edge : ((ControlNode) el).getOutgoing()) {
@@ -795,7 +798,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return candidate;
     }
 
-    private void extractRuleT5(Element el) {
+    private void extractRuleT6(Element el) {
         if (isActivityElement(el)) {
             List<Element> boundaryElements = BPMNHelper.getBoundaryEventRefs(el, getActivityStereotype(el));
             if (boundaryElements.isEmpty())
@@ -860,26 +863,61 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         }
     }
 
-    private void extractRuleT6(Element el) {
+    private void extractRuleT7(Element el) {
         if (isTaskElement(el))
             extractTasksWithDataObjects(el, false, "is produced", "is provided to");
+        else if (isSequenceFlow(el))
+            extractTasksWithAssociationsAndDataObjects(el, false, "is produced", "is provided to");
     }
 
-    private void extractRuleT7(Element el) {
+    private void extractRuleT8(Element el) {
         if (isActivityElement(el))
             extractTasksWithDataObjects(el, true, "is available to", "is provided with data");
+        else if (isSequenceFlow(el))
+            extractTasksWithAssociationsAndDataObjects(el, true, "is available to", "is provided with data");
+    }
+
+    private void extractTasksWithAssociationsAndDataObjects(Element el, boolean checkDataStore, String reservedVerb1, String reservedVerb2) {
+        ActivityEdge flow = (ActivityEdge) el;
+        List<Element> dataObjects = new ArrayList<>();
+        for (Relationship assoc: flow.get_relationshipOfRelatedElement())
+            if (assoc instanceof Dependency) {
+                Collection<NamedElement> clients = ((Dependency) assoc).getClient();
+                for (NamedElement client: clients)
+                    if (checkDataStore ? isDataStore(client) : isDataObject(client))
+                        dataObjects.add(client);
+            }
+        processOutgoingConnectionsWithDataObjects(dataObjects, flow.getSource(), checkDataStore, reservedVerb1);
+        processIncomingConnectionsWithDataObjects(dataObjects, flow.getTarget(), checkDataStore, reservedVerb2);
     }
 
     private void extractTasksWithDataObjects(Element el, boolean checkDataStore, String reservedVerb1, String reservedVerb2) {
         // Outgoing tasks with data objects
         List<Element> dataObjects = new ArrayList<>();
-        Map<Element, String> taskSubjects = getSubjectNames(el);
         for (ActivityEdge outAssoc: ((ActivityNode)el).getOutgoing())
             if (isDataAssociation(outAssoc)) {
                 ActivityNode dataObj = outAssoc.getTarget();
                 if (checkDataStore ? isDataStore(dataObj) : isDataObject(dataObj))
                     dataObjects.add(dataObj);
             }
+        processOutgoingConnectionsWithDataObjects(dataObjects, el, checkDataStore, reservedVerb1);
+        // Incoming tasks with data objects
+        dataObjects.clear();
+        for (ActivityEdge outAssoc: ((ActivityNode)el).getIncoming())
+            if (isDataAssociation(outAssoc)) {
+                ActivityNode dataObj = outAssoc.getSource();
+                if (checkDataStore ? isDataStore(dataObj) : isDataObject(dataObj))
+                    dataObjects.add(dataObj);
+            }
+        if (dataObjects.isEmpty())
+            return;
+        processIncomingConnectionsWithDataObjects(dataObjects, el, checkDataStore, reservedVerb2);
+    }
+
+    private void processOutgoingConnectionsWithDataObjects(List<Element> dataObjects, Element taskElement, boolean checkDataStore, String reservedVerb1) {
+        if (dataObjects.isEmpty())
+            return;
+        Map<Element, String> taskSubjects = getSubjectNames(taskElement);
         if (!dataObjects.isEmpty()) {
             for (Entry<Element, String> taskSubject : taskSubjects.entrySet()) {
                 SBVRExpressionModel subjectConcept = getGeneralConcept(taskSubject.getValue());
@@ -920,34 +958,30 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     }
                 }
                 candidate = candidate.addRuleConditional(Conditional.WHEN);
-                candidate = addActivity(candidate, (ActivityNode) el, taskSubject.getValue());
+                candidate = addActivity(candidate, (ActivityNode) taskElement, taskSubject.getValue());
                 List<Object> srcElements = new ArrayList<>(dataObjects);
                 srcElements.add(taskSubject.getKey());
-                srcElements.add(el);
+                srcElements.add(taskElement);
                 List<String> names = new ArrayList<>();
                 for (Element dataObject : dataObjects)
                     names.add(getProperName(dataObject));
                 names.add(getProperName(taskSubject.getKey()));
-                names.add(getProperName(el));
+                names.add(getProperName(taskElement));
                 SourceEntry source = new SourceEntry(srcElements, names);
                 br_candidates.add(source, candidate);
                 br_candidates.setAutomaticExtraction(source);
             }
         }
-        // Incoming tasks with data objects
-        dataObjects.clear();
-        for (ActivityEdge outAssoc: ((ActivityNode)el).getIncoming())
-            if (isDataAssociation(outAssoc)) {
-                ActivityNode dataObj = outAssoc.getSource();
-                if (checkDataStore ? isDataStore(dataObj) : isDataObject(dataObj))
-                    dataObjects.add(dataObj);
-            }
+    }
+
+    private void processIncomingConnectionsWithDataObjects(List<Element> dataObjects, Element taskElement, boolean checkDataStore, String reservedVerb2) {
         if (dataObjects.isEmpty())
             return;
+        Map<Element, String> taskSubjects = getSubjectNames(taskElement);
         for (Entry<Element, String> taskSubject : taskSubjects.entrySet()) {
             SBVRExpressionModel subjectConcept = getGeneralConcept(taskSubject.getValue());
             SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.PERMISSION);
-            candidate = addActivity(candidate, (ActivityNode) el, taskSubject.getValue())
+            candidate = addActivity(candidate, (ActivityNode) taskElement, taskSubject.getValue())
                     .addRuleConditional(Conditional.ONLY_IF);
             boolean added_first_obj = true;
             for (Element dataObj: dataObjects) {
@@ -985,12 +1019,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 }
             }
             List<Object> srcElements = new ArrayList<>();
-            srcElements.add(el);
+            srcElements.add(taskElement);
             srcElements.add(taskSubject.getKey());
             srcElements.addAll(dataObjects);
             List<String> names = new ArrayList<>();
             names.add(getProperName(taskSubject.getKey()));
-            names.add(getProperName(el));
+            names.add(getProperName(taskElement));
             for (Element dataObject: dataObjects)
                 names.add(getProperName(dataObject));
             SourceEntry source = new SourceEntry(srcElements, names);
@@ -999,8 +1033,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         }
     }
 
-
-    private void extractRuleT8(Element el) {
+    private void extractRuleT9(Element el) {
         if (isMessageFlow(el)) {
             Collection<Classifier> conveyed = ((InformationFlow) el).getConveyed();
             if (conveyed.isEmpty())
@@ -1146,7 +1179,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             getAllBoundaryGateways(neighborNode, nodes);
     }
 
-    void createPartialRules(GatewayNeighborhood nhood, ControlNode excluded) {
+    void createPartialRules(GatewayNeighborhood nhood, ControlNode excluded, Element startedElement) {
         ControlNode gateway = nhood.gatewayNode;
         if (gateway.equals(excluded))
             return;
@@ -1167,8 +1200,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         Conjunction conjunction = getGatewayConjunction(gateway);
         boolean first_added = true;
         SBVRExpressionModel modelPart = new SBVRExpressionModel();
+        // Recursively process outgoing gateways
         for (Entry<ControlNode, GatewayNeighborhood> gatewayOut: nhood.outgoingGateways.entrySet()) {
-            createPartialRules(gatewayOut.getValue(), excluded);
+            createPartialRules(gatewayOut.getValue(), excluded, startedElement);
             // It is possible that multiple sequence flows are between the two gateways
             Map<ActivityEdge, String> conditions = nhood.outgoingConditions.get(gatewayOut.getKey());
             SBVRExpressionModel ruleModel = new SBVRExpressionModel();
@@ -1191,7 +1225,11 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             nhood.partialRuleSource.addAll(gatewayOut.getValue().partialRuleSource);
             nhood.partialRuleNames.addAll(gatewayOut.getValue().partialRuleNames);
         }
+        // Process outgoing activities
         for (Entry<ActivityNode, ActivityNeighborhood> activityOut: nhood.outgoingActivities.entrySet()) {
+            // Exclude element which was used as the starting point
+            if (activityOut.getKey().equals(startedElement))
+                continue;
             // It is possible that multiple sequence flows are between the two tasks
             Map<ActivityEdge, String> conditions = activityOut.getValue().incomingConditions.get(activityOut.getKey());
             SBVRExpressionModel ruleModel = new SBVRExpressionModel();
@@ -1231,8 +1269,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             }
         }
         if (!modelPart.isEmpty())
-            nhood.partialRule.addUnidentifiedText(",").addRuleConditional(Conditional.IF)
-                    .addIdentifiedExpression(modelPart);
+            nhood.partialRule.addUnidentifiedText("(")
+                    .addRuleConditional(Conditional.AFTER)
+                    .addIdentifiedExpression(modelPart)
+                    .addUnidentifiedText(")");
     }
 
 
@@ -1248,9 +1288,6 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         if (incomingGateways.isEmpty())
             return;
         for (Entry<Element, String> subject : subjects.entrySet()) {
-            List<Object> sources = new ArrayList<>();
-            List<String> names = new ArrayList<>();
-            SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
             for (ActivityEdge edge: incomingGateways) {
                 ControlNode gateway = (ControlNode) edge.getSource();
                 GatewayNeighborhood nhood = gatewayNeighborhoods.get(gateway);
@@ -1259,15 +1296,15 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 for (ControlNode boundaryGate: boundaryGateways) {
                     SBVRExpressionModel rule = new SBVRExpressionModel()
                             .addRuleExpression(RuleType.OBLIGATION);
+                    List<Object> sources = new ArrayList<>(Arrays.asList(el, subject.getKey()));
+                    List<String> names = new ArrayList<>(Arrays.asList(getProperName(el), getProperName(subject.getKey())));
                     rule = addActivity(rule, (ActivityNode)el, subject.getValue());
-                    sources.addAll(Arrays.asList(el, subject.getKey()));
-                    names.addAll(Arrays.asList(getProperName(el), getProperName(subject.getKey())));
                     Map<ActivityEdge, String> conditionsOut = nhood.outgoingActivities.get(el).incomingConditions.get(gateway);
                     rule = addMultipleConditions(rule, conditionsOut, sources, names);
                     GatewayNeighborhood boundaryNhood = gatewayNeighborhoods2.get(boundaryGate);
                     if (boundaryGate.equals(gateway))
                         continue;   // Apply Rule T3
-                    createPartialRules(boundaryNhood, gateway);
+                    createPartialRules(boundaryNhood, gateway, el);
                     rule.addIdentifiedExpression(boundaryNhood.partialRule);
                     sources.addAll(boundaryNhood.partialRuleSource);
                     names.addAll(boundaryNhood.partialRuleNames);
