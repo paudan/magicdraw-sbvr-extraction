@@ -6,7 +6,6 @@ import com.nomagic.magicdraw.tests.MagicDrawTestCase;
 import org.ktu.model2sbvr.models.ConceptExtractionEntry;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
 import org.ktu.model2sbvr.models.SourceEntry;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;

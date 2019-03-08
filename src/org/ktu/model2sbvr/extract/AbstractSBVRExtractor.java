@@ -26,7 +26,6 @@ import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import org.ktu.model2sbvr.models.AbstractConceptModel;
 import org.ktu.model2sbvr.models.DefaultConceptModel;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
-import org.ktu.model2sbvr.models.SourceEntry;
 
 public abstract class AbstractSBVRExtractor {
 
@@ -274,16 +273,8 @@ public abstract class AbstractSBVRExtractor {
         return gcReplacements;
     }
 
-    public void setGCReplacements(Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> gcReplacements) {
-        this.gcReplacements = gcReplacements;
-    }
-
     public Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> getVCReplacements() {
         return vcReplacements;
-    }
-
-    public void setVCReplacements(Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> vcReplacements) {
-        this.vcReplacements = vcReplacements;
     }
 
     public Collection<Element> getExtractedDiagramElements() {
@@ -349,7 +340,7 @@ public abstract class AbstractSBVRExtractor {
         SBVRExpressionModel candidate = new SBVRExpressionModel();
         candidate.addGeneralConcept(name, false);
         candidate.setAuto(true);
-        SourceEntry source = new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el)));
+        MagicDrawSourceEntry source = new MagicDrawSourceEntry(Collections.singletonList(el));
         gc_candidates.add(source, candidate);
         if (setAuto)
             gc_candidates.setAutomaticExtraction(source);
@@ -427,8 +418,7 @@ public abstract class AbstractSBVRExtractor {
                     candidate.addUnidentifiedText(uc);
             }
             candidate.setAuto(true);
-            SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(actor, action)),
-                    Arrays.asList(getProperName(actor), getProperName(action)));
+            MagicDrawSourceEntry source = new MagicDrawSourceEntry(new ArrayList<Object>(Arrays.asList(actor, action)));
             vc_candidates.add(source, candidate);
             vc_candidates.setAutomaticExtraction(source);
         }
@@ -437,7 +427,6 @@ public abstract class AbstractSBVRExtractor {
     protected void createVerbConceptFromCondition(Element condEl, String condition) {
         if (condition == null)
             return;
-        String name = getProperName(condEl);
         List<String> idgcs = new ArrayList<>();
         String gcand = containsGCCandidate(condition);
         if (gcand != null)
@@ -469,12 +458,11 @@ public abstract class AbstractSBVRExtractor {
                             .addUnidentifiedText(condition.substring(gc2.length() + 1, condition.length() - gc1.length()))
                             .addIdentifiedExpression(gcExpr1);
             }
-            vc_candidates.add(new SourceEntry(Collections.singletonList(condEl), Collections.singletonList(name)), candidate);
+            vc_candidates.add(new MagicDrawSourceEntry(Collections.singletonList(condEl)), candidate);
         }
     }
 
     protected void createCharacteristic(Element subject, Element characteristic) {
-        Map<String, SBVRExpressionModel> map = gc_candidates.getListMap();
         String subj = extractElementText(subject);
         String char_ = extractElementText(characteristic);
         if (subj == null || char_ == null)
@@ -485,8 +473,7 @@ public abstract class AbstractSBVRExtractor {
         SBVRExpressionModel candidate = new SBVRExpressionModel();
         candidate.addIdentifiedExpression(first).addVerbConcept("is " + char_, true);
         candidate.setAuto(true);
-        SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(subject, characteristic)),
-                Arrays.asList(getProperName(subject), getProperName(characteristic)));
+        MagicDrawSourceEntry source = new MagicDrawSourceEntry(new ArrayList<Object>(Arrays.asList(subject, characteristic)));
         vc_candidates.add(source, candidate);
         vc_candidates.setAutomaticExtraction(source);
     }

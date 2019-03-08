@@ -52,7 +52,6 @@ import org.ktu.model2sbvr.models.SBVRExpressionModel;
 import org.ktu.model2sbvr.models.SBVRExpressionModel.Conditional;
 import org.ktu.model2sbvr.models.SBVRExpressionModel.Conjunction;
 import org.ktu.model2sbvr.models.SBVRExpressionModel.RuleType;
-import org.ktu.model2sbvr.models.SourceEntry;
 
 /**
  * @author Paulius Danenas, 2019
@@ -492,9 +491,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             else if (isSequenceFlow(el)) {
                 String condition = getCondition((ActivityEdge) el);
                 if (condition != null)
-                    gc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(condition)));
+                    gc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
             } else if ((isStartEventElement(el) || isEndEventElement(el)) && extractElementText(el) != null)
-                gc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
+                gc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
             else if (isDataObject(el) || isDataStore(el)) {
                 Collection<State> states = ((CentralBufferNode) el).getInState();
                 if (!states.isEmpty())
@@ -513,7 +512,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                         createGeneralConcept(el, extractElementText(el), false);
             } else if (el.getClassType().equals(Comment.class))
                 if (extractElementText(el) != null)
-                    gc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
+                    gc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
         }
     }
 
@@ -534,7 +533,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 for (State state : ((CentralBufferNode) el).getInState())
                     createCharacteristic(el, state);
             else if (el.getClassType().equals(Comment.class) && extractElementText(el) != null && !strictOnly)
-                vc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
+                vc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
         }
     }
 
@@ -644,8 +643,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                         candidate = candidate.addRuleConditional(Conditional.IF);
                         candidate = addCondition(candidate, incomingCondition);
                     }
-                    SourceEntry source = new SourceEntry(Arrays.asList(part, after, part, before),
-                            Arrays.asList(getProperName(part), getProperName(after), getProperName(part), getProperName(before)));
+                    MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(part, after, part, before));
                     br_candidates.add(source, candidate);
                     br_candidates.setAutomaticExtraction(source);
                 }
@@ -694,7 +692,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             if (entry == null)
                 return;
             candidate.addIdentifiedExpression((SBVRExpressionModel) entry[0]);
-            SourceEntry source = new SourceEntry((List<Object>)entry[1], (List<String>)entry[2]);
+            MagicDrawSourceEntry source = new MagicDrawSourceEntry((List<Object>)entry[1]);
             br_candidates.add(source, candidate);
             br_candidates.setAutomaticExtraction(source);
         }
@@ -785,8 +783,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                                 model.addConjunction(Conjunction.AND).addRuleConditional(Conditional.IF);
                                 model = addCondition(model, outgoingCondition);
                             }
-                            SourceEntry source = new SourceEntry(Arrays.asList(edgeOut.getTarget(), edgeInc.getSource(), subjectInc.getKey()),
-                                    Arrays.asList(getProperName(edgeOut.getTarget()), getProperName(subjectInc.getKey()), getProperName(edgeInc.getSource())));
+                            MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(edgeOut.getTarget(), edgeInc.getSource(), subjectInc.getKey()));
                             br_candidates.add(source, model);
                             br_candidates.setAutomaticExtraction(source);
                         }
@@ -834,10 +831,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                         srcObj.add(part);
                         srcObj.add(outTask);
                     }
-                    List<String> names = new ArrayList<>(Arrays.asList(getProperName(part), getProperName(outgoingTask), null));
-                    for (ActivityNode incTask : incomingTasks)
-                        names.addAll(Arrays.asList(getProperName(part), getProperName(incTask)));
-                    SourceEntry source = new SourceEntry(new ArrayList<Object>(srcObj), names);
+                    MagicDrawSourceEntry source = new MagicDrawSourceEntry(new ArrayList<>(srcObj));
                     br_candidates.add(source, candidate);
                     br_candidates.setAutomaticExtraction(source);
                 }
@@ -872,8 +866,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     candidate = addCondition(candidate, getProperName(boundary))
                             .addRuleConditional(Conditional.WHEN);
                     candidate = addActivity(candidate, (ActivityNode) el, subject.getValue());
-                    SourceEntry source = new SourceEntry(Arrays.asList(subject.getKey(), el, boundary),
-                            Arrays.asList(getProperName(subject.getKey()), getProperName(el), getProperName(boundary)));
+                    MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(subject.getKey(), el, boundary));
                     br_candidates.add(source, candidate);
                     br_candidates.setAutomaticExtraction(source);
 
@@ -888,8 +881,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                                     .addRuleConditional(Conditional.AFTER);
                             candidate = addActivity(candidate, (ActivityNode) el, subject.getValue())
                                     .addUnidentifiedText(")");
-                            source = new SourceEntry(Arrays.asList(subject.getKey(), el, boundary, outTask),
-                                    Arrays.asList(getProperName(subject.getKey()), getProperName(el), getProperName(boundary), getProperName(outTask)));
+                            source = new MagicDrawSourceEntry(Arrays.asList(subject.getKey(), el, boundary, outTask));
                             br_candidates.add(source, candidate);
                             br_candidates.setAutomaticExtraction(source);
                         }
@@ -900,8 +892,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                         candidate = addActivity(candidate, (ActivityNode) el, subject.getValue())
                                 .addRuleConditional(Conditional.AFTER);
                         candidate = addCondition(candidate, getProperName(boundary));
-                        source = new SourceEntry(Arrays.asList(subject.getKey(), el, boundary),
-                                Arrays.asList(getProperName(subject.getKey()), getProperName(el), getProperName(boundary)));
+                        source = new MagicDrawSourceEntry(Arrays.asList(subject.getKey(), el, boundary));
                         br_candidates.add(source, candidate);
                         br_candidates.setAutomaticExtraction(source);
                     }
@@ -1009,12 +1000,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 List<Object> srcElements = new ArrayList<>(dataObjects);
                 srcElements.add(taskSubject.getKey());
                 srcElements.add(taskElement);
-                List<String> names = new ArrayList<>();
-                for (Element dataObject : dataObjects)
-                    names.add(getProperName(dataObject));
-                names.add(getProperName(taskSubject.getKey()));
-                names.add(getProperName(taskElement));
-                SourceEntry source = new SourceEntry(srcElements, names);
+                MagicDrawSourceEntry source = new MagicDrawSourceEntry(srcElements);
                 br_candidates.add(source, candidate);
                 br_candidates.setAutomaticExtraction(source);
             }
@@ -1069,12 +1055,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             srcElements.add(taskElement);
             srcElements.add(taskSubject.getKey());
             srcElements.addAll(dataObjects);
-            List<String> names = new ArrayList<>();
-            names.add(getProperName(taskSubject.getKey()));
-            names.add(getProperName(taskElement));
-            for (Element dataObject: dataObjects)
-                names.add(getProperName(dataObject));
-            SourceEntry source = new SourceEntry(srcElements, names);
+            MagicDrawSourceEntry source = new MagicDrawSourceEntry(srcElements);
             br_candidates.add(source, candidate);
             br_candidates.setAutomaticExtraction(source);
         }
@@ -1153,12 +1134,11 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             source.add(task1);
         if (task2 != null)
             source.add(task2);
-        List<String> names = new ArrayList<>(Arrays.asList(getProperName(subject1), getProperName(convObj), getProperName(subject2)));
         if (task1 != null)
             source.add(getProperName(task1));
         if (task2 != null)
             source.add(getProperName(task2));
-        SourceEntry src = new SourceEntry(source, names);
+        MagicDrawSourceEntry src = new MagicDrawSourceEntry(source);
         br_candidates.add(src, candidate);
         br_candidates.setAutomaticExtraction(src);
     }
@@ -1193,8 +1173,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 candidate = addGeneralConcept(candidate, subject);
                 candidate = addConveyedObject(candidate, convObj, "receives", "from");
                 candidate = addGeneralConcept(candidate, source);
-                SourceEntry src = new SourceEntry(Arrays.asList(el, subject, source, target),
-                        Arrays.asList(getProperName(el), getProperName(subject), getProperName(source), getProperName(target)));
+                MagicDrawSourceEntry src = new MagicDrawSourceEntry(Arrays.asList(el, subject, source, target));
                 br_candidates.add(src, candidate);
                 br_candidates.setAutomaticExtraction(src);
             }
@@ -1358,11 +1337,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     for (ActivityNode incTask: boundaryNhood.incomingActivities.keySet()) {
                         SBVRExpressionModel ruleCopy = rule.clone();
                         List<Object> sourcesCopy = new ArrayList<>(sources);
-                        List<String> namesCopy = new ArrayList<>(names);
                         ruleCopy.addUnidentifiedText(",").addRuleConditional(Conditional.AFTER);
                         ruleCopy = addActivity(ruleCopy, incTask, subject.getValue());
                         sourcesCopy.addAll(Arrays.asList(incTask, subject.getKey()));
-                        SourceEntry src = new SourceEntry(sourcesCopy, namesCopy);
+                        MagicDrawSourceEntry src = new MagicDrawSourceEntry(sourcesCopy);
                         br_candidates.add(src, ruleCopy);
                         br_candidates.setAutomaticExtraction(src);
                     }

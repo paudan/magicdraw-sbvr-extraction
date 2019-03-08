@@ -1,0 +1,23 @@
+package org.ktu.model2sbvr.extract;
+
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import org.ktu.model2sbvr.models.SourceEntry;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MagicDrawSourceEntry extends SourceEntry {
+
+    public MagicDrawSourceEntry(List<Object> source) {
+        this.source = new ArrayList<>(source);
+        for (Object src: source)
+            addEntry(src);
+    }
+
+    public void addEntry(Object source) {
+        this.source.add(source);
+        if (source instanceof Element)
+            this.sourceText.add(AbstractSBVRExtractor.getProperName((Element)source));
+        else
+            this.sourceText.add(source.toString());
+    }
+}

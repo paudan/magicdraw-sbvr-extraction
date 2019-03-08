@@ -17,13 +17,11 @@ import com.nomagic.uml2.ext.magicdraw.mdusecases.Extend;
 import com.nomagic.uml2.ext.magicdraw.mdusecases.ExtensionPoint;
 import com.nomagic.uml2.ext.magicdraw.mdusecases.Include;
 import com.nomagic.uml2.ext.magicdraw.mdusecases.UseCase;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -31,7 +29,6 @@ import java.util.logging.Logger;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
 import org.ktu.model2sbvr.models.SBVRExpressionModel.Conditional;
 import org.ktu.model2sbvr.models.SBVRModelException;
-import org.ktu.model2sbvr.models.SourceEntry;
 
 public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
 
@@ -55,10 +52,10 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
             } else if (el.getClassType().equals(Extend.class)) {
                 for (ExtensionPoint ep : ((Extend) el).getExtensionLocation())
                     if (extractElementText(ep) != null)
-                        gc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(ep), Collections.singletonList(getProperName(ep))));
+                        gc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(ep)));
             } else if (el.getClassType().equals(Comment.class))
                 if (extractElementText(el) != null)
-                    gc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
+                    gc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
         }
     }
 
@@ -85,7 +82,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                     createVerbConceptFromAction(actor, (UseCase) uc);
                 // Association condition may be embedded in Association name
                 if (extractElementText(el) != null)
-                    vc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
+                    vc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
             } else if (el.getClassType().equals(Generalization.class) && !extractedAuto) {
                 Classifier general = ((Generalization) el).getGeneral();
                 Classifier specific = ((Generalization) el).getSpecific();
@@ -103,14 +100,13 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                         candidate.addIdentifiedExpression(first).addVerbConcept("generalizes", true)
                                 .addIdentifiedExpression(second);
                         candidate.setAuto(true);
-                        List<String> concept = Arrays.asList(getProperName(general), getProperName(specific));
-                        SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(general, specific, el)), concept);
+                        MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(general, specific, el));
                         vc_candidates.add(source, candidate);
                         vc_candidates.setAutomaticExtraction(source);
                     }
                 }
             } else if (el.getClassType().equals(Comment.class) && extractElementText(el) != null)
-                vc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
+                vc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
             else if (el instanceof UseCase && (!extractedAuto || (extractedAuto && extractedStrict))) {
                 if (extractElementText(el) != null) {
                     // Extract associations from UseCase elements which are not directly associated with Actors
@@ -140,12 +136,12 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                         // Use case without associations is executed by the system
                         createVerbConceptFromAction(uc.getOwner(), uc);
                     // Also add UseCases for possible manual extraction
-                    vc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
+                    vc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
                 }
             } else if (el.getClassType().equals(Extend.class))
                 for (ExtensionPoint ep : ((Extend) el).getExtensionLocation()) {
                     createVerbConceptFromCondition(ep, extractElementText(ep));
-                    vc_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
+                    vc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
                 }
         }
     }
@@ -228,8 +224,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                             else
                                 candidate.addUnidentifiedText(epname);
                             candidate.setAuto(false);
-                            SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(ep, aai, extension)), 
-                                    Arrays.asList(getProperName(ep), getProperName(aai), getProperName(extension)));
+                            MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(ep, aai, extension));
                             br_candidates.add(source, candidate);
                             br_candidates.setManualExtraction(source);
                         }
@@ -250,13 +245,12 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                     }
                 if (actor_found && uc_found && extractElementText(actor) != null
                         && extractElementText(uc) != null && extractElementText(el) != null) {
-                    SourceEntry entry = new SourceEntry(Arrays.asList(actor, uc, el),
-                            Arrays.asList(getProperName(actor), getProperName(uc), getProperName(el)));
+                    MagicDrawSourceEntry entry = new MagicDrawSourceEntry(Arrays.asList(actor, uc, el));
                     br_candidates.setManualExtraction(entry);
                 }
             } else if (el.getClassType().equals(Comment.class))
                 if (extractElementText(el) != null)
-                    br_candidates.setManualExtraction(new SourceEntry(Collections.singletonList(el), Collections.singletonList(getProperName(el))));
+                    br_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
         }
     }
 
@@ -295,7 +289,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                     SBVRExpressionModel candidate = new SBVRExpressionModel();
                     candidate.addGeneralConcept(String.format("association_condition '%s'", condition), false);
                     candidate.setModelVocabularyConcept(true);
-                    SourceEntry source = new SourceEntry(Collections.singletonList(cons), Collections.singletonList(condition));
+                    MagicDrawSourceEntry source = new MagicDrawSourceEntry(Collections.singletonList(cons));
                     gc_candidates.add(source, candidate);
                     gc_candidates.setAutomaticExtraction(source);
                     candidate.setAuto(true);
@@ -333,8 +327,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                     synonym.setAuto(true);
                     synonym.setModelVocabularyConcept(true);
                     candidate.addSynonymousForm(synonym);
-                    SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(extended, extension, ep)), 
-                            Arrays.asList(extendedName, extensionName, epName));
+                    MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(extended, extension, ep));
                     vc_candidates.add(source, candidate);
                     vc_candidates.setAutomaticExtraction(source);
                 }
@@ -368,7 +361,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
         } catch (SBVRModelException ex) {
             Logger.getLogger(UseCaseSBVRExtractor.class.getName()).log(Level.SEVERE, null, ex);
         }
-        SourceEntry source = new SourceEntry(Collections.singletonList(el), Collections.singletonList(name));
+        MagicDrawSourceEntry source = new MagicDrawSourceEntry(Collections.singletonList(el));
         gc_candidates.add(source, candidate);
         gc_candidates.setAutomaticExtraction(source);
         return name;
@@ -383,8 +376,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                 .addIdentifiedExpression(map.get(e2name));
         candidate.setAuto(true);
         candidate.setModelVocabularyConcept(true);
-        SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(el1, el2)), 
-                Arrays.asList(e1name, e2name));
+        MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(el1, el2));
         vc_candidates.add(source, candidate);
         vc_candidates.setAutomaticExtraction(source);
         // Add opposite form of relationship as synonymous form
@@ -427,8 +419,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
             else if (unary2 != null)
                 candidate.addIdentifiedExpression(unary2);
             candidate.setAuto(true);
-            SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(ai, including, aai, included)), 
-                    Arrays.asList(getProperName(ai), getProperName(including), getProperName(aai), getProperName(included)));
+            MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(ai, including, aai, included));
             br_candidates.add(source, candidate);
             br_candidates.setAutomaticExtraction(source);
         }
@@ -459,8 +450,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
             else if (unary2 != null)
                 candidate.addIdentifiedExpression(unary2);
             candidate.setAuto(true);
-            SourceEntry source = new SourceEntry(new ArrayList<Object>(Arrays.asList(ai, extended, aai, extension)), 
-                    Arrays.asList(getProperName(ai), getProperName(extended), getProperName(aai), getProperName(extension)));
+            MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(ai, extended, aai, extension));
             br_candidates.add(source, candidate);
             br_candidates.setAutomaticExtraction(source);
         }

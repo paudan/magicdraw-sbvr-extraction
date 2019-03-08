@@ -6,8 +6,8 @@ import java.util.List;
 
 public class SourceEntry implements Cloneable {
 
-    private List<Object> source;
-    private List<String> sourceText;
+    protected List<Object> source;
+    protected List<String> sourceText;
 
     public SourceEntry() {
         this.source = new ArrayList<>();
