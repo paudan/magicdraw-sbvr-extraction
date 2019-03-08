@@ -297,15 +297,13 @@ public abstract class AbstractSBVRExtractor {
             Map<String, SimpleImmutableEntry<String, SBVRExpressionModel>> replacements) {
         Map<String, SBVRExpressionModel> map = candidates.getListMap();
         Set<String> gclist = map.keySet();
-        if (cand != null)
-            if (!gclist.contains(cand) && replacements.containsKey(cand))
-                return replacements.get(cand).getValue();
-            else if (gclist.contains(cand))
-                return map.get(cand);
-            else
-                return null;
-        else
+        if (cand == null)
             return null;
+        if (!gclist.contains(cand) && replacements.containsKey(cand))
+            return replacements.get(cand).getValue();
+        else if (gclist.contains(cand))
+            return map.get(cand);
+        return null;
     }
 
     protected SBVRExpressionModel getGeneralConcept(String cand) {

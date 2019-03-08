@@ -492,7 +492,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 String condition = getCondition((ActivityEdge) el);
                 if (condition != null)
                     gc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
-            } else if ((isStartEventElement(el) || isEndEventElement(el)) && extractElementText(el) != null)
+            } else if (isEventElement(el) && extractElementText(el) != null)
                 gc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
             else if (isDataObject(el) || isDataStore(el)) {
                 Collection<State> states = ((CentralBufferNode) el).getInState();
@@ -525,9 +525,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 Map<Element, String> subjects = getSubjectNames(el);
                 for (Entry<Element, String> subject: subjects.entrySet())
                     createVerbConceptFromAction(subject.getKey(), el);
-            } else if (isStartEventElement(el) || isEndEventElement(el) && !strictOnly)
-                createVerbConceptFromCondition(el, getProperName(el));
-            else if (isSequenceFlow(el))
+            } else if (isEventElement(el) && !strictOnly) {
+                createVerbConceptFromCondition(el, extractElementText(el));
+                vc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
+            } else if (isSequenceFlow(el) && !strictOnly)
                 createVerbConceptFromCondition(el, getCondition((ActivityEdge) el));
             else if (isDataObject(el) || isDataStore(el))
                 for (State state : ((CentralBufferNode) el).getInState())
