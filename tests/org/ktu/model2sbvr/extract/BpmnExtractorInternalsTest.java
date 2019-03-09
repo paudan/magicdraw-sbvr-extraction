@@ -113,7 +113,7 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
                         assertEquals(gatewayName, gateway.getHumanName());
 
                         Conjunction conjunction = getGatewayConjunction(extractor, gateway);
-                        Object[] results = extractor.getRuleWithGateways(gateway, conjunction, null);
+                        Object[] results = extractor.getRuleWithGateways(gateway, conjunction);
                         System.out.println(results[0]);
                     }
                 break;
@@ -226,4 +226,6 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
         //testProcessPartialRules("TestModel4", "Exclusive Gateway Excl1", "Inclusive Gateway Inc1");
         testProcessPartialRules("TestModel1", "Exclusive Gateway Exclusive Gateway2", "Inclusive Gateway Inclusive Gateway2");
     }
+
+
 }

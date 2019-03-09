@@ -63,8 +63,8 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
         Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
         assertEquals(5, vcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        assertEquals(2, brObjects.size());
         printExtractorOutput(brObjects);
+        assertEquals(4, brObjects.size());
     }
 
     @Test
@@ -75,8 +75,8 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
         Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
         assertEquals(5, vcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        assertEquals(2, brObjects.size());
         printExtractorOutput(brObjects);
+        assertEquals(4, brObjects.size());
     }
 
     @Test
