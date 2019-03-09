@@ -8,18 +8,13 @@ import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.Activit
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import org.junit.Test;
-import org.ktu.model2sbvr.extract.BpmnSBVRExtractor.ActivityNeighborhood;
 import org.ktu.model2sbvr.extract.BpmnSBVRExtractor.GatewayNeighborhood;
-import org.ktu.model2sbvr.models.SBVRExpressionModel;
-import org.ktu.model2sbvr.models.SBVRExpressionModel.Conditional;
 import org.ktu.model2sbvr.models.SBVRExpressionModel.Conjunction;
-import org.ktu.model2sbvr.models.SBVRExpressionModel.RuleType;
 import org.ktu.model2sbvr.tests.ExtractionTestCase;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -230,54 +225,5 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
     public void testPartialRuleProcessing() {
         //testProcessPartialRules("TestModel4", "Exclusive Gateway Excl1", "Inclusive Gateway Inc1");
         testProcessPartialRules("TestModel1", "Exclusive Gateway Exclusive Gateway2", "Inclusive Gateway Inclusive Gateway2");
-    }
-
-    private void extractRulesWithBoundary(String modelName, String taskName, String subject) {
-        BpmnSBVRExtractor extractor = getBpmnExtractor(modelName);
-        Element taskElement = getElementByName(extractor, taskName);
-        assertNotNull(taskElement);
-        ActivityNode node = (ActivityNode) taskElement;
-        for (ActivityEdge edge: node.getIncoming())
-            if (extractor.isGatewayElement(edge.getSource())) {
-                ControlNode gateway = (ControlNode) edge.getSource();
-                GatewayNeighborhood nhood = extractor.gatewayNeighborhoods.get(gateway);
-                assertNotNull(nhood);
-                Set<ControlNode> boundaryGateways = new HashSet<>();
-                getAllBoundaryGatewaysLeft(nhood, boundaryGateways);
-                assertEquals(1, boundaryGateways.size());
-                for (ControlNode boundaryGate: boundaryGateways) {
-                    SBVRExpressionModel rule = new SBVRExpressionModel()
-                            .addRuleExpression(RuleType.OBLIGATION);
-                    rule = extractor.addActivity(rule, node, subject);
-                    Map<ActivityEdge, String> conditionsOut = nhood.outgoingActivities.get(taskElement).incomingConditions.get(gateway);
-                    if (conditionsOut != null) {
-                        rule.addRuleConditional(Conditional.IF);
-                        rule = extractor.addMultipleConditions(rule, conditionsOut, null, null);
-                    }
-                    GatewayNeighborhood boundaryNhood = extractor.gatewayNeighborhoods2.get(boundaryGate);
-                    assertNotNull(boundaryNhood);
-                    if (boundaryGate.equals(gateway))
-                        continue;   // Apply Rule T3
-                    extractor.createPartialRules(boundaryNhood, gateway, taskElement);
-                    rule.addIdentifiedExpression(boundaryNhood.partialRule);
-                    for (ActivityNode incTask: boundaryNhood.incomingActivities.keySet()) {
-                        SBVRExpressionModel ruleCopy = rule.clone();
-                        ruleCopy.addUnidentifiedText(",").addRuleConditional(Conditional.AFTER);
-                        ruleCopy = extractor.addActivity(ruleCopy, incTask, subject);
-                        System.out.println("Final extracted: " + ruleCopy);
-                    }
-                }
-            }
-    }
-
-
-    @Test
-    public void testRuleExtractionFromBoundary() {
-        extractRulesWithBoundary("TestModel1", "Task process order", "provider");
-    }
-
-    @Test
-    public void testRuleExtractionFromBoundary2() {
-        extractRulesWithBoundary("TestModel2", "Task a2", "participant");
     }
 }

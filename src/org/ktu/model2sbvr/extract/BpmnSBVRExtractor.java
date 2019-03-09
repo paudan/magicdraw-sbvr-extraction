@@ -75,7 +75,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
     Map<ControlNode, GatewayNeighborhood> gatewayNeighborhoods, gatewayNeighborhoods2;
 
-    class ActivityNeighborhood {
+    class ActivityNodeNeighborhood {
         ActivityNode taskNode;
         String taskText;
         Map<Element, String> taskSubjects;
@@ -84,7 +84,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         private Map<ActivityNode, Integer> nullCountIncoming, nullCountOutgoing;
         int nullsTotalIncoming, nullsTotalOutgoing;
 
-        private ActivityNeighborhood(ActivityNode task) {
+        private ActivityNodeNeighborhood(ActivityNode task) {
             this.taskNode = task;
             taskText = extractElementText(task);
             taskSubjects = getSubjectNames(task);
@@ -186,7 +186,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
     class GatewayNeighborhood {
         ControlNode gatewayNode;
-        Map<ActivityNode, ActivityNeighborhood> incomingActivities, outgoingActivities;
+        Map<ActivityNode, ActivityNodeNeighborhood> incomingActivities, outgoingActivities;
         Map<ActivityNode, Map<ActivityEdge, String>> incomingConditions, outgoingConditions;
         private Map<ActivityNode, Integer> nullCountIncoming, nullCountOutgoing;
         Map<ControlNode, GatewayNeighborhood> incomingGateways, outgoingGateways;
@@ -211,7 +211,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             for (ActivityEdge edge : gatewayNode.getIncoming()) {
                 addIncomingCondition(edge, edge.getSource());
                 if (isActivityElement(edge.getSource())) {
-                    ActivityNeighborhood taskTuple = new ActivityNeighborhood(edge.getSource());
+                    ActivityNodeNeighborhood taskTuple = new ActivityNodeNeighborhood(edge.getSource());
                     incomingActivities.put(taskTuple.taskNode, taskTuple);
                 } else if (isGatewayElement(edge.getSource())) {
                     ControlNode node = (ControlNode) edge.getSource();
@@ -225,7 +225,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             for (ActivityEdge edge : gatewayNode.getOutgoing()) {
                 addOutgoingCondition(edge, edge.getTarget());
                 if (isActivityElement(edge.getTarget())) {
-                    ActivityNeighborhood taskTuple = new ActivityNeighborhood(edge.getTarget());
+                    ActivityNodeNeighborhood taskTuple = new ActivityNodeNeighborhood(edge.getTarget());
                     outgoingActivities.put(taskTuple.taskNode, taskTuple);
                 } else if (isGatewayElement(edge.getTarget())) {
                     ControlNode node = (ControlNode) edge.getTarget();
@@ -277,12 +277,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             sb.append("Gateway element:").append(gatewayNode.getHumanName());
             if (!incomingActivities.isEmpty()) {
                 sb.append("\nIncoming activity nodes:\n");
-                for (ActivityNeighborhood taskNode: incomingActivities.values())
+                for (ActivityNodeNeighborhood taskNode: incomingActivities.values())
                     sb.append("\t").append(formatPadding(taskNode.toString())).append("\n\n");
             }
             if (!outgoingActivities.isEmpty()) {
                 sb.append("\nOutgoing activity nodes:\n");
-                for (ActivityNeighborhood taskNode: outgoingActivities.values())
+                for (ActivityNodeNeighborhood taskNode: outgoingActivities.values())
                     sb.append("\t").append(formatPadding(taskNode.toString())).append("\n\n");
             }
             if (!incomingGateways.isEmpty()) {
@@ -578,7 +578,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return names;
     }
 
-    SBVRExpressionModel addActivity(SBVRExpressionModel model, ActivityNode activity, String subject) {
+    private SBVRExpressionModel addActivity(SBVRExpressionModel model, ActivityNode activity, String subject) {
         if (activity == null)
             return model;
         String outTaskText = extractElementText(activity);
@@ -589,7 +589,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return binary2 != null ? model.addIdentifiedExpression(binary2) : model.addUnidentifiedText(verbText);
     }
 
-    SBVRExpressionModel addCondition(SBVRExpressionModel model, String condition) {
+    private SBVRExpressionModel addCondition(SBVRExpressionModel model, String condition) {
         if (condition == null)
             return model;
         condition = condition.replaceAll("\n", " ").replaceAll("_", " ").replaceAll("  ", " ").trim();
@@ -597,7 +597,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return binary2 != null ? model.addIdentifiedExpression(binary2) : model.addUnidentifiedText(condition);
     }
 
-    SBVRExpressionModel addMultipleConditions(SBVRExpressionModel model, Map<ActivityEdge, String> conditions,
+    private SBVRExpressionModel addMultipleConditions(SBVRExpressionModel model, Map<ActivityEdge, String> conditions,
                                                       List<Object> objects, List<String> names) {
         if (conditions == null)
             return model;
@@ -699,13 +699,13 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         }
     }
 
-    private SBVRExpressionModel addTasksWithConditions(SBVRExpressionModel candidate, Map<ActivityNode, ActivityNeighborhood> tasksData,
+    private SBVRExpressionModel addTasksWithConditions(SBVRExpressionModel candidate, Map<ActivityNode, ActivityNodeNeighborhood> tasksData,
                                                        List<Object> objects, List<String> representations, Conjunction conjunction,
                                                        ActivityNode excluded, ControlNode gate) {
         List<Object> tasksDefault = new ArrayList<>();
         boolean added_first = true;
         boolean rules_added = false;
-        for (Entry<ActivityNode, ActivityNeighborhood> entryOut : tasksData.entrySet()) {
+        for (Entry<ActivityNode, ActivityNodeNeighborhood> entryOut : tasksData.entrySet()) {
             Map<Element, String> subjectsOut = entryOut.getValue().taskSubjects;
             Map<ActivityNode, Map<ActivityEdge, String>> conditionsOut = entryOut.getValue().correctionsIncoming;
             Map<ActivityEdge, String> gateConditions = conditionsOut.get(gate);
@@ -796,12 +796,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
     private void extractRuleT5(Element el) {
         if (isGatewayOfType(el, "ParallelGateway")) {
-            Map<ActivityEdge, ActivityNeighborhood> outgoingElements = new HashMap<>();
+            Map<ActivityEdge, ActivityNodeNeighborhood> outgoingElements = new HashMap<>();
             for (ActivityEdge edge : ((ControlNode) el).getOutgoing()) {
-                ActivityNeighborhood taskTuple = new ActivityNeighborhood(edge.getTarget());
+                ActivityNodeNeighborhood taskTuple = new ActivityNodeNeighborhood(edge.getTarget());
                 outgoingElements.put(edge, taskTuple);
             }
-            for (Entry<ActivityEdge, ActivityNeighborhood> outTaskNode: outgoingElements.entrySet()) {
+            for (Entry<ActivityEdge, ActivityNodeNeighborhood> outTaskNode: outgoingElements.entrySet()) {
                 ActivityNode outgoingTask = outTaskNode.getValue().taskNode;
                 if (!(isTaskElement(outgoingTask) || isEndEventElement(outgoingTask)))
                     continue;
@@ -903,7 +903,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private void extractRuleT7(Element el) {
-        if (isTaskElement(el))
+        if (isActivityElement(el) || isEventElement(el))
             extractTasksWithDataObjects(el, false, "is produced", "is provided to");
         else if (isSequenceFlow(el))
             extractTasksWithAssociationsAndDataObjects(el, false, "is produced", "is provided to");
@@ -1253,7 +1253,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             nhood.partialRuleNames.addAll(gatewayOut.getValue().partialRuleNames);
         }
         // Process outgoing activities
-        for (Entry<ActivityNode, ActivityNeighborhood> activityOut: nhood.outgoingActivities.entrySet()) {
+        for (Entry<ActivityNode, ActivityNodeNeighborhood> activityOut: nhood.outgoingActivities.entrySet()) {
             // Exclude element which was used as the starting point
             if (activityOut.getKey().equals(startedElement))
                 continue;
