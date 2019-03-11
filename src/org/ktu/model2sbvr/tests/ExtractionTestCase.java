@@ -3,17 +3,23 @@ package org.ktu.model2sbvr.tests;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.openapi.uml.SessionManager;
 import com.nomagic.magicdraw.tests.MagicDrawTestCase;
+import com.nomagic.magicdraw.uml.Finder;
+import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import org.ktu.model2sbvr.models.ConceptExtractionEntry;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
 import org.ktu.model2sbvr.models.SourceEntry;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 
 public abstract class ExtractionTestCase extends MagicDrawTestCase {
 
@@ -56,11 +62,36 @@ public abstract class ExtractionTestCase extends MagicDrawTestCase {
         }
     }
 
-    protected List<String> getOutputsAsStrings(Map<SourceEntry, ConceptExtractionEntry> objects) {
-        List<String> outputs = new ArrayList<>();
-        for (Entry<SourceEntry, ConceptExtractionEntry> item: objects.entrySet())
-            for (SBVRExpressionModel sbvr: item.getValue().getCandidates())
-                outputs.add(sbvr.toString());
-        return outputs;
+    protected List<String> getOutputsAsStrings(Map<SourceEntry, ConceptExtractionEntry> objects, boolean outputSources) {
+        List<String> results = new ArrayList<>();
+        for (Entry<SourceEntry, ConceptExtractionEntry> item: objects.entrySet()) {
+            List<String> outputs = new ArrayList<>();
+            for (SBVRExpressionModel sbvr : item.getValue().getCandidates())
+                if (outputSources)
+                    outputs.add(sbvr.toString());
+                else
+                    results.add(sbvr.toString());
+            if (outputSources)
+                results.add("Source: " + String.join(",", item.getKey().getSourceNames()) + " -> output: " + String.join(",", outputs));
+        }
+        return results;
+    }
+
+    protected Element getElementByName(Collection<Element> root, String name, Class class_, String stereotype) {
+        Element element = Finder.byNameRecursively().find(root, class_, name);
+        if (element == null)
+            return element;
+        if (StereotypesHelper.hasStereotype(element, stereotype))
+            return element;
+        return null;
+    }
+
+    protected Element getElementByName(Package root, String name, Class class_, String stereotype) {
+        Element element = Finder.byNameRecursively().find(root, class_, name);
+        if (element == null)
+            return element;
+        if (StereotypesHelper.hasStereotype(element, stereotype))
+            return element;
+        return null;
     }
 }

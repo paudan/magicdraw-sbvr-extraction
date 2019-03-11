@@ -1,8 +1,9 @@
-package org.ktu.model2sbvr.extract;
+package org.ktu.model2sbvr;
 
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
+import org.ktu.model2sbvr.extract.BpmnSBVRExtractor;
 import org.ktu.model2sbvr.tests.ExtractionTestCase;
 import java.util.Collection;
 import java.util.Optional;

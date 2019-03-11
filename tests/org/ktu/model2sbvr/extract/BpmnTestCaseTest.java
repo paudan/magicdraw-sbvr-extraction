@@ -15,6 +15,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import org.junit.Test;
+import org.ktu.model2sbvr.BpmnExtractionTestCase;
 import org.ktu.model2sbvr.PluginUtilities;
 import org.ktu.model2sbvr.models.ConceptExtractionEntry;
 import org.ktu.model2sbvr.models.SourceEntry;

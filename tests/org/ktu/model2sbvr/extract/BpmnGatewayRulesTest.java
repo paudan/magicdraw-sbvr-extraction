@@ -3,9 +3,9 @@ package org.ktu.model2sbvr.extract;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.ktu.model2sbvr.BpmnExtractionTestCase;
 import org.ktu.model2sbvr.models.ConceptExtractionEntry;
 import org.ktu.model2sbvr.models.SourceEntry;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -23,7 +23,7 @@ public class BpmnGatewayRulesTest extends BpmnExtractionTestCase {
         BpmnSBVRExtractor extractor = getExtractor("TestModel1");
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
         printExtractorOutput(brObjects);
-        List<String> outputs = getOutputsAsStrings(brObjects);
+        List<String> outputs = getOutputsAsStrings(brObjects, false);
         String[] expected = {
                 "It is obligatory that provider process order, if provider apply VIP discount, after provider register order",
                 "It is obligatory that provider apply VIP discount if customer is VIP customer, after provider register order",
