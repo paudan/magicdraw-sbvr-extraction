@@ -55,11 +55,21 @@ public class SourceEntry implements Cloneable {
     
     @Override
     public String toString() {
-        StringBuilder str = new StringBuilder();
-        str.append(sourceText.get(0));
-        for (int i = 1; i < sourceText.size(); i++)
-            str.append(", ").append(sourceText.get(i));
-        return str.toString();
+        return String.join(",", sourceText);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SourceEntry))
+            return false;
+        if (obj == this)
+            return true;
+        SourceEntry other = (SourceEntry) obj;
+        return this.source.equals(other.source) && this.sourceText.equals(other.sourceText);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

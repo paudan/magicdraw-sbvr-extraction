@@ -95,5 +95,16 @@ public class ConceptExtractionEntry implements Cloneable {
             copy.mergedWith.put(entry.clone(), mergedWith.get(entry).clone());
         return copy;
     }
-    
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ConceptExtractionEntry))
+            return false;
+        if (obj == this)
+            return true;
+        ConceptExtractionEntry other = (ConceptExtractionEntry) obj;
+        return source.equals(other.source) && this.candidates.equals(other.candidates);
+    }
+
+
 }

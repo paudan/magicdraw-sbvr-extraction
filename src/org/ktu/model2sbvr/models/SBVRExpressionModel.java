@@ -72,17 +72,17 @@ public class SBVRExpressionModel implements Cloneable {
     private List<ExpressionType> types;
     private List<String> expressions;
     private boolean auto;
-    private SBVRExpressionModel general_concept;
-    private List<SBVRExpressionModel> synonymous_forms;
-    private boolean mmVocConcept;               // Is it a SBVR concept which belongs metamodel vocabulary?
+    private SBVRExpressionModel generalConcept;
+    private List<SBVRExpressionModel> synonymousForms;
+    private boolean mmVocConcept;           // Is it a SBVR concept which belongs metamodel vocabulary?
     private List<Boolean> identified;   	// Identified by the user previously
 
     public SBVRExpressionModel() {
         types = new ArrayList<>();
         expressions = new ArrayList<>();
         identified = new ArrayList<>();
-        synonymous_forms = new ArrayList<>();
-        general_concept = null;
+        synonymousForms = new ArrayList<>();
+        generalConcept = null;
         // By default, this SBVRExpressionModel does not represent a model vocabulary concept
         mmVocConcept = false;       
     }
@@ -162,9 +162,9 @@ public class SBVRExpressionModel implements Cloneable {
         expressions = modification.expressions;
         identified = modification.identified;
         auto = modification.auto;
-        general_concept = modification.general_concept;
+        generalConcept = modification.generalConcept;
         mmVocConcept = modification.mmVocConcept;
-        synonymous_forms = modification.synonymous_forms;
+        synonymousForms = modification.synonymousForms;
     }
 
     public boolean isAuto() {
@@ -272,7 +272,7 @@ public class SBVRExpressionModel implements Cloneable {
     }
     
     public SBVRExpressionModel getGeneralConcept() {
-        return general_concept;
+        return generalConcept;
     }
 
     public void setGeneralConcept(SBVRExpressionModel general_concept) throws SBVRModelException {
@@ -280,7 +280,7 @@ public class SBVRExpressionModel implements Cloneable {
             return;
         if (general_concept.getTypes().size() == 1 && 
                 general_concept.getTypes().get(0) == ExpressionType.GENERAL_CONCEPT)
-            this.general_concept = general_concept;
+            this.generalConcept = general_concept;
         else
             throw new SBVRModelException(bundle.getString("SBVRExpressionModel.1"));
     }
@@ -294,13 +294,32 @@ public class SBVRExpressionModel implements Cloneable {
     }
 
     public List<SBVRExpressionModel> getSynonymousForms() {
-        return synonymous_forms;
+        return synonymousForms;
     }
 
     public void addSynonymousForm(SBVRExpressionModel model) {
         if (model != null)
-            synonymous_forms.add(model);
+            synonymousForms.add(model);
     }
-    
-    
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SBVRExpressionModel))
+            return false;
+        if (obj == this)
+            return true;
+        SBVRExpressionModel other = (SBVRExpressionModel) obj;
+        boolean generalConceptCond = false;
+        if ((generalConcept == null && other.generalConcept == null) ||
+             generalConcept != null && other.generalConcept != null && generalConcept.equals(other.generalConcept))
+            generalConceptCond = true;
+        return types.equals(other.types) && expressions.equals(other.expressions) &&
+                identified.equals(other.identified) && generalConceptCond &&
+                synonymousForms.equals(other.synonymousForms);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

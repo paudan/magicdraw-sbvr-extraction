@@ -8,7 +8,7 @@ import java.util.List;
 public class MagicDrawSourceEntry extends SourceEntry {
 
     public MagicDrawSourceEntry(List<Object> source) {
-        this.source = new ArrayList<>(source);
+        this.source = new ArrayList<>();
         for (Object src: source)
             addEntry(src);
     }
