@@ -401,7 +401,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 hasAnyStereotype(el, boundaryStereotypes);
     }
 
-    private boolean isIntermediaryGateway(Element el) {
+    private boolean isIntermediaryEvent(Element el) {
         if (el == null)
             return false;
         return el.getClassType().equals(AcceptEventAction.class) && hasAnyStereotype(el, intermediaryStereotypes);
@@ -416,7 +416,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private boolean isEventElement(Element el) {
-        return isStartEventElement(el) || isBoundaryEvent(el) || isIntermediaryGateway(el) || isEndEventElement(el);
+        return isStartEventElement(el) || isBoundaryEvent(el) || isIntermediaryEvent(el) || isEndEventElement(el);
     }
 
     private boolean isDataObject(Element el) {
@@ -497,7 +497,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 for (Classifier classifier : conveyed)
                     if (classifier.getClassType().equals(com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class.class) && hasAnyStereotype(classifier, "BPMNMessage"))
                         createGeneralConcept(classifier, extractElementText(classifier), true);
-            } else if (isTaskElement(el) && !extractedAuto)
+            } else if (isActivityElement(el) && !extractedAuto)
                 createGeneralConcept(el, extractActionGC(el), false);
             else if (isSequenceFlow(el)) {
                 String condition = getCondition((ActivityEdge) el);
@@ -532,7 +532,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         Iterator<Element> iterator = candidateElements.iterator();
         while (iterator.hasNext()) {
             Element el = iterator.next();
-            if (isTaskElement(el) && el instanceof ActivityNode && !strictOnly) {
+            if (isActivityElement(el) && !strictOnly) {
                 Map<Element, String> subjects = getSubjectNames(el);
                 for (Entry<Element, String> subject: subjects.entrySet())
                     createVerbConceptFromAction(subject.getKey(), el);
@@ -581,10 +581,11 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         if (parts == null)
             return names;
         for (ActivityPartition part : parts) {
-            String subject = extractElementText(part.getRepresents() != null ? part.getRepresents() : part);
-            if (subject == null)
+            Element subject = part.getRepresents() != null ? part.getRepresents() : part;
+            String name = extractElementText(subject);
+            if (name == null)
                 continue;
-            names.put(part, subject);
+            names.put(subject, name);
         }
         return names;
     }
@@ -643,22 +644,27 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         if (isSequenceFlow(el)) {
             ActivityNode before = ((ActivityEdge) el).getSource();
             ActivityNode after = ((ActivityEdge) el).getTarget();
-            if (isTaskElement(before) && isTaskElement(after)) {
-                Map<Element, String> subjects = getSubjectNames(el);
-                for (Entry<Element, String> subject : subjects.entrySet()) {
-                    Element part = subject.getKey();
-                    SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION);
-                    candidate = addActivity(candidate, after, subject.getValue());
-                    candidate = candidate.addRuleConditional(Conditional.AFTER);
-                    candidate = addActivity(candidate, before, subject.getValue());
-                    String incomingCondition = getCondition((ActivityEdge) el);
-                    if (incomingCondition != null) {
-                        candidate = candidate.addRuleConditional(Conditional.IF);
-                        candidate = addCondition(candidate, incomingCondition);
+            if ((isActivityElement(before) || isStartEventElement(before) || isIntermediaryEvent(before)) &&
+                    (isActivityElement(after) || isEndEventElement(after) || isIntermediaryEvent(after))) {
+                Map<Element, String> subjectsFrom = getSubjectNames(before);
+                Map<Element, String> subjectsTo = getSubjectNames(after);
+                for (Entry<Element, String> subjectFrom : subjectsFrom.entrySet()) {
+                    for (Entry<Element, String> subjectTo : subjectsTo.entrySet()) {
+                        SBVRExpressionModel candidate = new SBVRExpressionModel()
+                                .addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION);
+                        candidate = addActivity(candidate, after, subjectTo.getValue());
+                        candidate = candidate.addRuleConditional(Conditional.AFTER);
+                        candidate = addActivity(candidate, before, subjectFrom.getValue());
+                        String incomingCondition = getCondition((ActivityEdge) el);
+                        if (incomingCondition != null) {
+                            candidate = candidate.addRuleConditional(Conditional.IF);
+                            candidate = addCondition(candidate, incomingCondition);
+                        }
+                        MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(subjectTo.getKey(),
+                                after, subjectFrom.getKey(), before));
+                        br_candidates.add(source, candidate);
+                        br_candidates.setAutomaticExtraction(source);
                     }
-                    MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(part, after, part, before));
-                    br_candidates.add(source, candidate);
-                    br_candidates.setAutomaticExtraction(source);
                 }
             }
         }
@@ -825,7 +831,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 Map<Element, String> subjectsInc = getSubjectNames(edgeInc.getSource());
                 for (Entry<Element, String> subjectInc: subjectsInc.entrySet()) {
                     for (ActivityEdge edgeOut: node.getOutgoing()) {
-                        if (isIntermediaryGateway(edgeOut.getTarget())) {
+                        if (isIntermediaryEvent(edgeOut.getTarget())) {
                             SBVRExpressionModel model = new SBVRExpressionModel().addRuleExpression(RuleType.PERMISSION);
                             model = addActivity(model, edgeOut.getTarget(), null);
                             model.addRuleConditional(Conditional.AFTER);
@@ -859,7 +865,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             }
             for (Entry<ActivityEdge, ActivityNodeNeighborhood> outTaskNode: outgoingElements.entrySet()) {
                 ActivityNode outgoingTask = outTaskNode.getValue().activityNode;
-                if (!(isTaskElement(outgoingTask) || isEndEventElement(outgoingTask)))
+                if (!(isActivityElement(outgoingTask) || isEndEventElement(outgoingTask)))
                     continue;
                 String taskText = outTaskNode.getValue().activityText;
                 if (taskText == null)
@@ -883,18 +889,19 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     candidate = candidate.addUnidentifiedText(",");
                     candidate = addActivity(candidate, outTaskNode.getValue().activityNode, subject);
                     candidate.setAuto(true);
-                    List<Element> srcObj = new ArrayList<>(Arrays.asList(part, outTaskNode.getKey(), el));
+                    List<Object> srcObj = new ArrayList<>(Arrays.asList(part, outTaskNode.getKey(), el));
                     for (ActivityNode outTask : incomingTasks) {
                         srcObj.add(part);
                         srcObj.add(outTask);
                     }
-                    MagicDrawSourceEntry source = new MagicDrawSourceEntry(new ArrayList<>(srcObj));
+                    MagicDrawSourceEntry source = new MagicDrawSourceEntry(srcObj);
                     br_candidates.add(source, candidate);
                     br_candidates.setAutomaticExtraction(source);
                 }
             }
         }
     }
+
 
     private void extractRuleT6(Element el) {
         if (isActivityElement(el)) {
@@ -919,9 +926,11 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 }
                 Map<Element, String> activitySubjects = getSubjectNames(el);
                 for (Entry<Element, String> subject: activitySubjects.entrySet()) {
+                    String boundaryText = extractElementText(boundary);
+                    if (boundaryText == null)
+                        continue;
                     SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.PERMISSION);
-                    candidate = addCondition(candidate, getProperName(boundary))
-                            .addRuleConditional(Conditional.WHEN);
+                    candidate = addCondition(candidate, boundaryText).addRuleConditional(Conditional.WHEN);
                     candidate = addActivity(candidate, (ActivityNode) el, subject.getValue());
                     MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(subject.getKey(), el, boundary));
                     br_candidates.add(source, candidate);
@@ -929,7 +938,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
                     for (ActivityEdge outNode: ((AcceptEventAction)boundary).getOutgoing()) {
                         ActivityNode outTask = outNode.getTarget();
-                        if (isTaskElement(outTask)) {
+                        if (isActivityElement(outTask)) {
                             candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
                             candidate = addActivity(candidate, outTask, subject.getValue())
                                     .addRuleConditional(Conditional.AFTER)
@@ -957,6 +966,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             }
         }
     }
+
 
     private void extractRuleT7(Element el) {
         if (isActivityElement(el) || isEventElement(el))
@@ -1144,29 +1154,37 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         if (isLaneElement(source) && isLaneElement(target)) {
             addMessageFlowBetweenLanes(el, convObj, source, null, target, null, "sends", "to", RuleType.PERMISSION);
             addMessageFlowBetweenLanes(el, convObj, target, null, source, null, "receives", "from", RuleType.PERMISSION);
-        } else if (isActivityElement(source) && isLaneElement(target)) {
-            Map<Element, String> subjects = getSubjectNames(source);
+        } else if ((isActivityElement(source) || isEventElement(source)) && isLaneElement(target)) {
+            Set<Element> subjects = new HashSet<>(Collections.singleton(null));
+            if (isActivityElement(source))
+                subjects = getSubjectNames(source).keySet();
             RuleType ruleType = RuleType.PERMISSION;
             if (hasAnyStereotype(source, "SendTask", "ReceiveTask"))
                 ruleType = RuleType.OBLIGATION;
-            for (Element subject: subjects.keySet()) {
+            for (Element subject: subjects) {
                 addMessageFlowBetweenLanes(el, convObj, subject, (ActivityNode) source, target, null, "sends", "to", ruleType);
                 addMessageFlowBetweenLanes(el, convObj, target, null, subject, null, "receives", "from", RuleType.PERMISSION);
             }
-        } else if (isLaneElement(source) && isActivityElement(target)) {
-            Map<Element, String> subjects = getSubjectNames(target);
-            for (Element subject: subjects.keySet())
+        } else if (isLaneElement(source) && (isActivityElement(target) || isEventElement(target))) {
+            Set<Element> subjects = new HashSet<>(Collections.singleton(null));
+            if (isActivityElement(target))
+                subjects = getSubjectNames(target).keySet();
+            for (Element subject: subjects)
                 addMessageFlowBetweenLanes(el, convObj, source, null, subject, (ActivityNode)target, "sends", "to", RuleType.PERMISSION);
             addReceivingNodeEventRules(el, convObj, source, (ActivityNode) target);
-        } else if (isActivityElement(source) && isActivityElement(target)) {
+        } else if ((isActivityElement(source) || isEventElement(source)) && (isActivityElement(target) || isEventElement(target))) {
             RuleType ruleType = RuleType.PERMISSION;
             if (hasAnyStereotype(source, "SendTask", "ReceiveTask"))
                 ruleType = RuleType.OBLIGATION;
-            Map<Element, String> subjects = getSubjectNames(source);
-            Map<Element, String> subjectsT = getSubjectNames(target);
-            for (Element subject: subjects.keySet())
-                for (Element subjectT: subjectsT.keySet())
-                addMessageFlowBetweenLanes(el, convObj, subject, (ActivityNode)source, subjectT, (ActivityNode)target, "sends", "to", ruleType);
+            Set<Element> subjects = new HashSet<>(Collections.singleton(null));
+            if (isActivityElement(source))
+                subjects = getSubjectNames(source).keySet();
+            Set<Element> subjectsT = new HashSet<>(Collections.singleton(null));
+            if (isActivityElement(target))
+                subjectsT = getSubjectNames(target).keySet();
+            for (Element subject: subjects)
+                for (Element subjectT: subjectsT)
+                    addMessageFlowBetweenLanes(el, convObj, subject, (ActivityNode)source, subjectT, (ActivityNode)target, "sends", "to", ruleType);
             addReceivingNodeEventRules(el, convObj, source, (ActivityNode) target);
         }
     }
@@ -1186,15 +1204,16 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             candidate = candidate.addRuleConditional(Conditional.WHEN);
             candidate = addActivity(candidate, task2, objText);
         }
-        List<Object> source = new ArrayList<>(Arrays.asList(subject1, el, subject2));
+        List<Object> source = new ArrayList<>();
+        if (subject1 != null)
+            source.add(subject1);
+        source.add(el);
+        if (subject2 != null)
+            source.add(subject2);
         if (task1 != null)
             source.add(task1);
         if (task2 != null)
             source.add(task2);
-        if (task1 != null)
-            source.add(getProperName(task1));
-        if (task2 != null)
-            source.add(getProperName(task2));
         MagicDrawSourceEntry src = new MagicDrawSourceEntry(source);
         br_candidates.add(src, candidate);
         br_candidates.setAutomaticExtraction(src);
@@ -1213,7 +1232,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     private void addReceivingNodeEventRules(Element el, Element convObj, Element source, ActivityNode target) {
         Map<Element, String> subjects = getSubjectNames(target);
         RuleType ruleType = RuleType.PERMISSION;
-        if (isTaskElement(target)) {
+        if (isActivityElement(target)) {
             if (hasAnyStereotype(target, "SendTask", "ReceiveTask"))
                 ruleType = RuleType.OBLIGATION;
             for (Element subject : subjects.keySet())
@@ -1370,7 +1389,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     if (activityNhood == null)
                         continue;
                     Map<ActivityEdge, String> conditionsOut = activityNhood.incomingConditions.get(gateway);
-                    rule.addIdentifiedExpression(createMultipleConditions(conditionsOut, sources));
+                    SBVRExpressionModel rulePart = createMultipleConditions(conditionsOut, sources);
+                    if (!rulePart.isEmpty())
+                        rule.addRuleConditional(Conditional.IF).addIdentifiedExpression(rulePart);
                     GatewayNeighborhood boundaryNhood = gatewayNeighborhoods2.get(boundaryGate);
                     if (boundaryGate.equals(gateway))
                         continue;   // Apply Rule T3
