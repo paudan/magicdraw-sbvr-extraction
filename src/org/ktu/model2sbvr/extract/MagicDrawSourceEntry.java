@@ -16,7 +16,7 @@ public class MagicDrawSourceEntry extends SourceEntry {
     public void addEntry(Object source) {
         this.source.add(source);
         if (source instanceof Element)
-            this.sourceText.add(AbstractSBVRExtractor.getProperName((Element)source));
+            this.sourceText.add(((Element)source).getHumanName());
         else
             this.sourceText.add(source.toString());
     }
