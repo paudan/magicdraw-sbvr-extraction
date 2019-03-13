@@ -34,7 +34,7 @@ public class BPMNExtractionExperimentTest extends BpmnExtractionTestCase {
             List<String> outputs = new ArrayList<>();
             for (SBVRExpressionModel sbvr: item.getValue().getCandidates())
                 outputs.add(sbvr.toString());
-            writer.write("Source: " + String.join(",", item.getKey().getSourceNames()) + " -> output: " + String.join(",", outputs) + "\n");
+            writer.write("Source: " + String.join(",", item.getKey().getSourceNames()) + " -> output: " + String.join(",", outputs) + "\r\n");
         }
     }
 
