@@ -17,16 +17,21 @@ public abstract class BpmnExtractionTestCase extends ExtractionTestCase {
         return project.getPrimaryModel();
     }
 
-    protected BpmnSBVRExtractor getExtractor(String modelName) {
+    protected DiagramPresentationElement getDiagramElements(String modelName) {
         Package model = getRootPackage();
         assertNotNull(model);
         Collection<DiagramPresentationElement> diagrams = BpmnSBVRExtractor.getBPMNDiagrams(model);
         Optional<DiagramPresentationElement> diagramOpt = diagrams.stream()
                 .filter(n -> n.getName() != null && n.getName().compareToIgnoreCase(modelName) == 0).findFirst();
         assertTrue(diagramOpt.isPresent());
-        DiagramPresentationElement diagram = diagramOpt.get();
+        return diagramOpt.get();
+    }
+
+    protected BpmnSBVRExtractor getExtractor(String modelName) {
+        DiagramPresentationElement diagram = getDiagramElements(modelName);
         BpmnSBVRExtractor extractor = new BpmnSBVRExtractor(diagram, false, false);
         extractor.extractAll();
         return extractor;
     }
+
 }

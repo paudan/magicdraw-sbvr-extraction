@@ -1,19 +1,21 @@
 package org.ktu.model2sbvr.extract;
 
 import com.nomagic.magicdraw.cbm.BPMNHelper;
-import com.nomagic.magicdraw.core.Application;
-import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.uml.Finder;
+import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.actions.mdbasicactions.OpaqueAction;
 import com.nomagic.uml2.ext.magicdraw.actions.mdcompleteactions.AcceptEventAction;
 import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.Activity;
+import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.ActivityPartition;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.EnumerationLiteral;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Property;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.ktu.model2sbvr.BpmnExtractionTestCase;
 import org.ktu.model2sbvr.PluginUtilities;
@@ -21,8 +23,10 @@ import org.ktu.model2sbvr.models.ConceptExtractionEntry;
 import org.ktu.model2sbvr.models.SourceEntry;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -154,8 +158,6 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
 
     @Test
     public void testGetBoundaryEvents_Model5() {
-        Project project = Application.getInstance().getProject();
-        assertNotNull(project);
         Profile profile = PluginUtilities.getBPMNProfile(project);
         Stereotype taskStereotype = StereotypesHelper.getStereotype(project, "Task", profile);
         Package root = getRootPackage();
@@ -169,8 +171,6 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
 
     @Test
     public void testGetStereotypeProperties() {
-        Project project = Application.getInstance().getProject();
-        assertNotNull(project);
         Profile profile = PluginUtilities.getBPMNProfile(project);
         Package root = getRootPackage();
         Element boundary = Finder.byNameRecursively().find(root, AcceptEventAction.class, "e-mail is sent");
@@ -190,5 +190,43 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
         EnumerationLiteral valueCasted = (EnumerationLiteral) value;
         System.out.println(valueCasted.getName());
         System.out.println(valueCasted.getOwnedElement());
+    }
+
+    @Test
+    public void testGetTopResource1() {
+        DiagramPresentationElement diagram1 = getDiagramElements("TestResource");
+        assertNotNull(diagram1);
+        Collection<Element> elements = diagram1.getUsedModelElements();
+        Element taskElement1 = Finder.byName().find(elements, OpaqueAction.class, "Hire developer");
+        assertNotNull(taskElement1);
+        OpaqueAction task1 = (OpaqueAction) taskElement1;
+        Collection<ActivityPartition> partitions = task1.getInPartition();
+        assertEquals(3, partitions.size());
+        Set<ActivityPartition> topPartitions = partitions.stream().filter(n -> !n.hasSubpartition()).collect(Collectors.toSet());
+        assertEquals(1, topPartitions.size());
+        ActivityPartition part = topPartitions.iterator().next();
+        Element subject = part.getRepresents() != null ? part.getRepresents() : part;
+        String name = AbstractSBVRExtractor.extractElementText(subject);
+        assertEquals("Manager", name);
+    }
+
+    @Test
+    public void testGetTopResource2() {
+        DiagramPresentationElement diagram1 = getDiagramElements("TestResource1");
+        assertNotNull(diagram1);
+        Collection<Element> elements = diagram1.getUsedModelElements();
+        Element taskElement1 = Finder.byName().find(elements, OpaqueAction.class, "Hire developer");
+        assertNotNull(taskElement1);
+        OpaqueAction task1 = (OpaqueAction) taskElement1;
+        Collection<ActivityPartition> partitions = task1.getInPartition();
+        assertEquals(5, partitions.size());
+        Set<ActivityPartition> topPartitions = partitions.stream().filter(n -> !n.hasSubpartition()).collect(Collectors.toSet());
+        assertEquals(2, topPartitions.size());
+        Set<String> names = topPartitions.stream().map(part -> {
+            Element subject = part.getRepresents() != null ? part.getRepresents() : part;
+            return AbstractSBVRExtractor.extractElementText(subject);
+        }).collect(Collectors.toSet());
+        String [] outputs = {"Manager", "Developer"};
+        MatcherAssert.assertThat(names, Matchers.containsInAnyOrder(outputs));
     }
 }
