@@ -460,7 +460,7 @@ public abstract class AbstractSBVRExtractor {
         }
     }
 
-    protected void createCharacteristic(Element subject, Element characteristic) {
+    protected void createUnaryVerbConcept(Element subject, Element characteristic) {
         String subj = extractElementText(subject);
         String char_ = extractElementText(characteristic);
         if (subj == null || char_ == null)
@@ -472,6 +472,21 @@ public abstract class AbstractSBVRExtractor {
         candidate.addIdentifiedExpression(first).addVerbConcept("is " + char_, true);
         candidate.setAuto(true);
         MagicDrawSourceEntry source = new MagicDrawSourceEntry(new ArrayList<Object>(Arrays.asList(subject, characteristic)));
+        vc_candidates.add(source, candidate);
+        vc_candidates.setAutomaticExtraction(source);
+    }
+
+    protected void createUnaryVerbConcept(Element subject, String verb) {
+        String subj = extractElementText(subject);
+        if (subj == null || verb == null)
+            return;
+        SBVRExpressionModel first = getGeneralConcept(subj);
+        if (first == null)
+            return;
+        SBVRExpressionModel candidate = new SBVRExpressionModel();
+        candidate.addIdentifiedExpression(first).addVerbConcept(verb, true);
+        candidate.setAuto(true);
+        MagicDrawSourceEntry source = new MagicDrawSourceEntry(Collections.singletonList(subject));
         vc_candidates.add(source, candidate);
         vc_candidates.setAutomaticExtraction(source);
     }

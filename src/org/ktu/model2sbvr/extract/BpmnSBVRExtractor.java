@@ -536,6 +536,8 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 Map<Element, String> subjects = getSubjectNames(el);
                 for (Entry<Element, String> subject: subjects.entrySet())
                     createVerbConceptFromAction(subject.getKey(), el);
+            } else if (isEventElement(el) && hasAnyStereotype(el, "TimerBoundaryEvent", "TimerCatchIntermediateEvent")) {
+                createUnaryVerbConcept(el, "has passed");
             } else if (isEventElement(el) && !strictOnly) {
                 createVerbConceptFromCondition(el, extractElementText(el));
                 vc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
@@ -543,7 +545,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 createVerbConceptFromCondition(el, getCondition((ActivityEdge) el));
             else if (isDataObject(el) || isDataStore(el))
                 for (State state : ((CentralBufferNode) el).getInState())
-                    createCharacteristic(el, state);
+                    createUnaryVerbConcept(el, state);
             else if (el.getClassType().equals(Comment.class) && extractElementText(el) != null && !strictOnly)
                 vc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
         }
@@ -580,6 +582,8 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             parts = ((ActivityEdge) element).getInPartition();
         if (parts == null)
             return names;
+        // Select lowest level partitions as subjects
+        parts = parts.stream().filter(n -> !n.hasSubpartition()).collect(Collectors.toSet());
         for (ActivityPartition part : parts) {
             Element subject = part.getRepresents() != null ? part.getRepresents() : part;
             String name = extractElementText(subject);
@@ -595,6 +599,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             return model;
         String outTaskText = extractElementText(activity);
         String verbText = outTaskText;
+        // Timer events
+        if (isEventElement(activity) && hasAnyStereotype(activity, "TimerBoundaryEvent", "TimerCatchIntermediateEvent"))
+            verbText += " has passed";
         if (!isEventElement(activity))
             verbText = subject + " " + outTaskText;
         SBVRExpressionModel binary2 = getVerbConcept(verbText);
