@@ -561,7 +561,6 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             extractRuleT3(el);
             extractRuleT4(el);
             extractRuleT5(el);
-            extractRuleT5(el);
             extractRuleT6(el);
             extractRuleT7(el);
             extractRuleT8(el);
@@ -697,25 +696,25 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             for (Entry<ActivityNode, ActivityNodeNeighborhood> actOut: tuple.outgoingActivities.entrySet()) {
                 Map<Element, String> subjectsOut = actOut.getValue().activitySubjects;
                 for (Entry<Element, String> subjectOut: subjectsOut.entrySet()) {
+                    if (tuple.incomingActivities.isEmpty())
+                        continue;
                     SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
                     List<Object> objects = new ArrayList<>(Arrays.asList(actOut.getKey(), subjectOut.getKey()));
                     candidate = addActivity(candidate, actOut.getKey(), subjectOut.getValue());
                     candidate.addRuleConditional(Conditional.AFTER);
-                    if (!tuple.incomingActivities.isEmpty()) {
-                        boolean first_added = true;
-                        for (Entry<ActivityNode, ActivityNodeNeighborhood> incNode: tuple.incomingActivities.entrySet()) {
-                            Map<Element, String> subjectsIn = incNode.getValue().activitySubjects;
-                            for (Entry<Element, String> subjectIn: subjectsIn.entrySet()) {
-                                if (!first_added)
-                                    candidate.addConjunction(conjunction);
-                                else
-                                    first_added = false;
-                                candidate = addActivity(candidate, incNode.getKey(), subjectIn.getValue());
-                                objects.add(subjectIn.getKey());
-                                SBVRExpressionModel conditionModel = createMultipleConditions(incNode.getValue().outgoingConditions.get(el), objects);
-                                if (!conditionModel.isEmpty())
-                                    candidate.addRuleConditional(Conditional.IF).addIdentifiedExpression(conditionModel);
-                            }
+                    boolean first_added = true;
+                    for (Entry<ActivityNode, ActivityNodeNeighborhood> incNode: tuple.incomingActivities.entrySet()) {
+                        Map<Element, String> subjectsIn = incNode.getValue().activitySubjects;
+                        for (Entry<Element, String> subjectIn: subjectsIn.entrySet()) {
+                            if (!first_added)
+                                candidate.addConjunction(conjunction);
+                            else
+                                first_added = false;
+                            candidate = addActivity(candidate, incNode.getKey(), subjectIn.getValue());
+                            objects.add(subjectIn.getKey());
+                            SBVRExpressionModel conditionModel = createMultipleConditions(incNode.getValue().outgoingConditions.get(el), objects);
+                            if (!conditionModel.isEmpty())
+                                candidate.addRuleConditional(Conditional.IF).addIdentifiedExpression(conditionModel);
                         }
                     }
                     SBVRExpressionModel conditionModel = createMultipleConditions(actOut.getValue().incomingConditions.get(el), objects);
@@ -866,46 +865,41 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     private void extractRuleT5(Element el) {
         if (!isGatewayOfType(el, "ParallelGateway"))
             return;
-        Map<ActivityEdge, ActivityNodeNeighborhood> outgoingElements = new HashMap<>();
-        for (ActivityEdge edge : ((ControlNode) el).getOutgoing()) {
-            ActivityNodeNeighborhood taskTuple = new ActivityNodeNeighborhood(edge.getTarget());
-            outgoingElements.put(edge, taskTuple);
-        }
-        for (Entry<ActivityEdge, ActivityNodeNeighborhood> outTaskNode: outgoingElements.entrySet()) {
-            ActivityNode outgoingTask = outTaskNode.getValue().activityNode;
-            if (!(isActivityElement(outgoingTask) || isEndEventElement(outgoingTask)))
-                continue;
-            String taskText = outTaskNode.getValue().activityText;
-            if (taskText == null)
-                continue;
-
-            for (Entry<Element, String> entry: outTaskNode.getValue().activitySubjects.entrySet()) {
-                Element part = entry.getKey();
-                String subject = entry.getValue();
-                SBVRExpressionModel candidate = new SBVRExpressionModel()
-                        .addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION)
-                        .addUnidentifiedText(",")
-                        .addRuleConditional(Conditional.AFTER);
-                boolean added_first = true;
-                Set<ActivityNode> incomingTasks = outTaskNode.getValue().incomingConditions.keySet();
-                for (ActivityNode outTask : incomingTasks) {
-                    if (!added_first)
-                        candidate = candidate.addAndExpression();
-                    else
-                        added_first = false;
-                    candidate = addActivity(candidate, outTask, subject);
+        GatewayNeighborhood tuple = gatewayNeighborhoods.get(el);
+        if (tuple.incomingActivities.isEmpty() && tuple.outgoingActivities.isEmpty())
+            return;
+        if (!tuple.outgoingActivities.isEmpty()) {
+            for (Entry<ActivityNode, ActivityNodeNeighborhood> actOut: tuple.outgoingActivities.entrySet()) {
+                Map<Element, String> subjectsOut = actOut.getValue().activitySubjects;
+                for (Entry<Element, String> subjectOut: subjectsOut.entrySet()) {
+                    if (tuple.incomingActivities.isEmpty())
+                        continue;
+                    SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
+                    List<Object> objects = new ArrayList<>(Arrays.asList(actOut.getKey(), subjectOut.getKey()));
+                    candidate = addActivity(candidate, actOut.getKey(), subjectOut.getValue());
+                    SBVRExpressionModel conditionModel = createMultipleConditions(actOut.getValue().incomingConditions.get(el), objects);
+                    if (!conditionModel.isEmpty())
+                        candidate.addRuleConditional(Conditional.IF).addIdentifiedExpression(conditionModel);
+                    candidate.addRuleConditional(Conditional.AFTER);
+                    boolean first_added = true;
+                    for (Entry<ActivityNode, ActivityNodeNeighborhood> incNode: tuple.incomingActivities.entrySet()) {
+                        Map<Element, String> subjectsIn = incNode.getValue().activitySubjects;
+                        for (Entry<Element, String> subjectIn: subjectsIn.entrySet()) {
+                            if (!first_added)
+                                candidate.addConjunction(Conjunction.AND);
+                            else
+                                first_added = false;
+                            candidate = addActivity(candidate, incNode.getKey(), subjectIn.getValue());
+                            objects.addAll(Arrays.asList(subjectIn.getKey(), incNode.getKey()));
+                            conditionModel = createMultipleConditions(incNode.getValue().outgoingConditions.get(el), objects);
+                            if (!conditionModel.isEmpty())
+                                candidate.addRuleConditional(Conditional.IF).addIdentifiedExpression(conditionModel);
+                        }
+                    }
+                    MagicDrawSourceEntry source = new MagicDrawSourceEntry(objects);
+                    br_candidates.add(source, candidate);
+                    br_candidates.setAutomaticExtraction(source);
                 }
-                candidate = candidate.addUnidentifiedText(",");
-                candidate = addActivity(candidate, outTaskNode.getValue().activityNode, subject);
-                candidate.setAuto(true);
-                List<Object> srcObj = new ArrayList<>(Arrays.asList(part, outTaskNode.getKey(), el));
-                for (ActivityNode outTask : incomingTasks) {
-                    srcObj.add(part);
-                    srcObj.add(outTask);
-                }
-                MagicDrawSourceEntry source = new MagicDrawSourceEntry(srcObj);
-                br_candidates.add(source, candidate);
-                br_candidates.setAutomaticExtraction(source);
             }
         }
     }
