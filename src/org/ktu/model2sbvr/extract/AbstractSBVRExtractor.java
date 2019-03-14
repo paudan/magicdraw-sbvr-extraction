@@ -503,7 +503,9 @@ public abstract class AbstractSBVRExtractor {
             String symbol = express.getSymbol();
             return symbol != null ? symbol : getProperName(express);
         } else if (spec instanceof LiteralString) {
-            return ((LiteralString)spec).getValue();
+            String value = ((LiteralString)spec).getValue();
+            if (value != null)
+                return value;
         }
         return getProperName(spec);
     }

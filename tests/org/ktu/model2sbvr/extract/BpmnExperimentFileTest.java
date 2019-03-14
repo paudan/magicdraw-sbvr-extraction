@@ -3,6 +3,9 @@ package org.ktu.model2sbvr.extract;
 import com.nomagic.magicdraw.uml.Finder;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.actions.mdbasicactions.OpaqueAction;
+import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ActivityEdge;
+import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.DecisionNode;
+import com.nomagic.uml2.ext.magicdraw.activities.mdstructuredactivities.StructuredActivityNode;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
@@ -87,6 +90,21 @@ public class BpmnExperimentFileTest extends BpmnExtractionTestCase {
                 .addRuleConditional(Conditional.AFTER)
                 .addUnidentifiedText("Marketing Manager Prepare Seminar Description");
         assertEquals(matchingEntry.getValue().getCandidates().iterator().next(), model);
+    }
 
+    @Test
+    public void testSequenceFlowCondition() {
+        Package root = getRootPackage();
+        assertNotNull(root);
+        BpmnSBVRExtractor extractor = getExtractor("2a");
+        Collection<Element> elements = extractor.getExtractedDiagramElements();
+        Element cancelSub = getElementByName(elements, "Cancel Seminar", StructuredActivityNode.class, "SubProcess");
+        assertNotNull(cancelSub);
+        StructuredActivityNode cancelNode = (StructuredActivityNode) cancelSub;
+        Collection<ActivityEdge> incoming = cancelNode.getIncoming();
+        assertEquals(1, incoming.size());
+        for (ActivityEdge edge: incoming)
+            if (edge.getSource().getClassType().equals(DecisionNode.class))
+                assertEquals("Too Few Participants", extractor.getCondition(edge));
     }
 }
