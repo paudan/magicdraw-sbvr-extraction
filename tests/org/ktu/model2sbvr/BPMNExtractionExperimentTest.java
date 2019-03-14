@@ -30,11 +30,13 @@ public class BPMNExtractionExperimentTest extends BpmnExtractionTestCase {
     }
 
     private void saveExtractorOutput(Map<SourceEntry, ConceptExtractionEntry> objects, Writer writer) throws IOException {
+        int i = 1;
         for(Entry<SourceEntry, ConceptExtractionEntry> item: objects.entrySet()) {
             List<String> outputs = new ArrayList<>();
             for (SBVRExpressionModel sbvr: item.getValue().getCandidates())
                 outputs.add(sbvr.toString());
-            writer.write("Source: " + String.join(",", item.getKey().getSourceNames()) + " -> output: " + String.join(",", outputs) + "\r\n");
+            writer.write(String.format("%d. Source: ", i) + String.join(",", item.getKey().getSourceNames()) + " -> output: " + String.join(",", outputs) + "\r\n");
+            i += 1;
         }
     }
 
