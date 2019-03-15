@@ -1,6 +1,7 @@
 package org.ktu.model2sbvr.extract;
 
 import com.nomagic.magicdraw.cbm.BPMNHelper;
+import com.nomagic.magicdraw.cbm.profiles.BPMN2Profile;
 import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
@@ -189,6 +190,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     class GatewayNeighborhood {
         ControlNode gatewayNode;
         Map<ActivityNode, ActivityNodeNeighborhood> incomingActivities, outgoingActivities;
+        Map<ActivityNode, ActivityEdge> outgoingDefault;
         Map<ActivityNode, Map<ActivityEdge, String>> incomingConditions, outgoingConditions;
         private Map<ActivityNode, Integer> nullCountIncoming, nullCountOutgoing;
         Map<ControlNode, GatewayNeighborhood> incomingGateways, outgoingGateways;
@@ -206,6 +208,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             outgoingConditions = new HashMap<>();
             nullCountIncoming = new HashMap<>();
             nullCountOutgoing = new HashMap<>();
+            outgoingDefault = new HashMap<>();
             partialRule = new SBVRExpressionModel();
             partialRuleSource = new ArrayList<>();
             for (ActivityEdge edge : gatewayNode.getIncoming()) {
@@ -229,7 +232,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 ActivityNode targetElement = edge.getTarget();
                 if (targetElement == null)
                     continue;
-                addOutgoingCondition(edge, targetElement);
+                if (BPMNHelper.isDefaultSequenceFlow(gatewayNode, edge))
+                    outgoingDefault.put(targetElement, edge);
+                else
+                    addOutgoingCondition(edge, targetElement);
                 if (isActivityElement(targetElement) || isEventElement(targetElement)) {
                     ActivityNodeNeighborhood taskTuple = new ActivityNodeNeighborhood(targetElement);
                     outgoingActivities.put(taskTuple.activityNode, taskTuple);
@@ -693,34 +699,62 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         if (tuple.incomingActivities.isEmpty() && tuple.outgoingActivities.isEmpty())
             return;
         if (!tuple.outgoingActivities.isEmpty()) {
+            //Calculate joint conditions for exclusion by negation, if no conditions are set
+            SBVRExpressionModel jointConditions = new SBVRExpressionModel();
+            boolean first_added = true;
+            for (Map<ActivityEdge, String> outEntry: tuple.outgoingConditions.values()) {
+                for (String condition: outEntry.values())
+                    if (condition != null && condition.trim().length() > 0) {
+                        if (!first_added)
+                            jointConditions.addConjunction(Conjunction.OR);
+                        else
+                            first_added = false;
+                        jointConditions = addCondition(jointConditions, condition);
+                    }
+            }
             for (Entry<ActivityNode, ActivityNodeNeighborhood> actOut: tuple.outgoingActivities.entrySet()) {
                 Map<Element, String> subjectsOut = actOut.getValue().activitySubjects;
                 for (Entry<Element, String> subjectOut: subjectsOut.entrySet()) {
                     if (tuple.incomingActivities.isEmpty())
                         continue;
-                    SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
+                    SBVRExpressionModel partial = new SBVRExpressionModel();
                     List<Object> objects = new ArrayList<>(Arrays.asList(actOut.getKey(), subjectOut.getKey()));
-                    candidate = addActivity(candidate, actOut.getKey(), subjectOut.getValue());
-                    candidate.addRuleConditional(Conditional.AFTER);
-                    boolean first_added = true;
+                    partial = addActivity(partial, actOut.getKey(), subjectOut.getValue());
+                    partial.addRuleConditional(Conditional.AFTER);
+                    first_added = true;
                     for (Entry<ActivityNode, ActivityNodeNeighborhood> incNode: tuple.incomingActivities.entrySet()) {
                         Map<Element, String> subjectsIn = incNode.getValue().activitySubjects;
                         for (Entry<Element, String> subjectIn: subjectsIn.entrySet()) {
                             if (!first_added)
-                                candidate.addConjunction(conjunction);
+                                partial.addConjunction(conjunction);
                             else
                                 first_added = false;
-                            candidate = addActivity(candidate, incNode.getKey(), subjectIn.getValue());
+                            partial = addActivity(partial, incNode.getKey(), subjectIn.getValue());
                             objects.add(subjectIn.getKey());
                             SBVRExpressionModel conditionModel = createMultipleConditions(incNode.getValue().outgoingConditions.get(el), objects);
                             if (!conditionModel.isEmpty())
-                                candidate.addRuleConditional(Conditional.IF).addIdentifiedExpression(conditionModel);
+                                partial.addRuleConditional(Conditional.IF).addIdentifiedExpression(conditionModel);
                         }
                     }
                     SBVRExpressionModel conditionModel = createMultipleConditions(actOut.getValue().incomingConditions.get(el), objects);
-                    if (!conditionModel.isEmpty())
-                        candidate.addConjunction(Conjunction.AND).addRuleConditional(Conditional.IF)
+                    SBVRExpressionModel candidate = new SBVRExpressionModel();
+                    if (!conditionModel.isEmpty()) {
+                        candidate.addRuleExpression(RuleType.OBLIGATION)
+                                .addIdentifiedExpression(partial)
+                                .addConjunction(Conjunction.AND)
+                                .addRuleConditional(Conditional.IF)
                                 .addIdentifiedExpression(conditionModel);
+                    } else {
+                        RuleType ruleType = RuleType.OBLIGATION;
+                        // Check if activity has no default incoming sequence flows from exclusive gateway; otherwise, set rule type to "PERMISSION"
+                        if (BPMN2Profile.isExclusiveGateway(el) && !tuple.outgoingDefault.keySet().contains(actOut.getKey()))
+                                ruleType = RuleType.PERMISSION;
+                        candidate.addRuleExpression(ruleType).addIdentifiedExpression(partial);
+                        if (!jointConditions.isEmpty())
+                            candidate.addConjunction(Conjunction.AND)
+                                    .addRuleConditional(Conditional.IF).addRuleConditional(Conditional.NOT)
+                                    .addUnidentifiedText("(").addIdentifiedExpression(jointConditions).addUnidentifiedText(")");
+                    }
                     MagicDrawSourceEntry source = new MagicDrawSourceEntry(objects);
                     br_candidates.add(source, candidate);
                     br_candidates.setAutomaticExtraction(source);

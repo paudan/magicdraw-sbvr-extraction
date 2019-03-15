@@ -1,13 +1,17 @@
 package org.ktu.model2sbvr.extract;
 
 import com.nomagic.magicdraw.cbm.BPMNHelper;
+import com.nomagic.magicdraw.cbm.profiles.BPMN2Profile;
 import com.nomagic.magicdraw.uml.Finder;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.actions.mdbasicactions.OpaqueAction;
 import com.nomagic.uml2.ext.magicdraw.actions.mdcompleteactions.AcceptEventAction;
+import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ControlFlow;
 import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.Activity;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.ActivityPartition;
+import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.DecisionNode;
+import com.nomagic.uml2.ext.magicdraw.activities.mdstructuredactivities.StructuredActivityNode;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.EnumerationLiteral;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
@@ -37,6 +41,17 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
         return Paths.get("tests", "resources", "bpmn", "test_cases.mdzip");
     }
 
+    private void runExtractionTest(String model, int actualGC, int actualVC, int actualBR) {
+        BpmnSBVRExtractor extractor = getExtractor(model);
+        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
+        assertEquals(actualGC, gcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
+        assertEquals(actualVC, vcObjects.size());
+        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
+        assertEquals(actualBR, brObjects.size());
+        printExtractorOutput(brObjects);
+    }
+
     @Test
     public void testRuleT1Extraction() {
         BpmnSBVRExtractor extractor = getExtractor("Model1");
@@ -50,123 +65,53 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
 
     @Test
     public void testRuleT2Extraction_PaperExample() {
-        BpmnSBVRExtractor extractor = getExtractor("PaperExampleT2");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(5, gcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        assertEquals(4, vcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        assertEquals(4, brObjects.size());
-        printExtractorOutput(brObjects);
+        runExtractionTest("PaperExampleT2", 5, 4, 4);
     }
 
     @Test
-    public void testRuleT2Extraction_Model2() {
-        BpmnSBVRExtractor extractor = getExtractor("Model2");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(6, gcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        assertEquals(5, vcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        printExtractorOutput(brObjects);
-        assertEquals(4, brObjects.size());
+    public void testRuleT2Extraction() {
+        System.out.println("Running test on model without default conditions");
+        runExtractionTest("Model2", 6, 5, 4);
+        System.out.println("Running test on model with default conditions");
+        runExtractionTest("Model2a", 6, 5, 4);
     }
 
     @Test
-    public void testRuleT3Extraction_Model3() {
-        BpmnSBVRExtractor extractor = getExtractor("Model3");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(6, gcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        assertEquals(5, vcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        printExtractorOutput(brObjects);
-        assertEquals(4, brObjects.size());
+    public void testRuleT3Extraction() {
+        runExtractionTest("Model3", 6, 5, 4);
     }
 
     @Test
-    public void testRuleT4Extraction_Model4() {
-        BpmnSBVRExtractor extractor = getExtractor("Model4");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(2, gcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        assertEquals(1, vcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        assertEquals(3, brObjects.size());
-        printExtractorOutput(brObjects);
-    }
-
-
-    @Test
-    public void testRuleT5Extraction_Model5a() {
-        BpmnSBVRExtractor extractor = getExtractor("Model5a");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(6, gcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        assertEquals(5, vcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        assertEquals(4, brObjects.size());
-        printExtractorOutput(brObjects);
+    public void testRuleT4Extraction() {
+        runExtractionTest("Model4", 2, 1, 3);
     }
 
     @Test
-    public void testRuleT6Extraction_Model5() {
-        BpmnSBVRExtractor extractor = getExtractor("Model5");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(3, gcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        assertEquals(2, vcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        assertEquals(8, brObjects.size());
-        printExtractorOutput(brObjects);
+    public void testRuleT5Extraction() {
+        runExtractionTest("Model5a", 6, 5, 4);
     }
 
     @Test
-    public void testRuleT7Extraction_Model6a() {
-        BpmnSBVRExtractor extractor = getExtractor("Model6a");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(6, gcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        assertEquals(2, vcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        assertEquals(2, brObjects.size());
-        printExtractorOutput(brObjects);
+    public void testRuleT6Extraction() {
+        runExtractionTest("Model5", 3, 2, 8);
     }
 
     @Test
-    public void testRuleT7Extraction_Model6b() {
-        BpmnSBVRExtractor extractor = getExtractor("Model6b");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(6, gcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        assertEquals(2, vcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        assertEquals(3, brObjects.size());
-        printExtractorOutput(brObjects);
+    public void testRuleT7Extraction() {
+        System.out.println("Running test on model with data associations");
+        runExtractionTest("Model6a", 6, 2, 2);
+        System.out.println("Running test on model with simple associations on sequence flows");
+        runExtractionTest("Model6b", 6, 2, 3);
     }
 
     @Test
-    public void testRuleT8Extraction_Model7a() {
-        BpmnSBVRExtractor extractor = getExtractor("Model7a");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(6, gcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        assertEquals(2, vcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        assertEquals(2, brObjects.size());
-        printExtractorOutput(brObjects);
+    public void testRuleT8Extraction() {
+        runExtractionTest("Model7a", 6, 2, 2);
     }
 
     @Test
-    public void testRuleT9Extraction_Model8() {
-        BpmnSBVRExtractor extractor = getExtractor("Model8");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        assertEquals(10, gcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        assertEquals(4, vcObjects.size());
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        assertEquals(8, brObjects.size());
-        printExtractorOutput(brObjects);
+    public void testRuleT9Extraction() {
+        runExtractionTest("Model8", 10, 4, 8);
     }
 
     @Test
@@ -241,5 +186,24 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
         }).collect(Collectors.toSet());
         String [] outputs = {"Manager", "Developer"};
         MatcherAssert.assertThat(names, Matchers.containsInAnyOrder(outputs));
+    }
+
+    @Test
+    public void testGetDefaultCondition() {
+        DiagramPresentationElement diagram1 = getDiagramElements("TestDefault1");
+        assertNotNull(diagram1);
+        Collection<Element> elements = diagram1.getUsedModelElements();
+        Element taskElement1 = Finder.byName().find(elements, StructuredActivityNode.class, "Confirm Seminar");
+        assertNotNull(taskElement1);
+        Collection<DecisionNode> gatewayElements = Finder.byType().find(elements, DecisionNode.class);
+        assertEquals(1, gatewayElements.size());
+        DecisionNode node = gatewayElements.iterator().next();
+        assertTrue(BPMN2Profile.isExclusiveGateway(node));
+        Collection<ControlFlow> flows = Finder.byType().find(elements, ControlFlow.class);
+        assertEquals(3, flows.size());
+        Set<ControlFlow> default_ = flows.stream().filter(n -> BPMNHelper.isDefaultSequenceFlow(node, n)).collect(Collectors.toSet());
+        assertEquals(1, default_.size());
+        ControlFlow defaultFlow = default_.iterator().next();
+        assertEquals(taskElement1, defaultFlow.getTarget());
     }
 }
