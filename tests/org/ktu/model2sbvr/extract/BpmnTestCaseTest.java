@@ -48,8 +48,8 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
         Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
         assertEquals(actualVC, vcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        assertEquals(actualBR, brObjects.size());
         printExtractorOutput(brObjects);
+        assertEquals(actualBR, brObjects.size());
     }
 
     @Test
@@ -102,6 +102,11 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
         runExtractionTest("Model6a", 6, 2, 2);
         System.out.println("Running test on model with simple associations on sequence flows");
         runExtractionTest("Model6b", 6, 2, 3);
+
+        System.out.println("Running test on model with data associations and data types");
+        runExtractionTest("Model6c", 6, 2, 2);
+        System.out.println("Running test on model with simple associations on sequence flows and data types");
+        runExtractionTest("Model6d", 6, 2, 3);
     }
 
     @Test

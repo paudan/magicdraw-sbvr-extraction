@@ -6,15 +6,12 @@ import com.nomagic.magicdraw.core.Application;
 import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
-import com.nomagic.uml2.ext.magicdraw.actions.mdbasicactions.CallBehaviorAction;
 import com.nomagic.uml2.ext.magicdraw.actions.mdcompleteactions.AcceptEventAction;
 import com.nomagic.uml2.ext.magicdraw.actions.mdintermediateactions.SendObjectAction;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ActivityEdge;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ActivityFinalNode;
-import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ControlFlow;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ControlNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.InitialNode;
-import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ObjectFlow;
 import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.Activity;
 import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.ActivityNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.ActivityPartition;
@@ -33,6 +30,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.EnumerationLiteral;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.NamedElement;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Relationship;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile;
 import com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype;
 import com.nomagic.uml2.ext.magicdraw.statemachines.mdbehaviorstatemachines.State;
@@ -387,8 +385,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     private boolean isActivityElement(Element el) {
         if (el == null)
             return false;
-        return isTaskElement(el)
-                || (el.getClassType().equals(CallBehaviorAction.class) && hasAnyStereotype(el, "CallActivity"))
+        return isTaskElement(el) || BPMN2Profile.isCallActivity(el)
                 || (el.getClassType().equals(StructuredActivityNode.class) && hasAnyStereotype(el, activityStereotypes));
     }
 
@@ -428,13 +425,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     private boolean isDataObject(Element el) {
         if (el == null)
             return false;
-        return el.getClassType().equals(CentralBufferNode.class) && hasAnyStereotype(el, "DataObject", "DataInput", "DataOutput");
-    }
-
-    private boolean isDataStore(Element el) {
-        if (el == null)
-            return false;
-        return el.getClassType().equals(CentralBufferNode.class) && hasAnyStereotype(el, "DataStore");
+        return BPMN2Profile.isDataObject(el) || BPMN2Profile.isDataInput(el) || BPMN2Profile.isDataOutput(el);
     }
 
     private boolean isResourceElement(Element el) {
@@ -458,25 +449,13 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     private boolean isSequenceFlow(Element el) {
         if (el == null)
             return false;
-        return el.getClassType().equals(ControlFlow.class) && hasAnyStereotype(el, "SequenceFlow");
-    }
-
-    private boolean isMessageFlow(Element el) {
-        if (el == null)
-            return false;
-        return el.getClassType().equals(InformationFlow.class) && hasAnyStereotype(el, "MessageFlow");
-    }
-
-    private boolean isDataAssociation(Element el) {
-        if (el == null)
-            return false;
-        return el.getClassType().equals(ObjectFlow.class) && hasAnyStereotype(el, "DataAssociation");
+        return BPMN2Profile.isSequenceFlow(el);
     }
 
     private boolean isLaneElement(Element el) {
         if (el == null)
             return false;
-        return el.getClassType().equals(ActivityPartition.class) && hasAnyStereotype(el, "Lane", "LaneSet");
+        return BPMN2Profile.isLane(el) || BPMN2Profile.isLaneSet(el);
     }
 
     protected Stereotype getStereotypeInList(Element el, String[] stereotypesList) {
@@ -498,10 +477,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             Element el = iterator.next();
             if (isLaneElement(el) || isResourceElement(el))
                 createGeneralConcept(el, extractElementText(el), true);
-            else if (isMessageFlow(el)) {
+            else if (BPMN2Profile.isMessageFlow(el)) {
                 Collection<Classifier> conveyed = ((InformationFlow) el).getConveyed();
                 for (Classifier classifier : conveyed)
-                    if (classifier.getClassType().equals(com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class.class) && hasAnyStereotype(classifier, "BPMNMessage"))
+                    if (classifier.getClassType().equals(com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class.class) && BPMN2Profile.isBPMNMessage(classifier))
                         createGeneralConcept(classifier, extractElementText(classifier), true);
             } else if (isActivityElement(el) && !extractedAuto)
                 createGeneralConcept(el, extractActionGC(el), false);
@@ -511,21 +490,21 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     gc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
             } else if (isEventElement(el) && extractElementText(el) != null)
                 gc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
-            else if (isDataObject(el) || isDataStore(el)) {
+            else if (isDataObject(el) || BPMN2Profile.isDataStore(el)) {
                 Collection<State> states = ((CentralBufferNode) el).getInState();
                 if (!states.isEmpty())
                     for (State state : states) {
                         String stateText = extractElementText(state);
-                        String elText = extractElementText(el);
+                        String elText = getDataObjectName(el);
                         if (stateText != null && elText != null)
                             createGeneralConcept(el, stateText + " " + elText, true);
                     }
                 else
-                    createGeneralConcept(el, extractElementText(el), true);
+                    createGeneralConcept(el, getDataObjectName(el), true);
             }
-            if (isMessageFlow(el)) {
+            if (BPMN2Profile.isMessageFlow(el)) {
                 for (Classifier convObj : ((InformationFlow) el).getConveyed())
-                    if (hasAnyStereotype(convObj, "BPMNMessage"))
+                    if (BPMN2Profile.isBPMNMessage(convObj))
                         createGeneralConcept(el, extractElementText(el), false);
             } else if (el.getClassType().equals(Comment.class))
                 if (extractElementText(el) != null)
@@ -549,7 +528,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 vc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
             } else if (isSequenceFlow(el) && !strictOnly)
                 createVerbConceptFromCondition(el, getCondition((ActivityEdge) el));
-            else if (isDataObject(el) || isDataStore(el))
+            else if (isDataObject(el) || BPMN2Profile.isDataStore(el))
                 for (State state : ((CentralBufferNode) el).getInState())
                     createUnaryVerbConcept(el, state);
             else if (el.getClassType().equals(Comment.class) && extractElementText(el) != null && !strictOnly)
@@ -597,6 +576,18 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             names.put(subject, name);
         }
         return names;
+    }
+
+    private String getDataObjectName(Element dataObject) {
+        if (dataObject == null)
+            return null;
+        String name = extractElementText(dataObject);
+        if ((name == null || name.trim().length() == 0) && dataObject instanceof CentralBufferNode) {
+            Type dataType = ((CentralBufferNode)dataObject).getType();
+            if (dataType != null)
+                return dataType.getName();
+        }
+        return name;
     }
 
     private SBVRExpressionModel addActivity(SBVRExpressionModel model, ActivityNode activity, String subject) {
@@ -897,7 +888,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private void extractRuleT5(Element el) {
-        if (!isGatewayOfType(el, "ParallelGateway"))
+        if (!BPMN2Profile.isParallelGateway(el))
             return;
         GatewayNeighborhood tuple = gatewayNeighborhoods.get(el);
         if (tuple.incomingActivities.isEmpty() && tuple.outgoingActivities.isEmpty())
@@ -1025,7 +1016,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             if (assoc instanceof Dependency) {
                 Collection<NamedElement> clients = ((Dependency) assoc).getClient();
                 for (NamedElement client: clients)
-                    if (checkDataStore ? isDataStore(client) : isDataObject(client))
+                    if (checkDataStore ? BPMN2Profile.isDataStore(el) : isDataObject(client))
                         dataObjects.add(client);
             }
         processOutgoingConnectionsWithDataObjects(dataObjects, flow.getSource(), checkDataStore, reservedVerb1);
@@ -1036,18 +1027,18 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         // Outgoing tasks with data objects
         List<Element> dataObjects = new ArrayList<>();
         for (ActivityEdge outAssoc: ((ActivityNode)el).getOutgoing())
-            if (isDataAssociation(outAssoc)) {
+            if (BPMN2Profile.isDataAssociation(outAssoc)) {
                 ActivityNode dataObj = outAssoc.getTarget();
-                if (checkDataStore ? isDataStore(dataObj) : isDataObject(dataObj))
+                if (checkDataStore ? BPMN2Profile.isDataStore(el) : isDataObject(dataObj))
                     dataObjects.add(dataObj);
             }
         processOutgoingConnectionsWithDataObjects(dataObjects, el, checkDataStore, reservedVerb1);
         // Incoming tasks with data objects
         dataObjects.clear();
         for (ActivityEdge outAssoc: ((ActivityNode)el).getIncoming())
-            if (isDataAssociation(outAssoc)) {
+            if (BPMN2Profile.isDataAssociation(outAssoc)) {
                 ActivityNode dataObj = outAssoc.getSource();
-                if (checkDataStore ? isDataStore(dataObj) : isDataObject(dataObj))
+                if (checkDataStore ? BPMN2Profile.isDataStore(el) : isDataObject(dataObj))
                     dataObjects.add(dataObj);
             }
         if (dataObjects.isEmpty())
@@ -1065,14 +1056,20 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
                 boolean added_first_obj = true;
                 for (Element dataObj : dataObjects) {
-                    Collection<State> states = ((CentralBufferNode) dataObj).getInState();
                     if (!added_first_obj)
                         candidate = candidate.addAndExpression();
                     else
                         added_first_obj = false;
-                    String objText = extractElementText(dataObj);
+                    String objText = getDataObjectName(dataObj);
+                    Collection<State> states = Collections.emptyList();
+                    if (dataObj instanceof CentralBufferNode)
+                        states = ((CentralBufferNode) dataObj).getInState();
                     if (states.isEmpty()) {
-                        candidate = addGeneralConcept(candidate, dataObj);
+                        SBVRExpressionModel objConcept = getGeneralConcept(objText);
+                        if (objConcept != null)
+                            candidate.addIdentifiedExpression(objConcept);
+                        else
+                            candidate.addUnidentifiedText(objText);
                         candidate = candidate.addVerbConcept(reservedVerb1, true);
                         if (checkDataStore)
                             candidate = subjectConcept != null ?
@@ -1121,14 +1118,20 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     .addRuleConditional(Conditional.ONLY_IF);
             boolean added_first_obj = true;
             for (Element dataObj: dataObjects) {
-                Collection<State> states = ((CentralBufferNode) dataObj).getInState();
                 if (!added_first_obj)
                     candidate = candidate.addAndExpression();
                 else
                     added_first_obj = false;
-                String objText = extractElementText(dataObj);
+                String objText = getDataObjectName(dataObj);
+                Collection<State> states = Collections.emptyList();
+                if (dataObj instanceof CentralBufferNode)
+                    states = ((CentralBufferNode) dataObj).getInState();
                 if (states.isEmpty()) {
-                    candidate = addGeneralConcept(candidate, dataObj);
+                    SBVRExpressionModel objConcept = getGeneralConcept(objText);
+                    if (objConcept != null)
+                        candidate.addIdentifiedExpression(objConcept);
+                    else
+                        candidate.addUnidentifiedText(objText);
                     candidate = candidate.addVerbConcept(reservedVerb2, true);
                     if (!checkDataStore)
                         candidate = subjectConcept != null ?
@@ -1165,13 +1168,13 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private void extractRuleT9(Element el) {
-        if (isMessageFlow(el)) {
+        if (BPMN2Profile.isMessageFlow(el)) {
             Collection<Classifier> conveyed = ((InformationFlow) el).getConveyed();
             if (conveyed.isEmpty())
                 extractMessageFlow(el, null);
             else {
                 for (Classifier convObj : conveyed)
-                    if (hasAnyStereotype(convObj, "BPMNMessage"))
+                    if (BPMN2Profile.isBPMNMessage(convObj))
                         extractMessageFlow(el, convObj);
             }
         }
@@ -1182,8 +1185,8 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         Collection<NamedElement> targets = ((InformationFlow) el).getInformationTarget();
         NamedElement source = null, target = null;
         if (!sources.isEmpty() && !targets.isEmpty()) {
-            source = sources.stream().findFirst().get();
-            target = targets.stream().findFirst().get();
+            source = sources.iterator().next();
+            target = targets.iterator().next();
         }
         if (source == null)
             return;

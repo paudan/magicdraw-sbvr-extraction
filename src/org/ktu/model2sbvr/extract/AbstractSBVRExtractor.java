@@ -156,7 +156,7 @@ public abstract class AbstractSBVRExtractor {
     public static String extractElementText(BaseElement el) {
         if (el == null)
             return null;
-        String name = getProperName(el);
+        String name = el instanceof NamedElement ? ((NamedElement) el).getName() : getProperName(el);
         if (name == null || name.trim().length() == 0)
             return null;
         if (name.startsWith(el.getHumanType()))
