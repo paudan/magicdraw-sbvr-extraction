@@ -7,19 +7,12 @@ import com.nomagic.magicdraw.core.Project;
 import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.actions.mdcompleteactions.AcceptEventAction;
-import com.nomagic.uml2.ext.magicdraw.actions.mdintermediateactions.SendObjectAction;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ActivityEdge;
-import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ActivityFinalNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ControlNode;
-import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.InitialNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.Activity;
 import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.ActivityNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.ActivityPartition;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.CentralBufferNode;
-import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.DecisionNode;
-import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.ForkNode;
-import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.JoinNode;
-import com.nomagic.uml2.ext.magicdraw.activities.mdstructuredactivities.StructuredActivityNode;
 import com.nomagic.uml2.ext.magicdraw.auxiliaryconstructs.mdinformationflows.InformationFlow;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Dependency;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Classifier;
@@ -62,16 +55,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     private Project project;
     private Profile bpmnProfile;
 
-    private static String[] taskStereotypes = {"Task", "ServiceTask", "SendTask", "ReceiveTask", "UserTask", "ManualTask", "BusinessRuleTask", "ScriptTask"};
     private static String[] activityStereotypes = {"SubProcess", "Transaction", "AdHocSubProcess"};
     private static String[] boundaryStereotypes = {"MessageBoundaryEvent", "ErrorBoundaryEvent",  "TimerBoundaryEvent",
             "EscalationBoundaryEvent", "CancelBoundaryEvent", "CompensationBoundaryEvent", "ConditionalBoundaryEvent",
             "SignalBoundaryEvent", "MultipleBoundaryEvent", "ParallelMultipleBoundaryEvent"};
-    private static String[] intermediaryStereotypes = {"NoneIntermediateEvent", "MessageCatchIntermediateEvent", "TimerCatchIntermediateEvent",
-            "ConditionalCatchIntermediateEvent", "LinkCatchIntermediateEvent", "SignalCatchIntermediateEvent", "MultipleCatchIntermediateEvent",
-            "ParallelMultipleCatchIntermediateEvent",
-            "MessageThrowIntermediateEvent", "EscalationThrowIntermediateEvent", "CompensationThrowIntermediateEvent", "LinkThrowIntermediateEvent",
-            "SignalThrowIntermediateEvent", "MultipleThrowIntermediateEvent"};
 
     Map<ControlNode, GatewayNeighborhood> gatewayNeighborhoods, gatewayNeighborhoods2;
 
@@ -87,7 +74,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
         private ActivityNodeNeighborhood(ActivityNode node) {
             this.activityNode = node;
-            this.activityText = extractElementText(node);
+            this.activityText = getActivityText(node);
             activitySubjects = getSubjectNames(node);
             incomingConditions = new HashMap<>();
             nullCountIncoming = new HashMap<>();
@@ -365,8 +352,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     private Stereotype getActivityStereotype(Element el) {
         if (el == null)
             return null;
-        List<String> stereotypes = new ArrayList<>(Arrays.asList(taskStereotypes));
-        stereotypes.add("CallActivity");
+        if (isTaskElement(el))
+            return BPMNHelper.getTaskStereotype(el);
+        List<String> stereotypes = new ArrayList<>(Collections.singleton("CallActivity"));
         stereotypes.addAll(Arrays.asList(activityStereotypes));
         for (String st : stereotypes) {
             Stereotype stereotype = StereotypesHelper.getStereotype(project, st, bpmnProfile);
@@ -379,47 +367,47 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     private boolean isTaskElement(Element el) {
         if (el == null)
             return false;
-        return hasAnyStereotype(el, taskStereotypes);
+        return BPMN2Profile.isTask(el);
     }
 
     private boolean isActivityElement(Element el) {
         if (el == null)
             return false;
-        return isTaskElement(el) || BPMN2Profile.isCallActivity(el)
-                || (el.getClassType().equals(StructuredActivityNode.class) && hasAnyStereotype(el, activityStereotypes));
+        return isTaskElement(el) || BPMN2Profile.isCallActivity(el) || BPMN2Profile.isSubProcess(el);
+    }
+
+    private boolean isEventElement(Element el) {
+        return isStartEventElement(el) || isBoundaryEvent(el) || isIntermediaryEvent(el) || isEndEventElement(el);
     }
 
     private boolean isStartEventElement(Element el) {
         if (el == null)
             return false;
-        return el.getClassType().equals(InitialNode.class)
-                && hasAnyStereotype(el, "StartEvent", "MessageStartEvent", "TimerStartEvent", "ErrorStartEvent", "EscalationStartEvent",
-                "CompensationStartEvent", "ConditionalStartEvent", "SignalStartEvent", "MultipleStartEvent", "ParallelMultipleStartEvent");
+        return BPMN2Profile.isStartEvent(el);
+    }
+
+    private boolean isTimerEvent(Element el) {
+        if (el == null)
+            return false;
+        return isEventElement(el) && hasAnyStereotype(el, "TimerBoundaryEvent", "TimerCatchIntermediateEvent");
     }
 
     private boolean isBoundaryEvent(Element el) {
         if (el == null)
             return false;
-        return Arrays.asList(AcceptEventAction.class, SendObjectAction.class).contains(el.getClassType()) &&
-                hasAnyStereotype(el, boundaryStereotypes);
+        return BPMN2Profile.isBoundaryEvent(el);
     }
 
     private boolean isIntermediaryEvent(Element el) {
         if (el == null)
             return false;
-        return el.getClassType().equals(AcceptEventAction.class) && hasAnyStereotype(el, intermediaryStereotypes);
+        return BPMN2Profile.isIntermediateCatchEvent(el) || BPMN2Profile.isIntermediateThrowEvent(el);
     }
 
     private boolean isEndEventElement(Element el) {
         if (el == null)
             return false;
-        return el.getClassType().equals(ActivityFinalNode.class)
-                && hasAnyStereotype(el, "EndEvent", "MessageEndEvent", "ErrorEndEvent", "EscalationEndEvent",
-                "CompensationEndEvent", "SignalEndEvent", "MultipleEndEvent", "TerminateEndEvent");
-    }
-
-    private boolean isEventElement(Element el) {
-        return isStartEventElement(el) || isBoundaryEvent(el) || isIntermediaryEvent(el) || isEndEventElement(el);
+        return BPMN2Profile.isEndEvent(el);
     }
 
     private boolean isDataObject(Element el) {
@@ -428,17 +416,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return BPMN2Profile.isDataObject(el) || BPMN2Profile.isDataInput(el) || BPMN2Profile.isDataOutput(el);
     }
 
-    private boolean isResourceElement(Element el) {
-        if (el == null)
-            return false;
-        return hasAnyStereotype(el, "Resource", "PartnerRole");
-    }
-
     private boolean isGatewayOfType(Element el, String stereotype) {
         if (el == null)
             return false;
-        Set<Class> gatewayClasses = new HashSet<>(Arrays.asList(ForkNode.class, JoinNode.class, DecisionNode.class));
-        return gatewayClasses.contains(el.getClassType()) && BPMNHelper.getGatewayStereotype(el).getName().compareToIgnoreCase(stereotype) == 0;
+        return BPMN2Profile.isGateway(el) && BPMNHelper.getGatewayStereotype(el).getName().compareToIgnoreCase(stereotype) == 0;
     }
 
     boolean isGatewayElement(Element el) {
@@ -458,7 +439,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return BPMN2Profile.isLane(el) || BPMN2Profile.isLaneSet(el);
     }
 
-    protected Stereotype getStereotypeInList(Element el, String[] stereotypesList) {
+    private Stereotype getStereotypeInList(Element el, String[] stereotypesList) {
         return getStereotypeInList(el, stereotypesList, project, bpmnProfile);
     }
 
@@ -470,20 +451,127 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return cond.length() > 0 ? cond : null;
     }
 
+
+    private Map<Element, String> getSubjectNames(Element element) {
+        Map<Element, String> names = new HashMap<>();
+        // Should be modelled as unary concepts
+        if (isStartEventElement(element) || isEndEventElement(element)) {
+            // Add null values to allow for single step in loops
+            names.put(null, null);
+            return names;
+        }
+        Collection<ActivityPartition> parts = null;
+        if (element instanceof ActivityNode && ((ActivityNode) element).hasInPartition())
+            parts = ((ActivityNode) element).getInPartition();
+        else if (element instanceof ActivityEdge && ((ActivityEdge) element).hasInPartition())
+            parts = ((ActivityEdge) element).getInPartition();
+        if (parts == null)
+            return names;
+        // Select lowest level partitions as subjects
+        parts = parts.stream().filter(n -> !n.hasSubpartition()).collect(Collectors.toSet());
+        for (ActivityPartition part : parts) {
+            Element subject = part.getRepresents() != null ? part.getRepresents() : part;
+            String name = extractElementText(subject);
+            if (name == null)
+                continue;
+            names.put(subject, name);
+        }
+        return names;
+    }
+
+    private String getDataObjectName(Element dataObject) {
+        if (dataObject == null)
+            return null;
+        String name = extractElementText(dataObject);
+        if ((name == null || name.trim().length() == 0) && dataObject instanceof CentralBufferNode) {
+            Type dataType = ((CentralBufferNode)dataObject).getType();
+            if (dataType != null)
+                return dataType.getName();
+        }
+        return name;
+    }
+
+    private String getActivityText(ActivityNode el) {
+        if (el == null)
+            return null;
+        if (isStartEventElement(el)){
+            String name = extractElementText(el);
+            if (name == null) {
+                Activity owner = el.getActivity();
+                if (owner != null) {
+                    String extracted = extractElementText(owner);
+                    if (extracted != null)
+                        return extracted + " starts";
+                }
+            } else
+                return name;
+        } else if (isEndEventElement(el)){
+            String name = extractElementText(el);
+            if (name == null) {
+                Activity owner = el.getActivity();
+                if (owner != null) {
+                    String extracted = extractElementText(owner);
+                    if (extracted != null)
+                        return extracted + " starts";
+                }
+            } else
+                return name;
+        } else if (isTimerEvent(el)) {
+            String name = extractElementText(el);
+            if (name != null)
+                return name + " has passed";
+        } else
+            return extractElementText(el);
+        return null;
+    }
+
+    private String extractActivityGC(ActivityNode el) {
+        if (el == null)
+            return null;
+        if (isStartEventElement(el)){
+            String name = extractActionUnaryLikeGC(el);
+            if (name == null) {
+                Activity owner = el.getActivity();
+                if (owner != null) {
+                    String extracted = extractElementText(owner);
+                    if (extracted != null)
+                        return extracted;
+                }
+            } else
+                return name;
+        } else if (isEndEventElement(el)){
+            String name = extractActionUnaryLikeGC(el);
+            if (name == null) {
+                Activity owner = el.getActivity();
+                if (owner != null) {
+                    String extracted = extractElementText(owner);
+                    if (extracted != null)
+                        return extracted;
+                }
+            } else
+                return name;
+        } else if (isTimerEvent(el))
+            return extractElementText(el);
+        else
+            return extractActionGC(el);
+        return null;
+    }
+
+
     @Override
     protected void extractGeneralConceptCandidates() {
         Iterator<Element> iterator = candidateElements.iterator();
         while (iterator.hasNext()) {
             Element el = iterator.next();
-            if (isLaneElement(el) || isResourceElement(el))
+            if (isLaneElement(el) || BPMN2Profile.isResource(el))
                 createGeneralConcept(el, extractElementText(el), true);
             else if (BPMN2Profile.isMessageFlow(el)) {
                 Collection<Classifier> conveyed = ((InformationFlow) el).getConveyed();
                 for (Classifier classifier : conveyed)
                     if (classifier.getClassType().equals(com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class.class) && BPMN2Profile.isBPMNMessage(classifier))
                         createGeneralConcept(classifier, extractElementText(classifier), true);
-            } else if (isActivityElement(el) && !extractedAuto)
-                createGeneralConcept(el, extractActionGC(el), false);
+            } else if ((isActivityElement(el) || isEventElement(el)) && !extractedAuto)
+                createGeneralConcept(el, extractActivityGC((ActivityNode) el), false);
             else if (isSequenceFlow(el)) {
                 String condition = getCondition((ActivityEdge) el);
                 if (condition != null)
@@ -517,12 +605,19 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         Iterator<Element> iterator = candidateElements.iterator();
         while (iterator.hasNext()) {
             Element el = iterator.next();
-            if (isActivityElement(el) && !strictOnly) {
+            if (isActivityElement(el) && !isEventElement(el) && !strictOnly) {
                 Map<Element, String> subjects = getSubjectNames(el);
                 for (Entry<Element, String> subject: subjects.entrySet())
                     createVerbConceptFromAction(subject.getKey(), el);
-            } else if (isEventElement(el) && hasAnyStereotype(el, "TimerBoundaryEvent", "TimerCatchIntermediateEvent")) {
-                createUnaryVerbConcept(el, "has passed");
+            } else if (isEventElement(el)) {
+                if (isStartEventElement(el))
+                    createUnaryVerbConcept(el, "starts", extractActivityGC((ActivityNode) el));
+                else if (isEndEventElement(el))
+                    createUnaryVerbConcept(el, "ends", extractActivityGC((ActivityNode) el));
+                else if (isTimerEvent(el))
+                    createUnaryVerbConcept(el, "has passed", extractActivityGC((ActivityNode) el));
+                else
+                    createVerbConceptFromCondition(el, extractElementText(el));
             } else if (isEventElement(el) && !strictOnly) {
                 createVerbConceptFromCondition(el, extractElementText(el));
                 vc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));
@@ -554,54 +649,14 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         }
     }
 
-    private Map<Element, String> getSubjectNames(Element element) {
-        Map<Element, String> names = new HashMap<>();
-        // Should be modelled as unary concepts
-        if (isStartEventElement(element) || isEndEventElement(element))
-            return names;
-        Collection<ActivityPartition> parts = null;
-        if (element instanceof ActivityNode && ((ActivityNode) element).hasInPartition())
-            parts = ((ActivityNode) element).getInPartition();
-        else if (element instanceof ActivityEdge && ((ActivityEdge) element).hasInPartition())
-            parts = ((ActivityEdge) element).getInPartition();
-        if (parts == null)
-            return names;
-        // Select lowest level partitions as subjects
-        parts = parts.stream().filter(n -> !n.hasSubpartition()).collect(Collectors.toSet());
-        for (ActivityPartition part : parts) {
-            Element subject = part.getRepresents() != null ? part.getRepresents() : part;
-            String name = extractElementText(subject);
-            if (name == null)
-                continue;
-            names.put(subject, name);
-        }
-        return names;
-    }
-
-    private String getDataObjectName(Element dataObject) {
-        if (dataObject == null)
-            return null;
-        String name = extractElementText(dataObject);
-        if ((name == null || name.trim().length() == 0) && dataObject instanceof CentralBufferNode) {
-            Type dataType = ((CentralBufferNode)dataObject).getType();
-            if (dataType != null)
-                return dataType.getName();
-        }
-        return name;
-    }
-
     private SBVRExpressionModel addActivity(SBVRExpressionModel model, ActivityNode activity, String subject) {
         if (activity == null)
             return model;
-        String outTaskText = extractElementText(activity);
-        String verbText = outTaskText;
-        // Timer events
-        if (isEventElement(activity) && hasAnyStereotype(activity, "TimerBoundaryEvent", "TimerCatchIntermediateEvent"))
-            verbText += " has passed";
+        String taskText = getActivityText(activity);
         if (!isEventElement(activity))
-            verbText = subject + " " + outTaskText;
-        SBVRExpressionModel binary2 = getVerbConcept(verbText);
-        return binary2 != null ? model.addIdentifiedExpression(binary2) : model.addUnidentifiedText(verbText);
+            taskText = subject + " " + taskText;
+        SBVRExpressionModel binary2 = getVerbConcept(taskText);
+        return binary2 != null ? model.addIdentifiedExpression(binary2) : model.addUnidentifiedText(taskText);
     }
 
     private SBVRExpressionModel addCondition(SBVRExpressionModel model, String condition) {
@@ -663,8 +718,14 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                             candidate = candidate.addRuleConditional(Conditional.IF);
                             candidate = addCondition(candidate, incomingCondition);
                         }
-                        MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(subjectTo.getKey(),
-                                after, subjectFrom.getKey(), before));
+                        List<Object> src = new ArrayList<>();
+                        if (subjectFrom.getKey() != null)
+                            src.add(subjectFrom.getKey());
+                        src.add(after);
+                        if (subjectFrom.getKey() != null)
+                            src.add(subjectFrom.getKey());
+                        src.add(before);
+                        MagicDrawSourceEntry source = new MagicDrawSourceEntry(src);
                         br_candidates.add(source, candidate);
                         br_candidates.setAutomaticExtraction(source);
                     }
@@ -709,7 +770,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     if (tuple.incomingActivities.isEmpty())
                         continue;
                     SBVRExpressionModel partial = new SBVRExpressionModel();
-                    List<Object> objects = new ArrayList<>(Arrays.asList(actOut.getKey(), subjectOut.getKey()));
+                    List<Object> objects = new ArrayList<>();
+                    objects.add(actOut.getKey());
+                    if (subjectOut.getKey() != null)
+                        objects.add(subjectOut.getKey());
                     partial = addActivity(partial, actOut.getKey(), subjectOut.getValue());
                     partial.addRuleConditional(Conditional.AFTER);
                     first_added = true;
@@ -721,7 +785,8 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                             else
                                 first_added = false;
                             partial = addActivity(partial, incNode.getKey(), subjectIn.getValue());
-                            objects.add(subjectIn.getKey());
+                            if (subjectIn.getKey() != null)
+                                objects.add(subjectIn.getKey());
                             SBVRExpressionModel conditionModel = createMultipleConditions(incNode.getValue().outgoingConditions.get(el), objects);
                             if (!conditionModel.isEmpty())
                                 partial.addRuleConditional(Conditional.IF).addIdentifiedExpression(conditionModel);
@@ -768,7 +833,6 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         if (!tuple.outgoingActivities.isEmpty())
             candidate = addTasksWithConditions(candidate, tuple.outgoingActivities, objects, conjunction, null, el);
         // No incoming or outgoing sequences flows - bad practice, but must be checked
-        //TODO: check incoming conditions from activities which are "incoming"
         if (!tuple.incomingActivities.isEmpty()) {
             // Skip conditional if only excluded task is in outgoing activities
             Set<ActivityNode> actOut = tuple.outgoingActivities.keySet();
@@ -813,7 +877,8 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 if (excluded != null && entryOut.getValue().activityNode == excluded)
                     continue;
                 // Add verb concept from rule and subject (lane, resource, etc.)
-                objects.add(subjectOut.getKey());
+                if (subjectOut.getKey() != null)
+                    objects.add(subjectOut.getKey());
                 objects.add(entryOut.getValue().activityNode);
                 if (gateConditions != null && !gateConditions.isEmpty()) {
                     if (!added_first)
@@ -877,7 +942,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                                 model.addConjunction(Conjunction.AND).addRuleConditional(Conditional.IF);
                                 model = addCondition(model, outgoingCondition);
                             }
-                            MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(edgeOut.getTarget(), edgeInc.getSource(), subjectInc.getKey()));
+                            List<Object> src = new ArrayList<>(Arrays.asList(edgeOut.getTarget(), edgeInc.getSource()));
+                            if (subjectInc.getKey() != null)
+                                src.add(subjectInc.getKey());
+                            MagicDrawSourceEntry source = new MagicDrawSourceEntry(src);
                             br_candidates.add(source, model);
                             br_candidates.setAutomaticExtraction(source);
                         }
@@ -900,7 +968,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     if (tuple.incomingActivities.isEmpty())
                         continue;
                     SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.OBLIGATION);
-                    List<Object> objects = new ArrayList<>(Arrays.asList(actOut.getKey(), subjectOut.getKey()));
+                    List<Object> objects = new ArrayList<>();
+                    objects.add(actOut.getKey());
+                    if (subjectOut.getKey() != null)
+                        objects.add(subjectOut.getKey());
                     candidate = addActivity(candidate, actOut.getKey(), subjectOut.getValue());
                     SBVRExpressionModel conditionModel = createMultipleConditions(actOut.getValue().incomingConditions.get(el), objects);
                     if (!conditionModel.isEmpty())
@@ -915,7 +986,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                             else
                                 first_added = false;
                             candidate = addActivity(candidate, incNode.getKey(), subjectIn.getValue());
-                            objects.addAll(Arrays.asList(subjectIn.getKey(), incNode.getKey()));
+                            objects.add(incNode.getKey());
+                            if (subjectIn.getKey() != null)
+                                objects.add(subjectIn.getKey());
                             conditionModel = createMultipleConditions(incNode.getValue().outgoingConditions.get(el), objects);
                             if (!conditionModel.isEmpty())
                                 candidate.addRuleConditional(Conditional.IF).addIdentifiedExpression(conditionModel);
@@ -959,7 +1032,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                     SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(RuleType.PERMISSION);
                     candidate = addCondition(candidate, boundaryText).addRuleConditional(Conditional.WHEN);
                     candidate = addActivity(candidate, (ActivityNode) el, subject.getValue());
-                    MagicDrawSourceEntry source = new MagicDrawSourceEntry(Arrays.asList(subject.getKey(), el, boundary));
+                    List<Object> src = new ArrayList<>();
+                    if (subject.getKey() != null)
+                        src.add(subject.getKey());
+                    src.add(el);
+                    src.add(boundary);
+                    MagicDrawSourceEntry source = new MagicDrawSourceEntry(src);
                     br_candidates.add(source, candidate);
                     br_candidates.setAutomaticExtraction(source);
 
@@ -974,7 +1052,11 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                                     .addRuleConditional(Conditional.AFTER);
                             candidate = addActivity(candidate, (ActivityNode) el, subject.getValue())
                                     .addUnidentifiedText(")");
-                            source = new MagicDrawSourceEntry(Arrays.asList(subject.getKey(), el, boundary, outTask));
+                            List<Object> srcOut = new ArrayList<>();
+                            if (subject.getKey() != null)
+                                srcOut.add(subject.getKey());
+                            srcOut.addAll(Arrays.asList(el, boundary, outTask));
+                            source = new MagicDrawSourceEntry(srcOut);
                             br_candidates.add(source, candidate);
                             br_candidates.setAutomaticExtraction(source);
                         }
@@ -985,7 +1067,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                         candidate = addActivity(candidate, (ActivityNode) el, subject.getValue())
                                 .addRuleConditional(Conditional.AFTER);
                         candidate = addCondition(candidate, getProperName(boundary));
-                        source = new MagicDrawSourceEntry(Arrays.asList(subject.getKey(), el, boundary));
+                        src = new ArrayList<>();
+                        if (subject.getKey() != null)
+                            src.add(subject.getKey());
+                        src.add(el);
+                        src.add(boundary);
+                        source = new MagicDrawSourceEntry(src);
                         br_candidates.add(source, candidate);
                         br_candidates.setAutomaticExtraction(source);
                     }
@@ -1098,7 +1185,8 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 candidate = candidate.addRuleConditional(Conditional.WHEN);
                 candidate = addActivity(candidate, (ActivityNode) taskElement, taskSubject.getValue());
                 List<Object> srcElements = new ArrayList<>(dataObjects);
-                srcElements.add(taskSubject.getKey());
+                if (taskSubject.getKey() != null)
+                    srcElements.add(taskSubject.getKey());
                 srcElements.add(taskElement);
                 MagicDrawSourceEntry source = new MagicDrawSourceEntry(srcElements);
                 br_candidates.add(source, candidate);
@@ -1159,7 +1247,8 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             }
             List<Object> srcElements = new ArrayList<>();
             srcElements.add(taskElement);
-            srcElements.add(taskSubject.getKey());
+            if (taskSubject.getKey() != null)
+                srcElements.add(taskSubject.getKey());
             srcElements.addAll(dataObjects);
             MagicDrawSourceEntry source = new MagicDrawSourceEntry(srcElements);
             br_candidates.add(source, candidate);
@@ -1288,9 +1377,15 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 candidate = addGeneralConcept(candidate, subject);
                 candidate = addConveyedObject(candidate, convObj, "receives", "from");
                 candidate = addGeneralConcept(candidate, source);
-                MagicDrawSourceEntry src = new MagicDrawSourceEntry(Arrays.asList(el, subject, source, target));
-                br_candidates.add(src, candidate);
-                br_candidates.setAutomaticExtraction(src);
+                List<Object> src = new ArrayList<>();
+                src.add(el);
+                if (subject != null)
+                    src.add(subject);
+                src.add(source);
+                src.add(target);
+                MagicDrawSourceEntry sourceEntry = new MagicDrawSourceEntry(src);
+                br_candidates.add(sourceEntry, candidate);
+                br_candidates.setAutomaticExtraction(sourceEntry);
             }
     }
 
@@ -1380,7 +1475,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                             .addIdentifiedExpression(ruleModel);
                     conditionedRules.add(partialOutgoingRule);
                 }
-                nhood.partialRuleSource.addAll(Arrays.asList(subject.getKey(), activityOut.getKey()));
+                if (subject.getKey() != null)
+                    nhood.partialRuleSource.add(subject.getKey());
+                nhood.partialRuleSource.add(activityOut.getKey());
             }
         }
         // Add default conditions
@@ -1422,7 +1519,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 for (ControlNode boundaryGate: boundaryGateways) {
                     SBVRExpressionModel rule = new SBVRExpressionModel()
                             .addRuleExpression(RuleType.OBLIGATION);
-                    List<Object> sources = new ArrayList<>(Arrays.asList(el, subject.getKey()));
+                    List<Object> sources = new ArrayList<>();
+                    sources.add(el);
+                    if (subject.getKey() != null)
+                        sources.add(subject.getKey());
                     rule = addActivity(rule, (ActivityNode)el, subject.getValue());
                     ActivityNodeNeighborhood activityNhood = nhood.outgoingActivities.get(el);
                     if (activityNhood == null)
@@ -1442,7 +1542,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                         List<Object> sourcesCopy = new ArrayList<>(sources);
                         ruleCopy.addUnidentifiedText(",").addRuleConditional(Conditional.AFTER);
                         ruleCopy = addActivity(ruleCopy, incTask, subject.getValue());
-                        sourcesCopy.addAll(Arrays.asList(incTask, subject.getKey()));
+                        sourcesCopy.add(incTask);
+                        if (subject.getKey() != null)
+                            sourcesCopy.add(subject.getKey());
                         MagicDrawSourceEntry src = new MagicDrawSourceEntry(sourcesCopy);
                         br_candidates.add(src, ruleCopy);
                         br_candidates.setAutomaticExtraction(src);

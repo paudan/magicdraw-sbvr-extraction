@@ -369,9 +369,8 @@ public abstract class AbstractSBVRExtractor {
     }
 
     /**
-     * Extract verb-concept from action-like element (UseCase, Task, etc.)
-     * @param el Element
-     * @return Extracted string
+     * Extract verb-concept from action-like element (UseCase, Task, etc.).
+     * Here, it is assumed that phrase starts with verb ("extract text")
      */
     protected String extractActionVC(Element el) {
         String name = extractElementText(el);
@@ -394,6 +393,18 @@ public abstract class AbstractSBVRExtractor {
         for (int i = 1; i < parts.length; i++)
             name += parts[i] + " ";
         return name.trim();
+    }
+
+    /**
+     * Extract noun-phrase from action-like element, modelled like condition (Event, etc.).
+     * Here, it is assumed that phrase starts with noun and is passive voice-like ("text is extracted")
+     */
+    protected String extractActionUnaryLikeGC(Element el) {
+        return extractActionVC(el);
+    }
+
+    protected String extractActionUnaryLikeVC(Element el) {
+        return extractActionGC(el);
     }
 
     protected void createVerbConceptFromAction(Element actor, Element action) {
@@ -476,8 +487,8 @@ public abstract class AbstractSBVRExtractor {
         vc_candidates.setAutomaticExtraction(source);
     }
 
-    protected void createUnaryVerbConcept(Element subject, String verb) {
-        String subj = extractElementText(subject);
+    protected void createUnaryVerbConcept(Element subject, String verb, String subjectOverride) {
+        String subj = subjectOverride == null ? extractElementText(subject) : subjectOverride;
         if (subj == null || verb == null)
             return;
         SBVRExpressionModel first = getGeneralConcept(subj);

@@ -7,7 +7,10 @@ import com.nomagic.magicdraw.uml.symbols.DiagramPresentationElement;
 import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.actions.mdbasicactions.OpaqueAction;
 import com.nomagic.uml2.ext.magicdraw.actions.mdcompleteactions.AcceptEventAction;
+import com.nomagic.uml2.ext.magicdraw.actions.mdintermediateactions.SendObjectAction;
+import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ActivityFinalNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ControlFlow;
+import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.InitialNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.Activity;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.ActivityPartition;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.DecisionNode;
@@ -54,13 +57,8 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
 
     @Test
     public void testRuleT1Extraction() {
-        BpmnSBVRExtractor extractor = getExtractor("Model1");
-        Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        printExtractorOutput(gcObjects);
-        Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        printExtractorOutput(vcObjects);
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        printExtractorOutput(brObjects);
+        runExtractionTest("Model1", 3, 2, 1);
+        runExtractionTest("Model1a", 3, 2, 1);
     }
 
     @Test
@@ -74,6 +72,11 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
         runExtractionTest("Model2", 6, 5, 4);
         System.out.println("Running test on model with default conditions");
         runExtractionTest("Model2a", 6, 5, 4);
+
+        System.out.println("Running test on model without default conditions and start/end events");
+        runExtractionTest("Model2b", 6, 5, 4);
+        System.out.println("Running test on model with default conditions and start/end events");
+        runExtractionTest("Model2c", 6, 5, 4);
     }
 
     @Test
@@ -211,4 +214,95 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
         ControlFlow defaultFlow = default_.iterator().next();
         assertEquals(taskElement1, defaultFlow.getTarget());
     }
+
+    public void performTestStartEvent(String modelName) {
+        DiagramPresentationElement diagram1 = getDiagramElements(modelName);
+        assertNotNull(diagram1);
+        Collection<Element> elements = diagram1.getUsedModelElements();
+        Collection<InitialNode> startEvents = Finder.byType().find(elements, InitialNode.class);
+        assertEquals(1, startEvents.size());
+        InitialNode startNode = startEvents.iterator().next();
+        assertTrue(BPMN2Profile.isStartEvent(startNode));
+        String text = AbstractSBVRExtractor.extractElementText(startNode);
+        assertNull(text);
+        Activity owner = startNode.getActivity();
+        assertNotNull(owner);
+        String name = owner.getName();
+        assertEquals(name, modelName);
+    }
+
+    @Test
+    public void testStartEvent() {
+        performTestStartEvent("Model2b");
+        performTestStartEvent("Model2c");
+    }
+
+    private void performTestEndEvent(String modelName, String actualName) {
+        DiagramPresentationElement diagram1 = getDiagramElements(modelName);
+        assertNotNull(diagram1);
+        Collection<Element> elements = diagram1.getUsedModelElements();
+        Collection<ActivityFinalNode> endEvents = Finder.byType().find(elements, ActivityFinalNode.class);
+        assertEquals(1, endEvents.size());
+        ActivityFinalNode endNode = endEvents.iterator().next();
+        String name = AbstractSBVRExtractor.extractElementText(endNode);
+        if (name == null) {
+            Activity owner = endNode.getActivity();
+            assertNotNull(owner);
+            name = owner.getName() + " ends";
+        }
+        assertEquals(actualName, name);
+    }
+
+
+    @Test
+    public void testEndEvent() {
+        performTestEndEvent("Model2b", "Model2b ends");
+        performTestEndEvent("Model2c", "activity is finished");
+    }
+
+    @Test
+    public void testSpecializations() {
+        DiagramPresentationElement diagram1 = getDiagramElements("TestSpecializations");
+        assertNotNull(diagram1);
+        Collection<Element> elements = diagram1.getUsedModelElements();
+        Collection<InitialNode> startEvents = Finder.byType().find(elements, InitialNode.class);
+        assertEquals(10, startEvents.size());
+        for (InitialNode node: startEvents)
+            assertTrue(BPMN2Profile.isStartEvent(node));
+        Collection<AcceptEventAction> intermediaryEvents = Finder.byType().find(elements, AcceptEventAction.class);
+        assertEquals(8, intermediaryEvents.size());
+        for (AcceptEventAction node: intermediaryEvents)
+            assertTrue(BPMN2Profile.isIntermediateCatchEvent(node));
+        Collection<SendObjectAction> throwEvents = Finder.byType().find(elements, SendObjectAction.class);
+        assertEquals(6, throwEvents.size());
+        for (SendObjectAction node: throwEvents)
+            assertTrue(BPMN2Profile.isIntermediateThrowEvent(node));
+        Collection<ActivityFinalNode> endEvents = Finder.byType().find(elements, ActivityFinalNode.class);
+        assertEquals(9, endEvents.size());
+        for (ActivityFinalNode node: endEvents)
+            assertTrue(BPMN2Profile.isEndEvent(node));
+    }
+
+    @Test
+    public void testStereotypes() {
+        DiagramPresentationElement diagram1 = getDiagramElements("Model1");
+        assertNotNull(diagram1);
+        Collection<Element> elements = diagram1.getUsedModelElements();
+        Collection<OpaqueAction> taskList = Finder.byType().find(elements, OpaqueAction.class);
+        assertEquals(2, taskList.size());
+        OpaqueAction task = taskList.iterator().next();
+        Stereotype st = BPMNHelper.getTaskStereotype(task);
+        assertNotNull(st);
+        assertEquals("Task", st.getName());
+
+        diagram1 = getDiagramElements("Model1a");
+        assertNotNull(diagram1);
+        elements = diagram1.getUsedModelElements();
+        Collection<StructuredActivityNode> subprocess = Finder.byType().find(elements, StructuredActivityNode.class);
+        assertEquals(1, subprocess.size());
+        StructuredActivityNode subprocessNode = subprocess.iterator().next();
+        st = BPMNHelper.getTaskStereotype(subprocessNode);
+        assertNull(st);
+    }
+
 }
