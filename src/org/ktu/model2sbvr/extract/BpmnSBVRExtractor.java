@@ -389,7 +389,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     private boolean isTimerEvent(Element el) {
         if (el == null)
             return false;
-        return isEventElement(el) && hasAnyStereotype(el, "TimerBoundaryEvent", "TimerCatchIntermediateEvent");
+        return BPMN2Profile.isTimerBoundaryEvent(el) || BPMN2Profile.isTimerCatchIntermediateEvent(el);
     }
 
     private boolean isBoundaryEvent(Element el) {
@@ -416,15 +416,11 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return BPMN2Profile.isDataObject(el) || BPMN2Profile.isDataInput(el) || BPMN2Profile.isDataOutput(el);
     }
 
-    private boolean isGatewayOfType(Element el, String stereotype) {
+    boolean isGatewayElement(Element el) {
         if (el == null)
             return false;
-        return BPMN2Profile.isGateway(el) && BPMNHelper.getGatewayStereotype(el).getName().compareToIgnoreCase(stereotype) == 0;
-    }
-
-    boolean isGatewayElement(Element el) {
-        return isGatewayOfType(el, "ExclusiveGateway") || isGatewayOfType(el, "InclusiveGateway") ||
-               isGatewayOfType(el, "ParallelGateway") || isGatewayOfType(el, "EventBasedGateway");
+        return BPMN2Profile.isExclusiveGateway(el) || BPMN2Profile.isInclusiveGateway(el) ||
+               BPMN2Profile.isParallelGateway(el) || BPMN2Profile.isEventBasedGateway(el);
     }
 
     private boolean isSequenceFlow(Element el) {
@@ -691,9 +687,11 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private Conjunction getGatewayConjunction(ControlNode gateway) {
-        if (hasAnyStereotype(gateway, "ExclusiveGateway", "EventBasedGateway"))
+        if (!isGatewayElement(gateway))
+            return null;
+        if (BPMN2Profile.isExclusiveGateway(gateway) || BPMN2Profile.isEventBasedGateway(gateway))
             return Conjunction.OR;
-        else if (hasAnyStereotype(gateway, "InclusiveGateway"))
+        else if (BPMN2Profile.isInclusiveGateway(gateway))
             return Conjunction.AND;
         return null;
     }
@@ -735,17 +733,17 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     }
 
     private void extractRuleT2(Element el) {
-        extractRulesWithGatewaysSimplified(el, "ExclusiveGateway", Conjunction.OR, "T2");
-        //extractRuleWithGateways(el, "ExclusiveGateway", Conjunction.OR);
+        extractRulesWithGatewaysSimplified(el, BPMN2Profile.isExclusiveGateway(el), Conjunction.OR, "T2");
+        //extractRuleWithGateways(el, BPMN2Profile.isExclusiveGateway(el), Conjunction.OR);
     }
 
     private void extractRuleT3(Element el) {
-        extractRulesWithGatewaysSimplified(el, "InclusiveGateway", Conjunction.AND, "T3");
-        //extractRuleWithGateways(el, "InclusiveGateway", Conjunction.AND);
+        extractRulesWithGatewaysSimplified(el, BPMN2Profile.isInclusiveGateway(el), Conjunction.AND, "T3");
+        //extractRuleWithGateways(el, BPMN2Profile.isInclusiveGateway(el), Conjunction.AND);
     }
 
-    private void extractRulesWithGatewaysSimplified(Element el, String gatewayStereotype, Conjunction conjunction, String rule) {
-        if (!isGatewayOfType(el, gatewayStereotype))
+    private void extractRulesWithGatewaysSimplified(Element el, boolean checkGatewayCondition, Conjunction conjunction, String rule) {
+        if (!checkGatewayCondition)
             return;
         GatewayNeighborhood tuple = gatewayNeighborhoods.get(el);
         if (tuple.incomingActivities.isEmpty() && tuple.outgoingActivities.isEmpty())
@@ -844,18 +842,18 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return results;
     }
 
-    private void extractRuleWithGateways(Element el, String gatewayStereotype, Conjunction conjunction, String rule) {
-        if (isGatewayOfType(el, gatewayStereotype)) {
-            SBVRExpressionModel candidate = new SBVRExpressionModel()
-                    .addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION);
-            Object[] entry = getRuleWithGateways((ControlNode) el, conjunction);
-            if (entry == null)
-                return;
-            candidate.addIdentifiedExpression((SBVRExpressionModel) entry[0]);
-            MagicDrawSourceEntry source = new MagicDrawSourceEntry((List<Object>)entry[1], rule);
-            br_candidates.add(source, candidate);
-            br_candidates.setAutomaticExtraction(source);
-        }
+    private void extractRuleWithGateways(Element el, boolean checkGatewayCondition, Conjunction conjunction, String rule) {
+        if (!checkGatewayCondition)
+            return;
+        SBVRExpressionModel candidate = new SBVRExpressionModel()
+                .addRuleExpression(SBVRExpressionModel.RuleType.OBLIGATION);
+        Object[] entry = getRuleWithGateways((ControlNode) el, conjunction);
+        if (entry == null)
+            return;
+        candidate.addIdentifiedExpression((SBVRExpressionModel) entry[0]);
+        MagicDrawSourceEntry source = new MagicDrawSourceEntry((List<Object>)entry[1], rule);
+        br_candidates.add(source, candidate);
+        br_candidates.setAutomaticExtraction(source);
     }
 
     private SBVRExpressionModel addTasksWithConditions(SBVRExpressionModel candidate, Map<ActivityNode, ActivityNodeNeighborhood> tasksData,
@@ -919,7 +917,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
 
 
     private void extractRuleT4(Element el) {
-        if (!isGatewayOfType(el, "EventBasedGateway"))
+        if (!BPMN2Profile.isEventBasedGateway(el))
             return;
         ControlNode node = (ControlNode) el;
         for (ActivityEdge edgeInc: node.getIncoming()) {
@@ -1290,7 +1288,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             if (isActivityElement(source))
                 subjects = getSubjectNames(source).keySet();
             RuleType ruleType = RuleType.PERMISSION;
-            if (hasAnyStereotype(source, "SendTask", "ReceiveTask"))
+            if (BPMN2Profile.isSendTask(source) || BPMN2Profile.isReceiveTask(source))
                 ruleType = RuleType.OBLIGATION;
             for (Element subject: subjects) {
                 addMessageFlowBetweenLanes(el, convObj, subject, (ActivityNode) source, target, null, "sends", "to", ruleType);
@@ -1305,7 +1303,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             addReceivingNodeEventRules(el, convObj, source, (ActivityNode) target);
         } else if ((isActivityElement(source) || isEventElement(source)) && (isActivityElement(target) || isEventElement(target))) {
             RuleType ruleType = RuleType.PERMISSION;
-            if (hasAnyStereotype(source, "SendTask", "ReceiveTask"))
+            if (BPMN2Profile.isSendTask(source) || BPMN2Profile.isReceiveTask(source))
                 ruleType = RuleType.OBLIGATION;
             Set<Element> subjects = new HashSet<>(Collections.singleton(null));
             if (isActivityElement(source))
@@ -1364,7 +1362,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         Map<Element, String> subjects = getSubjectNames(target);
         RuleType ruleType = RuleType.PERMISSION;
         if (isActivityElement(target)) {
-            if (hasAnyStereotype(target, "SendTask", "ReceiveTask"))
+            if (BPMN2Profile.isSendTask(target) || BPMN2Profile.isReceiveTask(target))
                 ruleType = RuleType.OBLIGATION;
             for (Element subject : subjects.keySet())
                 if (source instanceof ActivityNode) {
