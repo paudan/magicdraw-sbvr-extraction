@@ -13,6 +13,7 @@ import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.Activit
 import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.ActivityNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.ActivityPartition;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.CentralBufferNode;
+import com.nomagic.uml2.ext.magicdraw.activities.mdstructuredactivities.StructuredActivityNode;
 import com.nomagic.uml2.ext.magicdraw.auxiliaryconstructs.mdinformationflows.InformationFlow;
 import com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Dependency;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Classifier;
@@ -448,6 +449,22 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
     }
 
 
+    private Collection<ActivityPartition> getInPartition(ActivityNode node) {
+        if (node == null)
+            return null;
+        if (!node.hasInPartition())
+            return getInPartition(node.getInStructuredNode());
+        return node.getInPartition();
+    }
+
+    private Collection<ActivityPartition> getInPartition(ActivityEdge node) {
+        if (node == null)
+            return null;
+        if (!node.hasInPartition())
+            return getInPartition(node.getInStructuredNode());
+        return node.getInPartition();
+    }
+
     private Map<Element, String> getSubjectNames(Element element) {
         Map<Element, String> names = new HashMap<>();
         // Should be modelled as unary concepts
@@ -457,10 +474,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             return names;
         }
         Collection<ActivityPartition> parts = null;
-        if (element instanceof ActivityNode && ((ActivityNode) element).hasInPartition())
-            parts = ((ActivityNode) element).getInPartition();
-        else if (element instanceof ActivityEdge && ((ActivityEdge) element).hasInPartition())
-            parts = ((ActivityEdge) element).getInPartition();
+        if (element instanceof ActivityNode)
+            parts = getInPartition((ActivityNode) element);
+        else if (element instanceof ActivityEdge)
+            parts = getInPartition((ActivityEdge) element);
         if (parts == null)
             return names;
         // Select lowest level partitions as subjects
@@ -1596,6 +1613,26 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         return BpmnSBVRExtractor.getBPMNDiagrams(root, diagrams);
     }
 
+    @Override
+    protected Collection<Element> getDiagramElements(Collection<Element> colelem, DiagramPresentationElement diagram) {
+        Collection<Element> newelem = new HashSet<>();
+        for (Element element : colelem)
+            if (element instanceof Package && diagram.findPresentationElement(element, null) != null)
+                addPackageElements(diagram, (Package) element, newelem);
+            else if (element instanceof StructuredActivityNode && diagram.findPresentationElement(element, null) != null)
+                addSubProcessElements(diagram, (StructuredActivityNode) element, newelem);
+        return newelem;
+    }
+
+    private void addSubProcessElements(DiagramPresentationElement diagram, StructuredActivityNode node, Collection<Element> elements) {
+        for (Element el : node.getOwnedElement())
+            if (diagram.findPresentationElement(el, null) != null)
+                elements.add(el);
+        for (ActivityNode innerNode : node.getNode())
+            if (innerNode instanceof StructuredActivityNode && diagram.findPresentationElement(innerNode, null) != null)
+                addSubProcessElements(diagram, (StructuredActivityNode) innerNode, elements);
+    }
+
     private String getConditionsRepresentation(Map<ActivityNode, Map<ActivityEdge, String>> structConditions){
         final StringBuilder sb = new StringBuilder();
         for (Entry<ActivityNode, Map<ActivityEdge, String>> entry: structConditions.entrySet()) {
@@ -1609,5 +1646,6 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         }
         return sb.toString();
     }
+
 
 }

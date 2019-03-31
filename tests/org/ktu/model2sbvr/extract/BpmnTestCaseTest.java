@@ -8,13 +8,16 @@ import com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper;
 import com.nomagic.uml2.ext.magicdraw.actions.mdbasicactions.OpaqueAction;
 import com.nomagic.uml2.ext.magicdraw.actions.mdcompleteactions.AcceptEventAction;
 import com.nomagic.uml2.ext.magicdraw.actions.mdintermediateactions.SendObjectAction;
+import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ActivityEdge;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ActivityFinalNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.ControlFlow;
 import com.nomagic.uml2.ext.magicdraw.activities.mdbasicactivities.InitialNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.Activity;
+import com.nomagic.uml2.ext.magicdraw.activities.mdfundamentalactivities.ActivityNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.ActivityPartition;
 import com.nomagic.uml2.ext.magicdraw.activities.mdintermediateactivities.DecisionNode;
 import com.nomagic.uml2.ext.magicdraw.activities.mdstructuredactivities.StructuredActivityNode;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.EnumerationLiteral;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
@@ -31,8 +34,12 @@ import org.ktu.model2sbvr.models.SourceEntry;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -303,6 +310,95 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
         StructuredActivityNode subprocessNode = subprocess.iterator().next();
         st = BPMNHelper.getTaskStereotype(subprocessNode);
         assertNull(st);
+    }
+
+
+    private Collection<Element> getDiagramElements(Collection<Element> colelem, DiagramPresentationElement diagram) {
+        Collection<Element> newelem = new HashSet<>();
+        for (Element element : colelem)
+            if (element instanceof Package && diagram.findPresentationElement(element, null) != null)
+                addPackageElements(diagram, (Package) element, newelem);
+            else if (element instanceof StructuredActivityNode && diagram.findPresentationElement(element, null) != null)
+                addSubProcessElements(diagram, (StructuredActivityNode) element, newelem);
+        return newelem;
+    }
+
+
+    private void addPackageElements(DiagramPresentationElement diagram, Package pack, Collection<Element> elements) {
+        for (Element el : pack.getOwnedElement())
+            if (diagram.findPresentationElement(el, null) != null)
+                elements.add(el);
+        for (Package innerPack : pack.getNestedPackage())
+            if (diagram.findPresentationElement(innerPack, null) != null)
+                addPackageElements(diagram, innerPack, elements);
+    }
+
+    private void addSubProcessElements(DiagramPresentationElement diagram, StructuredActivityNode node, Collection<Element> elements) {
+        for (Element el : node.getOwnedElement())
+            if (diagram.findPresentationElement(el, null) != null)
+                elements.add(el);
+        for (ActivityNode innerNode : node.getNode())
+            if (innerNode instanceof StructuredActivityNode && diagram.findPresentationElement(innerNode, null) != null)
+                addSubProcessElements(diagram, (StructuredActivityNode) innerNode, elements);
+    }
+
+    private DiagramPresentationElement getDiagramElement(String modelName) {
+        Package model = getRootPackage();
+        assertNotNull(model);
+        Collection<DiagramPresentationElement> diagrams = BpmnSBVRExtractor.getBPMNDiagrams(model);
+        Optional<DiagramPresentationElement> diagramOpt = diagrams.stream()
+                .filter(n -> n.getName() != null && n.getName().compareToIgnoreCase(modelName) == 0).findFirst();
+        assertTrue(diagramOpt.isPresent());
+        return diagramOpt.get();
+    }
+
+    @Test
+    public void testElementCollection() {
+        DiagramPresentationElement diagram = getDiagramElement("SubprocessDiagram");
+        Collection<Element> extracted = diagram.getUsedModelElements();
+        extracted.addAll(getDiagramElements(extracted, diagram));
+        System.out.println(extracted.size());
+        OpaqueAction element = Finder.byName().find(extracted, OpaqueAction.class, "Initiate sending process");
+        assertNotNull(element);
+        Map<Element, String> subjects = getSubjectNames(element);
+        assertEquals(1, subjects.size());
+        Entry<Element, String> subject = subjects.entrySet().iterator().next();
+        assertNotNull(subject);
+        assertTrue(subject.getKey() instanceof Class);
+        assertEquals(subject.getValue(), "Resource Developer");
+    }
+
+    private Collection<ActivityPartition> getInPartition(ActivityNode node) {
+        if (!node.hasInPartition())
+            return getInPartition(node.getInStructuredNode());
+        return node.getInPartition();
+    }
+
+    private Collection<ActivityPartition> getInPartition(ActivityEdge node) {
+        if (!node.hasInPartition())
+            return getInPartition(node.getInStructuredNode());
+        return node.getInPartition();
+    }
+
+    private Map<Element, String> getSubjectNames(Element element) {
+        Map<Element, String> names = new HashMap<>();
+        Collection<ActivityPartition> parts = null;
+        if (element instanceof ActivityNode)
+            parts = getInPartition((ActivityNode) element);
+        else if (element instanceof ActivityEdge)
+            parts = getInPartition((ActivityEdge) element);
+        if (parts == null)
+            return names;
+        // Select lowest level partitions as subjects
+        parts = parts.stream().filter(n -> !n.hasSubpartition()).collect(Collectors.toSet());
+        for (ActivityPartition part : parts) {
+            Element subject = part.getRepresents() != null ? part.getRepresents() : part;
+            String name = subject.getHumanName();
+            if (name == null)
+                continue;
+            names.put(subject, name);
+        }
+        return names;
     }
 
 }

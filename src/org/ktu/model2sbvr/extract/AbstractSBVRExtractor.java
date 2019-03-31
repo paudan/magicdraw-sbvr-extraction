@@ -349,23 +349,19 @@ public abstract class AbstractSBVRExtractor {
 
     protected Collection<Element> getDiagramElements(Collection<Element> colelem, DiagramPresentationElement diagram) {
         Collection<Element> newelem = new HashSet<>();
-        Collection<Package> packages = new HashSet<>();
         for (Element element : colelem)
-            if (element instanceof Package && diagram.findPresentationElement(element, (Class) null) != null)
-                packages.add((Package) element);
-        while (!packages.isEmpty()) {
-            Collection<Package> newPack = new HashSet<>();
-            for (Package pack : packages) {
-                for (Element el : pack.getOwnedElement())
-                    if (diagram.findPresentationElement(el, (Class) null) != null)
-                        newelem.add(el);
-                for (Package innerPack : pack.getNestedPackage())
-                    if (diagram.findPresentationElement(innerPack, (Class) null) != null)
-                        newPack.add(innerPack);
-            }
-            packages = newPack;
-        }
+            if (element instanceof Package && diagram.findPresentationElement(element, null) != null)
+                addPackageElements(diagram, (Package) element, newelem);
         return newelem;
+    }
+
+    protected void addPackageElements(DiagramPresentationElement diagram, Package pack, Collection<Element> elements) {
+        for (Element el : pack.getOwnedElement())
+            if (diagram.findPresentationElement(el, null) != null)
+                elements.add(el);
+        for (Package innerPack : pack.getNestedPackage())
+            if (diagram.findPresentationElement(innerPack, null) != null)
+                addPackageElements(diagram, innerPack, elements);
     }
 
     /**
