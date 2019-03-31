@@ -8,15 +8,21 @@ public class SourceEntry implements Cloneable {
 
     protected List<Object> source;
     protected List<String> sourceText;
+    protected String rule;
 
     public SourceEntry() {
         this.source = new ArrayList<>();
         this.sourceText = new ArrayList<>();
     }
 
-    public SourceEntry(List<Object> source, List<String> sourceText) {
+    public SourceEntry(List<Object> source, List<String> sourceText, String rule) {
         this.source = source;
         this.sourceText = sourceText;
+        this.rule = rule;
+    }
+
+    public SourceEntry(List<Object> source, List<String> sourceText) {
+        this(source, sourceText, null);
     }
 
     public SourceEntry(List<String> sourceText) {
@@ -42,7 +48,11 @@ public class SourceEntry implements Cloneable {
     public List<String> getSourceNames() {
         return sourceText;
     }
-    
+
+    public String getRule() {
+        return rule;
+    }
+
     @Override
     public SourceEntry clone() {
         SourceEntry copy = new SourceEntry();
@@ -50,6 +60,7 @@ public class SourceEntry implements Cloneable {
         Collections.copy(source, copy.source);
         copy.sourceText = new ArrayList<>();
         Collections.copy(sourceText, copy.sourceText);
+        copy.rule = rule;
         return copy;
     }
     

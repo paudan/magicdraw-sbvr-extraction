@@ -7,10 +7,15 @@ import java.util.List;
 
 public class MagicDrawSourceEntry extends SourceEntry {
 
-    public MagicDrawSourceEntry(List<Object> source) {
+    public MagicDrawSourceEntry(List<Object> source, String rule) {
         this.source = new ArrayList<>();
         for (Object src: source)
             addEntry(src);
+        this.rule = rule;
+    }
+
+    public MagicDrawSourceEntry(List<Object> source) {
+        this(source, null);
     }
 
     public void addEntry(Object source) {
