@@ -512,7 +512,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                 if (owner != null) {
                     String extracted = extractElementText(owner);
                     if (extracted != null)
-                        return extracted + " starts";
+                        return extracted + " ends";
                 }
             } else
                 return name;
