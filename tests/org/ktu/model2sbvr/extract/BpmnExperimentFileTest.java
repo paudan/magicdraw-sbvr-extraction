@@ -45,15 +45,10 @@ public class BpmnExperimentFileTest extends BpmnExtractionTestCase {
     }
 
     @Test
-    public void testModel1Extraction() {
-        BpmnSBVRExtractor extractor = getExtractor("1");
+    public void testModelExtraction() {
+        BpmnSBVRExtractor extractor = getExtractor("9d");
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        List<String> extracted = getOutputsAsStrings(brObjects, true);
-        Collections.sort(extracted);
-        for (String item: extracted)
-            System.out.println(item);
-        System.out.println(brObjects.size());
-        //printExtractorOutput(brObjects);
+        printExtractorOutput(brObjects);
     }
 
     @Test

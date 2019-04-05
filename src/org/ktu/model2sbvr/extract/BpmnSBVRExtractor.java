@@ -140,9 +140,12 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             sb.append("Activity element:").append(activityNode.getHumanName()).append("\n")
-                    .append("Extracted text: ").append(activityText).append("\n")
-                    .append("Subjects (executing elements): ")
-                    .append(String.join(",", activitySubjects.keySet().stream().map(Element::getHumanName).collect(Collectors.toList())));
+                    .append("Extracted text: ").append(activityText).append("\n");
+            Set<Element> elements = activitySubjects.keySet().stream().filter(Objects::nonNull).collect(Collectors.toSet());
+            if (elements.size() > 0) {
+                sb.append("Subjects (executing elements): ");
+                sb.append(elements.stream().map(Element::getHumanName).collect(Collectors.joining(",")));
+            }
             if (!incomingConditions.isEmpty()) {
                 sb.append("\nConditions from incoming edges:\n");
                 sb.append(formatPadding(getConditionsRepresentation(incomingConditions)));
