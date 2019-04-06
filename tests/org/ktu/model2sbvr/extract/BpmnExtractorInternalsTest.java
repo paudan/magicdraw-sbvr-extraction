@@ -44,14 +44,6 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
         return extractor;
     }
 
-    private Element getElementByName(BpmnSBVRExtractor extractor, String name) {
-        Collection<Element> elements = extractor.getExtractedDiagramElements();
-        for (Element el: elements)
-            if (el.getHumanName().equalsIgnoreCase(name))
-                return el;
-        return null;
-    }
-
     private void outputInternalStructures(String modelName, boolean fillIncoming) {
         BpmnSBVRExtractor extractor = getBpmnExtractor(modelName);
         Collection<Element> elements = extractor.getExtractedDiagramElements();
@@ -113,7 +105,7 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
                         assertEquals(gatewayName, gateway.getHumanName());
 
                         Conjunction conjunction = getGatewayConjunction(extractor, gateway);
-                        Object[] results = extractor.getRuleWithGateways(gateway, conjunction);
+                        Object[] results = extractor.getRuleWithGateways(gateway, conjunction, null);
                         System.out.println(results[0]);
                     }
                 break;
