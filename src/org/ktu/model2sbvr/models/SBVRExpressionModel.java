@@ -14,7 +14,7 @@ public class SBVRExpressionModel implements Cloneable {
     private static final ResourceBundle bundle = ResourceBundle.getBundle("org/ktu/model2sbvr/messages");
 
     public enum ExpressionType {
-        GENERAL_CONCEPT, INDIVIDUAL_CONCEPT, VERB_CONCEPT, RULE_TYPE, RULE_CONDITIONAL, RULE_CONJUNCTION, GENERIC
+        GENERAL_CONCEPT, INDIVIDUAL_CONCEPT, VERB_CONCEPT, RULE_TYPE, RULE_CONDITIONAL, RULE_CONJUNCTION, BRACKET, GENERIC
     }
 
     public enum RuleType {
@@ -61,6 +61,21 @@ public class SBVRExpressionModel implements Cloneable {
         private final String expr;
 
         Conjunction(String expr) {
+            this.expr = expr;
+        }
+
+        public String toString() {
+            return expr;
+        }
+    }
+
+    public enum Bracket {
+        LEFT("("),
+        RIGHT(")");
+
+        private final String expr;
+
+        Bracket(String expr) {
             this.expr = expr;
         }
 
@@ -123,23 +138,16 @@ public class SBVRExpressionModel implements Cloneable {
         return this;
     }
 
-    public SBVRExpressionModel addAndExpression() {
+    public SBVRExpressionModel addConjunction(Conjunction conj) {
         types.add(ExpressionType.RULE_CONJUNCTION);
-        expressions.add(Conjunction.AND.toString());
-        identified.add(true);
-        return this;
-    }
-    
-    public SBVRExpressionModel addOrExpression() {
-        types.add(ExpressionType.RULE_CONJUNCTION);
-        expressions.add(Conjunction.OR.toString());
+        expressions.add(conj.toString());
         identified.add(true);
         return this;
     }
 
-    public SBVRExpressionModel addConjunction(Conjunction conj) {
-        types.add(ExpressionType.RULE_CONJUNCTION);
-        expressions.add(conj.toString());
+    public SBVRExpressionModel addBracket(Bracket bracket) {
+        types.add(ExpressionType.BRACKET);
+        expressions.add(bracket.toString());
         identified.add(true);
         return this;
     }

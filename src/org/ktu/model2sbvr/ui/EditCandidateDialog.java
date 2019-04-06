@@ -32,6 +32,7 @@ import org.ktu.model2sbvr.models.CandidateTableModel;
 import org.ktu.model2sbvr.models.CandidateTableModel.CandidateEntry;
 import org.ktu.model2sbvr.models.FilteredConceptModel;
 import org.ktu.model2sbvr.models.SBVRExpressionModel;
+import org.ktu.model2sbvr.models.SBVRExpressionModel.Conjunction;
 import org.ktu.model2sbvr.models.SBVRExpressionModel.RuleType;
 import org.ktu.model2sbvr.models.SourceEntry;
 
@@ -338,10 +339,10 @@ public class EditCandidateDialog extends JDialog {
                 int s = 0;
                 for (int i = 0; i < split.length; i++) {
                     if (split[i].compareToIgnoreCase("and") == 0) {
-                        model.addAndExpression();
+                        model.addConjunction(Conjunction.AND);
                         s = 0;
                     } else if (split[i].compareToIgnoreCase("or") == 0) {
-                        model.addOrExpression();
+                        model.addConjunction(Conjunction.OR);
                         s = 0;
                     } else s++;
                     if (s % 2 == 0)
