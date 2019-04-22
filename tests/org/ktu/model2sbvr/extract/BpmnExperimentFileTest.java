@@ -51,13 +51,6 @@ public class BpmnExperimentFileTest extends BpmnExtractionTestCase {
     }
 
     @Test
-    public void testModel1Extraction() {
-        BpmnSBVRExtractor extractor = getExtractor("1");
-        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
-        printExtractorOutput(brObjects);
-    }
-
-    @Test
     public void testIdentity() {
         Package root = getRootPackage();
         assertNotNull(root);
