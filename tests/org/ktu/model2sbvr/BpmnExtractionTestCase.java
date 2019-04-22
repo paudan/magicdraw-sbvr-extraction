@@ -29,6 +29,7 @@ public abstract class BpmnExtractionTestCase extends ExtractionTestCase {
 
     protected BpmnSBVRExtractor getExtractor(String modelName) {
         DiagramPresentationElement diagram = getDiagramElements(modelName);
+        assertNotNull(diagram);
         BpmnSBVRExtractor extractor = new BpmnSBVRExtractor(diagram, false, false);
         extractor.extractAll();
         return extractor;

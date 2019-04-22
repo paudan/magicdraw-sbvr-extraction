@@ -76,7 +76,7 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
                 ActivityNode task = (ActivityNode) el;
                 for (ActivityEdge edge: task.getIncoming())
                     if (extractor.isGatewayElement(edge.getSource())) {
-                        GatewayNeighborhood nhood = extractor.gatewayNeighborhoods2.get(edge.getSource());
+                        GatewayNeighborhood nhood = extractor.gatewayNeighborhoods.get(edge.getSource());
                         assertEquals(gatewayName, edge.getSource().getHumanName());
                         assertEquals(sizeAssertion, nhood.outgoingGateways.size());
                     }
@@ -99,7 +99,7 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
                 ActivityNode task = (ActivityNode) el;
                 for (ActivityEdge edge: task.getIncoming())
                     if (extractor.isGatewayElement(edge.getSource())) {
-                        GatewayNeighborhood nhood = extractor.gatewayNeighborhoods2.get(edge.getSource());
+                        GatewayNeighborhood nhood = extractor.gatewayNeighborhoods.get(edge.getSource());
                         ControlNode gateway = getBoundaryGateway(nhood);
                         assertNotNull(gateway);
                         assertEquals(gatewayName, gateway.getHumanName());
@@ -136,7 +136,7 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
                 ActivityNode task = (ActivityNode) el;
                 for (ActivityEdge edge: task.getIncoming())
                     if (extractor.isGatewayElement(edge.getSource())) {
-                        GatewayNeighborhood nhood = extractor.gatewayNeighborhoods2.get(edge.getSource());
+                        GatewayNeighborhood nhood = extractor.gatewayNeighborhoods.get(edge.getSource());
                         Set<ControlNode> boundaryGateways = new HashSet<>();
                         getAllBoundaryGateways(nhood, boundaryGateways);
                         assertEquals(numAssert, boundaryGateways.size());
@@ -175,7 +175,7 @@ public class BpmnExtractorInternalsTest extends ExtractionTestCase {
         for (String gatewayName: gatewayNames)
             for (Element el: elements)
                 if (extractor.isGatewayElement(el) && el.getHumanName().equalsIgnoreCase(gatewayName)){
-                    GatewayNeighborhood nhood = extractor.gatewayNeighborhoods2.get(el);
+                    GatewayNeighborhood nhood = extractor.gatewayNeighborhoods.get(el);
                     System.out.println(nhood);
                 }
     }

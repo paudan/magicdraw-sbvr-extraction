@@ -54,12 +54,12 @@ public class BpmnTestCaseTest extends BpmnExtractionTestCase {
     private void runExtractionTest(String model, int actualGC, int actualVC, int actualBR) {
         BpmnSBVRExtractor extractor = getExtractor(model);
         Map<SourceEntry, ConceptExtractionEntry> gcObjects = extractor.getGCCandidateModel().getDataset();
-        //assertEquals(actualGC, gcObjects.size());
+        assertEquals(actualGC, gcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> vcObjects = extractor.getVCCandidateModel().getDataset();
-        //assertEquals(actualVC, vcObjects.size());
+        assertEquals(actualVC, vcObjects.size());
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
         printExtractorOutput(brObjects);
-        //assertEquals(actualBR, brObjects.size());
+        assertEquals(actualBR, brObjects.size());
     }
 
     @Test

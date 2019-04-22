@@ -21,7 +21,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,7 @@ public class BpmnExperimentFileTest extends BpmnExtractionTestCase {
 
     @Override
     protected Path getFilename() {
-        return Paths.get("tests", "resources", "bpmn", "experiment.mdzip");
+        return Paths.get("tests", "resources", "bpmn", "experiment_refactored.mdzip");
     }
 
     @Test
@@ -46,7 +45,14 @@ public class BpmnExperimentFileTest extends BpmnExtractionTestCase {
 
     @Test
     public void testModelExtraction() {
-        BpmnSBVRExtractor extractor = getExtractor("9d");
+        BpmnSBVRExtractor extractor = getExtractor("9e");
+        Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
+        printExtractorOutput(brObjects);
+    }
+
+    @Test
+    public void testModel1Extraction() {
+        BpmnSBVRExtractor extractor = getExtractor("1");
         Map<SourceEntry, ConceptExtractionEntry> brObjects = extractor.getBRCandidateModel().getDataset();
         printExtractorOutput(brObjects);
     }

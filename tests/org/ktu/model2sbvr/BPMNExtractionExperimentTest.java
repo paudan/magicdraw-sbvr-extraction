@@ -26,7 +26,7 @@ public class BPMNExtractionExperimentTest extends BpmnExtractionTestCase {
 
     @Override
     protected Path getFilename() {
-        return Paths.get("tests", "resources", "bpmn", "experiment.mdzip");
+        return Paths.get("tests", "resources", "bpmn", "experiment_refactored.mdzip");
     }
 
     private void saveExtractorOutput(Map<SourceEntry, ConceptExtractionEntry> objects, Writer writer) throws IOException {
@@ -51,7 +51,7 @@ public class BPMNExtractionExperimentTest extends BpmnExtractionTestCase {
             Logger.getLogger(getName()).log(Level.SEVERE, null, e);
         }
         String[] modelNames = {"1", "2a", "2b", "2c", "2d", "2e", "3a", "3b", "4", "5",
-                "6a", "6b", "6c", "6d", "6e", "6f", "6g", "7", "8", "9a", "9b", "9c", "9d", "9e",
+                "6a", "6b", "6c", "6d", "6e", "6f", "6g", "7", "8", "9a", "9b", "9c", "9e",
                 "10a", "10b", "11a", "11b", "12a", "12b", "12c", "12d", "12e"};
         for (String modelName: modelNames) {
             BpmnSBVRExtractor extractor = getExtractor(modelName);
