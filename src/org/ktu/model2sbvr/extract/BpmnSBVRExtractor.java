@@ -526,26 +526,10 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             return null;
         if (isStartEventElement(el)){
             String name = extractElementText(el);
-            if (name == null) {
-                Activity owner = el.getActivity();
-                if (owner != null) {
-                    String extracted = extractElementText(owner);
-                    if (extracted != null)
-                        return extracted + " starts";
-                }
-            } else
-                return name;
+            return name == null ? "Process starts" : name;
         } else if (isEndEventElement(el)){
             String name = extractElementText(el);
-            if (name == null) {
-                Activity owner = el.getActivity();
-                if (owner != null) {
-                    String extracted = extractElementText(owner);
-                    if (extracted != null)
-                        return extracted + " ends";
-                }
-            } else
-                return name;
+            return name == null ? "Process ends" : name;
         } else if (isTimerEvent(el)) {
             String name = extractElementText(el);
             if (name != null)
