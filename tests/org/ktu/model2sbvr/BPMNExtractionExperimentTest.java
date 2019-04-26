@@ -15,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,7 +27,7 @@ import java.util.logging.Logger;
 
 public class BPMNExtractionExperimentTest extends BpmnExtractionTestCase {
 
-    private Map<String, Map<String, Integer>> ruleStats = new HashMap<>();
+    private Map<String, Map<String, Integer>> ruleStats = new TreeMap<>();
     private Set<String> ruleNames;
 
     public BPMNExtractionExperimentTest() {
