@@ -1294,7 +1294,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         if (BPMN2Profile.isMessageFlow(el)) {
             Collection<Classifier> conveyed = ((InformationFlow) el).getConveyed();
             if (conveyed.isEmpty())
-                extractMessageFlow(el, null);
+                extractMessageFlow(el, extractElementText(el));
             else {
                 for (Classifier convObj : conveyed)
                     if (BPMN2Profile.isBPMNMessage(convObj))
@@ -1303,7 +1303,9 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         }
     }
 
-    private void extractMessageFlow(Element el, Element convObj) {
+    private void extractMessageFlow(Element el, Object convObj) {
+        if (!(convObj == null || convObj instanceof String || convObj instanceof Element))
+            return;
         Collection<NamedElement> sources = ((InformationFlow) el).getInformationSource();
         Collection<NamedElement> targets = ((InformationFlow) el).getInformationTarget();
         NamedElement source = null, target = null;
@@ -1349,7 +1351,7 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         }
     }
 
-    private void addMessageFlowBetweenLanes(Element el, Element convObj, Element subject1, ActivityNode task1,
+    private void addMessageFlowBetweenLanes(Element el, Object convObj, Element subject1, ActivityNode task1,
                                             Element subject2, ActivityNode task2, String verb1, String verb2, RuleType ruleType) {
         SBVRExpressionModel candidate = new SBVRExpressionModel().addRuleExpression(ruleType);
         if (task1 != null) {
@@ -1385,23 +1387,25 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
             source.add(task1);
         if (task2 != null)
             source.add(task2);
-        System.out.println(candidate);
         MagicDrawSourceEntry src = new MagicDrawSourceEntry(source, "T9");
         br_candidates.add(src, candidate);
         br_candidates.setAutomaticExtraction(src);
     }
 
-    private SBVRExpressionModel addConveyedObject(SBVRExpressionModel candidate, Element convObj, String verb1, String verb2) {
+    private SBVRExpressionModel addConveyedObject(SBVRExpressionModel candidate, Object convObj, String verb1, String verb2) {
         if (convObj != null) {
             candidate = candidate.addVerbConcept(verb1, true);
-            candidate = addGeneralConcept(candidate, convObj);
+            if (convObj instanceof String)
+                candidate = addGeneralConcept(candidate, (String) convObj);
+            else if (convObj instanceof Element)
+                candidate = addGeneralConcept(candidate, (Element) convObj);
             candidate = candidate.addVerbConcept(verb2, true);
         } else
             candidate = candidate.addVerbConcept(verb1 + " message " + verb2, true);
         return candidate;
     }
 
-    private void addReceivingNodeEventRules(Element el, Element convObj, Element source, ActivityNode target) {
+    private void addReceivingNodeEventRules(Element el, Object convObj, Element source, ActivityNode target) {
         Map<Element, String> subjects = getSubjectNames(target, true);
         RuleType ruleType = RuleType.PERMISSION;
         if (isActivityElement(target)) {
