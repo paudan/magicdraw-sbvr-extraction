@@ -1505,58 +1505,58 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         Set<SBVRExpressionModel> conditionedRules = new HashSet<>();
         boolean first_added = true;
         SBVRExpressionModel modelPart = new SBVRExpressionModel();
-        // Recursively process outgoing gateways
-        for (Entry<ControlNode, GatewayNeighborhood> gatewayOut: nhood.incomingGateways.entrySet()) {
-            createPartialRules(gatewayOut.getValue(), startedElement, gateway);
+        // Recursively process incoming gateways
+        for (Entry<ControlNode, GatewayNeighborhood> gatewayIn: nhood.incomingGateways.entrySet()) {
+            createPartialRules(gatewayIn.getValue(), startedElement, gateway);
             // It is possible that multiple sequence flows are between the two gateways
-            Map<ActivityEdge, String> conditions = nhood.incomingConditions.get(gatewayOut.getKey());
+            Map<ActivityEdge, String> conditions = nhood.incomingConditions.get(gatewayIn.getKey());
             SBVRExpressionModel ruleModel = createMultipleConditions(conditions, nhood.partialRuleSource);
-            SBVRExpressionModel partialOutgoingRule = gatewayOut.getValue().partialRule;
-            if (partialOutgoingRule.isEmpty())
+            SBVRExpressionModel partialIncomingRule = gatewayIn.getValue().partialRule;
+            if (partialIncomingRule.isEmpty())
                 continue;
             if (ruleModel.isEmpty())
-                defaultRules.add(partialOutgoingRule);
+                defaultRules.add(partialIncomingRule);
             else {
                 if (!first_added)
                     modelPart.addConjunction(conjunction);
                 else
                     first_added = false;
-                modelPart.addIdentifiedExpression(partialOutgoingRule)
+                modelPart.addIdentifiedExpression(partialIncomingRule)
                         .addConjunction(Conjunction.AND)
                         .addRuleConditional(Conditional.IF)
                         .addIdentifiedExpression(ruleModel);
-                conditionedRules.add(partialOutgoingRule);
+                conditionedRules.add(partialIncomingRule);
             }
-            nhood.partialRuleSource.addAll(gatewayOut.getValue().partialRuleSource);
+            nhood.partialRuleSource.addAll(gatewayIn.getValue().partialRuleSource);
         }
-        // Process outgoing activities
-        for (Entry<ActivityNode, ActivityNodeNeighborhood> activityOut: nhood.incomingActivities.entrySet()) {
+        // Process incoming activities
+        for (Entry<ActivityNode, ActivityNodeNeighborhood> activityIn: nhood.incomingActivities.entrySet()) {
             // Exclude element which was used as the starting point
-            if (activityOut.getKey().equals(startedElement))
+            if (activityIn.getKey().equals(startedElement))
                 continue;
             // It is possible that multiple sequence flows are between the two tasks
-            Map<ActivityEdge, String> conditions = activityOut.getValue().incomingConditions.get(activityOut.getKey());
+            Map<ActivityEdge, String> conditions = activityIn.getValue().incomingConditions.get(activityIn.getKey());
             SBVRExpressionModel ruleModel = createMultipleConditions(conditions, nhood.partialRuleSource);
-            Map<Element, String> subjects = getSubjectNames(activityOut.getKey(), false);
+            Map<Element, String> subjects = getSubjectNames(activityIn.getKey(), false);
             for (Entry<Element, String> subject : subjects.entrySet()) {
-                SBVRExpressionModel partialOutgoingRule = addActivity(new SBVRExpressionModel(), activityOut.getKey(), subject.getValue());
-                if (partialOutgoingRule.isEmpty())
+                SBVRExpressionModel partialIncomingRule = addActivity(new SBVRExpressionModel(), activityIn.getKey(), subject.getValue());
+                if (partialIncomingRule.isEmpty())
                     continue;
                 if (ruleModel.isEmpty())
-                    defaultRules.add(partialOutgoingRule);
+                    defaultRules.add(partialIncomingRule);
                 else {
                     if (!first_added)
                         modelPart.addConjunction(conjunction);
                     else
                         first_added = false;
-                    modelPart.addIdentifiedExpression(partialOutgoingRule)
+                    modelPart.addIdentifiedExpression(partialIncomingRule)
                             .addRuleConditional(Conditional.IF)
                             .addIdentifiedExpression(ruleModel);
-                    conditionedRules.add(partialOutgoingRule);
+                    conditionedRules.add(partialIncomingRule);
                 }
                 if (subject.getKey() != null)
                     nhood.partialRuleSource.add(subject.getKey());
-                nhood.partialRuleSource.add(activityOut.getKey());
+                nhood.partialRuleSource.add(activityIn.getKey());
             }
         }
         // Add default conditions
