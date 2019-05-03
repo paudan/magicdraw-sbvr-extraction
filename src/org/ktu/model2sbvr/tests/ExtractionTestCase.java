@@ -14,9 +14,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -93,5 +95,15 @@ public abstract class ExtractionTestCase extends MagicDrawTestCase {
         if (StereotypesHelper.hasStereotype(element, stereotype))
             return element;
         return null;
+    }
+
+    protected Map<String, Map<SourceEntry, ConceptExtractionEntry>> objectsByRuleName(Map<SourceEntry, ConceptExtractionEntry> objects) {
+        Map<String, Map<SourceEntry, ConceptExtractionEntry>> output = new TreeMap<>();
+        for (Entry<SourceEntry, ConceptExtractionEntry> item: objects.entrySet()) {
+            String rule = item.getKey().getRule();
+            output.putIfAbsent(rule, new HashMap<>());
+            output.get(rule).put(item.getKey(), item.getValue());
+        }
+        return output;
     }
 }

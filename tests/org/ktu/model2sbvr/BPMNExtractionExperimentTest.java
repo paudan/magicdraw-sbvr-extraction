@@ -92,7 +92,9 @@ public class BPMNExtractionExperimentTest extends BpmnExtractionTestCase {
             ruleStats.put(modelName, modelStats);
             String filePath = Paths.get(dirName, modelName + ".txt").toString();
             try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filePath), StandardCharsets.UTF_8))) {
-                saveExtractorOutput(extractor.getBRCandidateModel().getDataset(), writer, modelName);
+                Map<String, Map<SourceEntry, ConceptExtractionEntry>> mapByRule = objectsByRuleName(extractor.getBRCandidateModel().getDataset());
+                for (Map<SourceEntry, ConceptExtractionEntry> ruleSet: mapByRule.values())
+                    saveExtractorOutput(ruleSet, writer, modelName);
             } catch (IOException e) {
                 Logger.getLogger(getName()).log(Level.SEVERE, null, e);
             }
