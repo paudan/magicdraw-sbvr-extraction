@@ -528,9 +528,14 @@ public abstract class AbstractSBVRExtractor {
         return null;
     }
 
-    protected SBVRExpressionModel addGeneralConcept(SBVRExpressionModel candidate, Element element) {
-        String objText = extractElementText(element);
+    protected SBVRExpressionModel addGeneralConcept(SBVRExpressionModel candidate, String objText) {
+        /*if (objText == null)
+            return null;*/
         SBVRExpressionModel objConcept = getGeneralConcept(objText);
         return objConcept != null ? candidate.addIdentifiedExpression(objConcept) : candidate.addUnidentifiedText(objText);
+    }
+
+    protected SBVRExpressionModel addGeneralConcept(SBVRExpressionModel candidate, Element element) {
+        return addGeneralConcept(candidate, extractElementText(element));
     }
 }
