@@ -10,6 +10,7 @@ import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.DirectedRelationship;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Element;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Generalization;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Package;
+import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Relationship;
 import com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Type;
 import com.nomagic.uml2.ext.magicdraw.components.mdbasiccomponents.Component;
 import com.nomagic.uml2.ext.magicdraw.mdusecases.Actor;
@@ -30,6 +31,7 @@ import org.ktu.model2sbvr.models.SBVRExpressionModel;
 import org.ktu.model2sbvr.models.SBVRExpressionModel.Conditional;
 import org.ktu.model2sbvr.models.SBVRModelException;
 
+
 public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
 
     public UseCaseSBVRExtractor(DiagramPresentationElement diagram, boolean strictOnly, boolean extractMMVoc) {
@@ -40,15 +42,22 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
         super(model, strictOnly, extractMMVoc);
     }
 
+    private boolean bothEndsInDiagram(Relationship el) {
+        for (Element e: el.getRelatedElement())
+            if (!candidateElements.contains(e))
+                return false;
+        return true;
+    }
+
     @Override
     protected void extractGeneralConceptCandidates() {
         Iterator<Element> iterator = candidateElements.iterator();
         while (iterator.hasNext()) {
             Element el = iterator.next();
-            if ((el.getClassType().equals(Actor.class) || isBoundaryElement(el)) && !extractedAuto)
-                createGeneralConcept(el, extractElementText(el), true);
+            if (el.getClassType().equals(Actor.class) || isBoundaryElement(el))
+                createGeneralConcept(el, extractElementText(el), true, true);
             else if (el.getClassType().equals(UseCase.class) && (!extractedAuto || (extractedAuto && extractedStrict))) {
-                createGeneralConcept(el, extractActionGC(el), false);
+                createGeneralConcept(el, extractActionGC(el), false, false);
             } else if (el.getClassType().equals(Extend.class)) {
                 for (ExtensionPoint ep : ((Extend) el).getExtensionLocation())
                     if (extractElementText(ep) != null)
@@ -66,7 +75,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
         Iterator<Element> iterator = candidateElements.iterator();
         while (iterator.hasNext()) {
             Element el = iterator.next();
-            if (el.getClassType().equals(Association.class) && !extractedAuto) {
+            if (el.getClassType().equals(Association.class) && !extractedAuto && bothEndsInDiagram((Association)el)) {
                 Collection<Type> endtypes = ((Association) el).getEndType();
                 boolean actor_found = false, uc_found = false;
                 Element actor = null, uc = null;
@@ -79,7 +88,7 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                         uc_found = true;
                     }
                 if (actor_found && uc_found)
-                    createVerbConceptFromAction(actor, (UseCase) uc);
+                    createVerbConceptFromAction(actor, uc);
                 // Association condition may be embedded in Association name
                 if (extractElementText(el) != null)
                     vc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));

@@ -10,6 +10,7 @@ import java.util.Map;
 public class ConceptExtractionEntry implements Cloneable {
     private SourceEntry source;
     private List<SBVRExpressionModel> candidates;
+    private List<Boolean> includedInTestCase;
     private boolean isMerged;
     private Map<SourceEntry, SBVRExpressionModel> mergedWith;
 
@@ -24,6 +25,7 @@ public class ConceptExtractionEntry implements Cloneable {
     public ConceptExtractionEntry(SourceEntry source) {
         this.source = source;
         this.candidates = new ArrayList<>();
+        this.includedInTestCase = new ArrayList<>();
         isMerged = false;
         this.mergedWith = new HashMap<>();
     }
@@ -43,13 +45,26 @@ public class ConceptExtractionEntry implements Cloneable {
         return Collections.unmodifiableList(candidates);
     }
 
-    public boolean addCandidate(SBVRExpressionModel candidate) {
+    public List<SBVRExpressionModel> getTestCaseSelectedCandidates() {
+        List<SBVRExpressionModel> selected = new ArrayList<>();
+        for (int i = 0; i < candidates.size(); i++)
+            if (includedInTestCase.get(i))
+                selected.add(candidates.get(i));
+        return selected;
+    }
+
+    public boolean addCandidate(SBVRExpressionModel candidate, boolean includeInTestCase) {
         if (!candidates.isEmpty())
             for (SBVRExpressionModel sbvr : candidates)
                 if (sbvr.originalEqualsTo(candidate))
                     return false;
         this.candidates.add(candidate);
+        this.includedInTestCase.add(includeInTestCase);
         return true;
+    }
+
+    public boolean addCandidate(SBVRExpressionModel candidate) {
+        return addCandidate(candidate, true);
     }
 
     public void removeCandidate(SBVRExpressionModel candidate) {

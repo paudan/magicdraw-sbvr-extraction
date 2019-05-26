@@ -17,11 +17,7 @@ public abstract class AbstractConceptModel implements Cloneable {
         flag = new HashMap<>();
     }
 
-    protected static AbstractConceptModel createInstance() {
-        return null;
-    }
-
-    public boolean add(SourceEntry source, SBVRExpressionModel candidate) {
+    public boolean add(SourceEntry source, SBVRExpressionModel candidate, boolean includeInTestCase) {
         if (source == null)
             return false;
         ConceptExtractionEntry srcEntry = data.get(source);
@@ -29,8 +25,12 @@ public abstract class AbstractConceptModel implements Cloneable {
             srcEntry = new ConceptExtractionEntry(source);
             data.put(source, srcEntry);
         }
-        srcEntry.addCandidate(candidate);
+        srcEntry.addCandidate(candidate, includeInTestCase);
         return true;
+    }
+
+    public boolean add(SourceEntry source, SBVRExpressionModel candidate) {
+        return add(source, candidate, true);
     }
 
     public boolean remove(SourceEntry source, SBVRExpressionModel candidate) {

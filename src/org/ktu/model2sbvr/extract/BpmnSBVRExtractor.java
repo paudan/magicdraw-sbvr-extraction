@@ -584,14 +584,14 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
         while (iterator.hasNext()) {
             Element el = iterator.next();
             if (isLaneElement(el) || BPMN2Profile.isResource(el))
-                createGeneralConcept(el, extractElementText(el), true);
+                createGeneralConcept(el, extractElementText(el), true, true);
             else if (BPMN2Profile.isMessageFlow(el)) {
                 Collection<Classifier> conveyed = ((InformationFlow) el).getConveyed();
                 for (Classifier classifier : conveyed)
                     if (classifier.getClassType().equals(com.nomagic.uml2.ext.magicdraw.classes.mdkernel.Class.class) && BPMN2Profile.isBPMNMessage(classifier))
-                        createGeneralConcept(classifier, extractElementText(classifier), true);
+                        createGeneralConcept(classifier, extractElementText(classifier), true, true);
             } else if ((isActivityElement(el) || isEventElement(el)) && !extractedAuto)
-                createGeneralConcept(el, extractActivityGC((ActivityNode) el), false);
+                createGeneralConcept(el, extractActivityGC((ActivityNode) el), false, false);
             else if (isSequenceFlow(el)) {
                 String condition = getCondition((ActivityEdge) el);
                 if (condition != null)
@@ -605,15 +605,15 @@ public class BpmnSBVRExtractor extends AbstractSBVRExtractor {
                         String stateText = extractElementText(state);
                         String elText = getDataObjectName(el);
                         if (stateText != null && elText != null)
-                            createGeneralConcept(el, stateText + " " + elText, true);
+                            createGeneralConcept(el, stateText + " " + elText, true, true);
                     }
                 else
-                    createGeneralConcept(el, getDataObjectName(el), true);
+                    createGeneralConcept(el, getDataObjectName(el), true, true);
             }
             if (BPMN2Profile.isMessageFlow(el)) {
                 for (Classifier convObj : ((InformationFlow) el).getConveyed())
                     if (BPMN2Profile.isBPMNMessage(convObj))
-                        createGeneralConcept(el, extractElementText(el), false);
+                        createGeneralConcept(el, extractElementText(el), false, true);
             } else if (el.getClassType().equals(Comment.class))
                 if (extractElementText(el) != null)
                     gc_candidates.setManualExtraction(new MagicDrawSourceEntry(Collections.singletonList(el)));

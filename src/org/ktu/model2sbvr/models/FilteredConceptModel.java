@@ -36,8 +36,8 @@ public class FilteredConceptModel extends AbstractConceptModel  {
     }
 
     @Override
-    public boolean add(SourceEntry source, SBVRExpressionModel candidate) {
-        boolean added = super.add(source, candidate);
+    public boolean add(SourceEntry source, SBVRExpressionModel candidate, boolean includeInTestCase) {
+        boolean added = super.add(source, candidate, includeInTestCase);
         if (added) {
             List<Boolean> res = selected.get(source);
             if (res == null) {

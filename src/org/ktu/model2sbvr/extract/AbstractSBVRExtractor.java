@@ -332,14 +332,14 @@ public abstract class AbstractSBVRExtractor {
         return candidate;
     }
 
-    protected SBVRExpressionModel createGeneralConcept(Element el, String name, boolean setAuto) {
+    protected SBVRExpressionModel createGeneralConcept(Element el, String name, boolean setAuto, boolean includeInTestCase) {
         if (name == null)
             return null;
         SBVRExpressionModel candidate = new SBVRExpressionModel();
         candidate.addGeneralConcept(name, false);
         candidate.setAuto(true);
         MagicDrawSourceEntry source = new MagicDrawSourceEntry(Collections.singletonList(el));
-        gc_candidates.add(source, candidate);
+        gc_candidates.add(source, candidate, includeInTestCase);
         if (setAuto)
             gc_candidates.setAutomaticExtraction(source);
         else
