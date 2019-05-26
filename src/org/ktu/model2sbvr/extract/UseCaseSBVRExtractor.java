@@ -125,7 +125,8 @@ public class UseCaseSBVRExtractor extends AbstractSBVRExtractor {
                             }
                         if (!hasEnd)
                             createVerbConceptFromAction(uc.getOwner(), uc);
-                    } else if (!uc.get_includeOfAddition().isEmpty() || !uc.get_extendOfExtendedCase().isEmpty()) {
+                    }
+                    if (!uc.get_includeOfAddition().isEmpty() || !uc.get_extendOfExtendedCase().isEmpty()) {
                         Collection<Actor> actors = getActorsOfUseCase(uc, null);
                         if (!actors.isEmpty())
                             for (Actor actor : actors)
